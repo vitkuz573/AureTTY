@@ -5,7 +5,7 @@ It can be integrated from any language through the HTTP API and SSE event stream
 
 ## Integration Modes
 
-- HTTP API (`/v1/*`) + SSE (`/v1/viewers/{viewerId}/events`) for language-agnostic clients.
+- REST API (`/api/v1/*`) + SSE (`/api/v1/viewers/{viewerId}/events`) for language-agnostic clients.
 - Local IPC API (named pipe) for legacy/hosted integrations on Windows.
 - Both transports can run together.
 
@@ -27,17 +27,20 @@ Defaults:
 
 ## HTTP Endpoints
 
-- `GET /v1/health`
-- `GET /v1/viewers/{viewerId}/events` (SSE)
-- `POST /v1/viewers/{viewerId}/sessions/start`
-- `POST /v1/viewers/{viewerId}/sessions/resume`
-- `POST /v1/viewers/{viewerId}/sessions/input`
-- `GET /v1/viewers/{viewerId}/sessions/{sessionId}/input-diagnostics`
-- `POST /v1/viewers/{viewerId}/sessions/resize`
-- `POST /v1/viewers/{viewerId}/sessions/{sessionId}/signal/{signal}`
-- `DELETE /v1/viewers/{viewerId}/sessions/{sessionId}`
-- `DELETE /v1/viewers/{viewerId}/sessions`
-- `DELETE /v1/sessions`
+- `GET /api/v1/health`
+- `GET /api/v1/sessions`
+- `DELETE /api/v1/sessions`
+- `GET /api/v1/viewers/{viewerId}/events` (SSE)
+- `GET /api/v1/viewers/{viewerId}/sessions`
+- `POST /api/v1/viewers/{viewerId}/sessions`
+- `GET /api/v1/viewers/{viewerId}/sessions/{sessionId}`
+- `POST /api/v1/viewers/{viewerId}/sessions/{sessionId}/attachments`
+- `POST /api/v1/viewers/{viewerId}/sessions/{sessionId}/inputs`
+- `GET /api/v1/viewers/{viewerId}/sessions/{sessionId}/input-diagnostics`
+- `PUT /api/v1/viewers/{viewerId}/sessions/{sessionId}/terminal-size`
+- `POST /api/v1/viewers/{viewerId}/sessions/{sessionId}/signals`
+- `DELETE /api/v1/viewers/{viewerId}/sessions/{sessionId}`
+- `DELETE /api/v1/viewers/{viewerId}/sessions`
 
 OpenAPI document:
 

@@ -2,12 +2,13 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using Microsoft.Extensions.Logging;
-using AureTTY.Execution.Abstractions;
-using AureTTY.Execution.Services;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
 using AureTTY.Contracts.Enums;
+using AureTTY.Contracts.Exceptions;
+using AureTTY.Execution.Abstractions;
+using AureTTY.Execution.Services;
+using Microsoft.Extensions.Logging;
 
 namespace AureTTY.Core.Services;
 
@@ -35,6 +36,36 @@ public sealed class TerminalSessionService(
     private readonly ILogger<TerminalSessionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, TerminalSessionInstance> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
+    public Task<IReadOnlyCollection<TerminalSessionHandle>> GetAllSessionsAsync(CancellationToken cancellationToken = default)
+    {
+        var handles = _sessions.Values
+            .Select(session => session.CreateHandleSnapshot())
+            .OrderBy(static session => session.CreatedAtUtc)
+            .ToArray();
+        return Task.FromResult<IReadOnlyCollection<TerminalSessionHandle>>(handles);
+    }
+
+    public Task<IReadOnlyCollection<TerminalSessionHandle>> GetViewerSessionsAsync(string viewerId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(viewerId);
+
+        var handles = _sessions.Values
+            .Where(session => session.IsViewer(viewerId))
+            .Select(session => session.CreateHandleSnapshot())
+            .OrderBy(static session => session.CreatedAtUtc)
+            .ToArray();
+        return Task.FromResult<IReadOnlyCollection<TerminalSessionHandle>>(handles);
+    }
+
+    public Task<TerminalSessionHandle> GetSessionAsync(string viewerId, string sessionId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(viewerId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sessionId);
+
+        var session = ResolveSession(viewerId, sessionId);
+        return Task.FromResult(session.CreateHandleSnapshot());
+    }
+
     public Task<TerminalSessionHandle> StartAsync(string viewerId, TerminalSessionStartRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(viewerId);
@@ -51,13 +82,13 @@ public sealed class TerminalSessionService(
                 MaxConcurrentSessions,
                 snapshot);
 
-            throw new InvalidOperationException($"Maximum number of concurrent terminal sessions ({MaxConcurrentSessions}) has been reached.");
+            throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions ({MaxConcurrentSessions}) has been reached.");
         }
 
         var sessionId = request.SessionId?.Trim();
         if (string.IsNullOrWhiteSpace(sessionId))
         {
-            throw new InvalidOperationException("SessionId is required.");
+            throw new TerminalSessionValidationException("SessionId is required.");
         }
 
         var normalizedRequest = new TerminalSessionStartRequest(sessionId, request.Shell)
@@ -75,16 +106,12 @@ public sealed class TerminalSessionService(
         var session = new TerminalSessionInstance(viewerId, normalizedRequest);
         if (!_sessions.TryAdd(session.SessionId, session))
         {
-            throw new InvalidOperationException($"Terminal session '{session.SessionId}' already exists.");
+            throw new TerminalSessionConflictException($"Terminal session '{session.SessionId}' already exists.");
         }
 
         _ = RunSessionAsync(session, CancellationToken.None);
 
-        return Task.FromResult(new TerminalSessionHandle(session.SessionId)
-        {
-            State = TerminalSessionState.Starting,
-            CreatedAtUtc = session.CreatedAtUtc
-        });
+        return Task.FromResult(session.CreateHandleSnapshot());
     }
 
     public async Task<TerminalSessionHandle> ResumeAsync(string viewerId, TerminalSessionResumeRequest request, CancellationToken cancellationToken = default)
@@ -95,12 +122,12 @@ public sealed class TerminalSessionService(
         var sessionId = request.SessionId?.Trim();
         if (string.IsNullOrWhiteSpace(sessionId))
         {
-            throw new InvalidOperationException("SessionId is required.");
+            throw new TerminalSessionValidationException("SessionId is required.");
         }
 
         if (!_sessions.TryGetValue(sessionId, out var session))
         {
-            throw new InvalidOperationException($"Terminal session '{sessionId}' was not found.");
+            throw new TerminalSessionNotFoundException($"Terminal session '{sessionId}' was not found.");
         }
 
         session.Reattach(viewerId);
@@ -141,13 +168,7 @@ public sealed class TerminalSessionService(
                 sequenceNumber: replayEntry.SequenceNumber);
         }
 
-        return new TerminalSessionHandle(session.SessionId)
-        {
-            State = session.State,
-            CreatedAtUtc = session.CreatedAtUtc,
-            ProcessId = session.ProcessId,
-            Error = session.State == TerminalSessionState.Failed ? "Terminal session is in failed state." : null
-        };
+        return session.CreateHandleSnapshot();
     }
 
     public async Task SendInputAsync(string viewerId, TerminalSessionInputRequest request, CancellationToken cancellationToken = default)
@@ -156,7 +177,7 @@ public sealed class TerminalSessionService(
         ArgumentNullException.ThrowIfNull(request);
         if (request.Sequence <= 0)
         {
-            throw new InvalidOperationException("Terminal input sequence must be a positive integer.");
+            throw new TerminalSessionValidationException("Terminal input sequence must be a positive integer.");
         }
 
         var session = ResolveSession(viewerId, request.SessionId);
@@ -178,7 +199,7 @@ public sealed class TerminalSessionService(
             var process = session.GetProcess();
             if (process is null)
             {
-                throw new InvalidOperationException($"Terminal session '{session.SessionId}' is not running.");
+                throw new TerminalSessionConflictException($"Terminal session '{session.SessionId}' is not running.");
             }
 
             foreach (var chunk in orderedInputChunks)
@@ -290,7 +311,7 @@ public sealed class TerminalSessionService(
                 }
 
             default:
-                throw new InvalidOperationException($"Unsupported terminal signal '{signal}'.");
+                throw new TerminalSessionValidationException($"Unsupported terminal signal '{signal}'.");
         }
     }
 
@@ -306,7 +327,7 @@ public sealed class TerminalSessionService(
 
         if (!session.IsViewer(viewerId))
         {
-            throw new InvalidOperationException("Terminal session belongs to another viewer.");
+            throw new TerminalSessionForbiddenException("Terminal session belongs to another viewer.");
         }
 
         session.RequestClose();
@@ -946,12 +967,12 @@ public sealed class TerminalSessionService(
     {
         if (!_sessions.TryGetValue(sessionId, out var session))
         {
-            throw new InvalidOperationException($"Terminal session '{sessionId}' was not found.");
+            throw new TerminalSessionNotFoundException($"Terminal session '{sessionId}' was not found.");
         }
 
         if (!session.IsViewer(viewerId))
         {
-            throw new InvalidOperationException("Terminal session belongs to another viewer.");
+            throw new TerminalSessionForbiddenException("Terminal session belongs to another viewer.");
         }
 
         return session;
@@ -1098,7 +1119,7 @@ public sealed class TerminalSessionService(
 
                 if (_pendingInputBySequence.Count >= MaxPendingInputChunks)
                 {
-                    throw new InvalidOperationException("Terminal input sequence window overflow.");
+                    throw new TerminalSessionConflictException("Terminal input sequence window overflow.");
                 }
 
                 _pendingInputBySequence[sequence] = input;
@@ -1145,6 +1166,20 @@ public sealed class TerminalSessionService(
                     PendingSequences = [.. _pendingInputBySequence.Keys],
                     RecentChunks = [.. _inputDiagnosticsBuffer],
                     GeneratedAtUtc = DateTimeOffset.UtcNow
+                };
+            }
+        }
+
+        public TerminalSessionHandle CreateHandleSnapshot()
+        {
+            lock (_stateSync)
+            {
+                return new TerminalSessionHandle(SessionId)
+                {
+                    State = State,
+                    CreatedAtUtc = CreatedAtUtc,
+                    ProcessId = ProcessId,
+                    Error = State == TerminalSessionState.Failed ? "Terminal session is in failed state." : null
                 };
             }
         }

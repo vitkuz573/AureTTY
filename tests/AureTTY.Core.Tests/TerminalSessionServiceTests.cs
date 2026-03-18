@@ -1,13 +1,14 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
-using Microsoft.Extensions.Logging.Abstractions;
-using Moq;
-using AureTTY.Execution.Abstractions;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
 using AureTTY.Contracts.Enums;
+using AureTTY.Contracts.Exceptions;
 using AureTTY.Core.Services;
+using AureTTY.Execution.Abstractions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 
 namespace AureTTY.Core.Tests;
 
@@ -324,6 +325,73 @@ public sealed class TerminalSessionServiceTests
 
         Assert.False(process.HasExited);
         await service.CloseAsync("viewer-1", "session-other-viewer");
+    }
+
+    [Fact]
+    public async Task GetViewerSessionsAsync_ShouldReturnOnlyOwnedSessions()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-viewer-1", Shell.Pwsh));
+        _ = await service.StartAsync("viewer-2", new TerminalSessionStartRequest("session-viewer-2", Shell.Pwsh));
+
+        var sessions = await service.GetViewerSessionsAsync("viewer-1");
+
+        Assert.Single(sessions);
+        Assert.Equal("session-viewer-1", sessions.Single().SessionId);
+
+        await service.CloseAllSessionsAsync();
+    }
+
+    [Fact]
+    public async Task GetAllSessionsAsync_ShouldReturnAllActiveSessions()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-all-a", Shell.Pwsh));
+        _ = await service.StartAsync("viewer-2", new TerminalSessionStartRequest("session-all-b", Shell.Pwsh));
+
+        var sessions = await service.GetAllSessionsAsync();
+
+        Assert.Equal(2, sessions.Count);
+        Assert.Contains(sessions, session => session.SessionId == "session-all-a");
+        Assert.Contains(sessions, session => session.SessionId == "session-all-b");
+
+        await service.CloseAllSessionsAsync();
+    }
+
+    [Fact]
+    public async Task GetSessionAsync_WhenViewerDoesNotOwnSession_ThrowsForbiddenException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-owner", new TerminalSessionStartRequest("session-secured", Shell.Pwsh));
+
+        var act = () => service.GetSessionAsync("viewer-stranger", "session-secured");
+        await Assert.ThrowsAsync<TerminalSessionForbiddenException>(act);
+
+        await service.CloseAllSessionsAsync();
     }
 
     [Fact]
@@ -832,7 +900,7 @@ public sealed class TerminalSessionServiceTests
             throw new NotSupportedException();
         }
 
-        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        public async override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
         {
             _ = buffer;
 

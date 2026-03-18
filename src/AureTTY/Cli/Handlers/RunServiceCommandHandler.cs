@@ -1,4 +1,5 @@
 using System.CommandLine;
+using AureTTY.Api;
 using AureTTY.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -43,11 +44,13 @@ public sealed class RunServiceCommandHandler
         webBuilder.Host.UseWindowsService();
         webBuilder.WebHost.UseUrls(options.HttpListenUrl);
         webBuilder.Services.AddAureTTYTerminalServices(options);
+        webBuilder.Services.AddControllers();
         webBuilder.Services.AddOpenApi(TerminalServiceOptions.ApiVersion);
 
         var app = webBuilder.Build();
+        app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
         app.MapOpenApi();
-        app.MapAureTTYHttpApi();
+        app.MapControllers();
 
         await app.RunAsync(cancellationToken);
         return 0;
