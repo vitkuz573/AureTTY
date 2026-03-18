@@ -21,9 +21,6 @@ install:
       .\dotnet-install.ps1 -Version $env:DOTNET_INSTALL_VERSION -InstallDir $env:DOTNET_INSTALL_DIR -NoPath;
       & "$env:DOTNET_INSTALL_DIR\dotnet.exe" --info
 
-init:
-  - cmd: '%DOTNET_ROOT%\dotnet.exe --info'
-
 build_script:
   - cmd: '%DOTNET_ROOT%\dotnet.exe restore AureTTY.slnx'
   - cmd: '%DOTNET_ROOT%\dotnet.exe build AureTTY.slnx -c Release --no-restore'
