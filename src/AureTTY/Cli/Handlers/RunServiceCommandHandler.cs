@@ -29,6 +29,18 @@ public sealed class RunServiceCommandHandler
         }
 
         var options = cliArguments.ToTerminalServiceOptions();
+        var openApiApplicationName = parseResult.GetValue(CliOptions.ApplicationName);
+        var isOpenApiDocumentGeneration = !string.IsNullOrWhiteSpace(openApiApplicationName);
+        if (isOpenApiDocumentGeneration)
+        {
+            options = options with
+            {
+                EnablePipeApi = false,
+                EnableHttpApi = true,
+                HttpListenUrl = TerminalServiceOptions.DefaultHttpListenUrl
+            };
+        }
+
         if (!options.EnableHttpApi)
         {
             var hostBuilder = Host.CreateApplicationBuilder();
@@ -44,7 +56,10 @@ public sealed class RunServiceCommandHandler
             return 0;
         }
 
-        var webBuilder = WebApplication.CreateSlimBuilder();
+        var webBuilder = WebApplication.CreateSlimBuilder(new WebApplicationOptions
+        {
+            ApplicationName = ResolveApplicationName(openApiApplicationName)
+        });
         if (OperatingSystem.IsWindows())
         {
             webBuilder.Host.UseWindowsService();
@@ -53,6 +68,7 @@ public sealed class RunServiceCommandHandler
         webBuilder.WebHost.UseUrls(options.HttpListenUrl);
         webBuilder.Services.AddAureTTYTerminalServices(options);
         webBuilder.Services.AddControllers();
+        webBuilder.Services.AddEndpointsApiExplorer();
         webBuilder.Services.AddOpenApi(TerminalServiceOptions.ApiVersion);
 
         var app = webBuilder.Build();
@@ -62,5 +78,15 @@ public sealed class RunServiceCommandHandler
 
         await app.RunAsync(cancellationToken);
         return 0;
+    }
+
+    private static string ResolveApplicationName(string? configuredApplicationName)
+    {
+        if (!string.IsNullOrWhiteSpace(configuredApplicationName))
+        {
+            return configuredApplicationName.Trim();
+        }
+
+        return typeof(RunServiceCommandHandler).Assembly.GetName().Name ?? "AureTTY";
     }
 }

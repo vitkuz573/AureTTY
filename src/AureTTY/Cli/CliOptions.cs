@@ -26,6 +26,11 @@ public static class CliOptions
         "--api-key",
         "HTTP API key sent via X-AureTTY-Key header.");
 
+    public static readonly Option<string?> ApplicationName = new("--applicationName")
+    {
+        Hidden = true
+    };
+
     static CliOptions()
     {
         PipeName.DefaultValueFactory = _ => Environment.GetEnvironmentVariable(CliArguments.PipeNameEnvironmentVariable);
@@ -71,6 +76,7 @@ public static class CliOptions
         command.Add(Transports);
         command.Add(HttpListenUrl);
         command.Add(ApiKey);
+        command.Add(ApplicationName);
     }
 
     private static Option<string?> CreateString(string name, string description, params string[] aliases)
