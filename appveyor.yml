@@ -149,7 +149,7 @@ deploy_script:
               Invoke-RestMethod -Method Delete -Uri $deleteUri -Headers $headers
           }
 
-          $uploadUri = "$uploadUrl?name=$([Uri]::EscapeDataString($asset.Name))"
+          $uploadUri = "$($uploadUrl)?name=$([Uri]::EscapeDataString($asset.Name))"
           if (-not [Uri]::IsWellFormedUriString($uploadUri, [UriKind]::Absolute)) {
               throw "Upload URI is invalid: '$uploadUri'"
           }
