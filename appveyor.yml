@@ -22,15 +22,15 @@ install:
       & "$env:DOTNET_INSTALL_DIR\dotnet.exe" --info
 
 init:
-  - cmd: "%DOTNET_ROOT%\dotnet.exe" --info
+  - cmd: %DOTNET_ROOT%\dotnet.exe --info
 
 build_script:
-  - cmd: "%DOTNET_ROOT%\dotnet.exe" restore AureTTY.slnx
-  - cmd: "%DOTNET_ROOT%\dotnet.exe" build AureTTY.slnx -c Release --no-restore
-  - cmd: "%DOTNET_ROOT%\dotnet.exe" test tests\AureTTY.Core.Tests\AureTTY.Core.Tests.csproj -c Release --no-build
+  - cmd: %DOTNET_ROOT%\dotnet.exe restore AureTTY.slnx
+  - cmd: %DOTNET_ROOT%\dotnet.exe build AureTTY.slnx -c Release --no-restore
+  - cmd: %DOTNET_ROOT%\dotnet.exe test tests\AureTTY.Core.Tests\AureTTY.Core.Tests.csproj -c Release --no-build
   - cmd: if exist artifacts\publish rmdir /s /q artifacts\publish
-  - cmd: "%DOTNET_ROOT%\dotnet.exe" publish src\AureTTY\AureTTY.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts\publish\win-x64
-  - cmd: "%DOTNET_ROOT%\dotnet.exe" publish src\AureTTY\AureTTY.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts\publish\linux-x64
+  - cmd: %DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts\publish\win-x64
+  - cmd: %DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts\publish\linux-x64
   - ps: |
       $ErrorActionPreference = "Stop"
       New-Item -ItemType Directory -Path artifacts -Force | Out-Null
