@@ -19,6 +19,10 @@ Current platform backend:
 
 - Linux backend: `AureTTY.Linux` (pseudo-terminal launch through `script`, util-linux).
 - Windows backend: `AureTTY.Windows` (ConPTY/Windows process launch).
+- Host multi-targeting: `net10.0` (Linux backend only) and `net10.0-windows` (Windows backend only).
+- Direct host run/publish from project file should specify framework explicitly:
+  - Linux: `-f net10.0`
+  - Windows: `-f net10.0-windows`
 
 ## Quick Start
 
@@ -104,7 +108,7 @@ dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Debug --collec
 Windows AOT publish (experimental):
 
 ```powershell
-dotnet publish src/AureTTY/AureTTY.csproj -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64-aot
+dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64-aot
 pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 -AureTTYExecutable artifacts/publish/win-x64-aot/AureTTY.exe
 ```
 

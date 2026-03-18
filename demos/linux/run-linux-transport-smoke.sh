@@ -37,7 +37,7 @@ cleanup() {
 trap cleanup EXIT
 
 echo "[linux-smoke] Starting AureTTY (http + pipe)..."
-dotnet run --project src/AureTTY/AureTTY.csproj -c Debug -- \
+dotnet run --project src/AureTTY/AureTTY.csproj -f net10.0 -c Debug -- \
   --transport pipe --transport http \
   --http-listen-url "$base_url" \
   --api-key "$api_key" \

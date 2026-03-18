@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework />
+    <TargetFrameworks>net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net10.0-windows;net10.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <AssemblyName>AureTTY</AssemblyName>
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
@@ -19,14 +21,25 @@
     <DefineConstants>$(DefineConstants);AURETTY_NATIVEAOT</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <DefineConstants>$(DefineConstants);AURETTY_WINDOWS_BACKEND</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <DefineConstants>$(DefineConstants);AURETTY_LINUX_BACKEND</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.Extensions.ApiDescription.Server">
       <GeneratePathProperty>true</GeneratePathProperty>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,7 +47,13 @@
     <ProjectReference Include="..\AureTTY.Contracts\AureTTY.Contracts.csproj" />
     <ProjectReference Include="..\AureTTY.Core\AureTTY.Core.csproj" />
     <ProjectReference Include="..\AureTTY.Protocol\AureTTY.Protocol.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <ProjectReference Include="..\AureTTY.Linux\AureTTY.Linux.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows'">
     <ProjectReference Include="..\AureTTY.Windows\AureTTY.Windows.csproj" />
   </ItemGroup>
 

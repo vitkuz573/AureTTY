@@ -45,10 +45,12 @@ public sealed class RunServiceCommandHandler
         if (!options.EnableHttpApi)
         {
             var hostBuilder = Host.CreateApplicationBuilder();
+#if AURETTY_WINDOWS_BACKEND
             if (OperatingSystem.IsWindows())
             {
                 hostBuilder.Services.AddWindowsService();
             }
+#endif
 
             hostBuilder.Services.AddAureTTYTerminalServices(options);
 
@@ -61,10 +63,12 @@ public sealed class RunServiceCommandHandler
         {
             ApplicationName = ResolveApplicationName(openApiApplicationName)
         });
+#if AURETTY_WINDOWS_BACKEND
         if (OperatingSystem.IsWindows())
         {
             webBuilder.Host.UseWindowsService();
         }
+#endif
 
         webBuilder.WebHost.UseUrls(options.HttpListenUrl);
         webBuilder.Services.AddAureTTYTerminalServices(options);

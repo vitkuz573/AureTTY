@@ -32,6 +32,7 @@ try {
     $serverArgs = @(
         "run",
         "--project", "src/AureTTY/AureTTY.csproj",
+        "-f", "net10.0-windows",
         "-c", "Debug",
         "--",
         "--transport", "pipe",
