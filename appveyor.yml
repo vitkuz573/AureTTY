@@ -115,7 +115,10 @@ deploy_script:
       }
 
       $release = Get-OrCreateRelease -Repo $repo -Tag $tag -Headers $headers -ApiBase $apiBase
-      $uploadUrl = ($release.upload_url -replace '\{.*\}$', '')
+      if (-not $release.id) {
+          throw "GitHub release id is missing in API response."
+      }
+      $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
       $assetPattern = '^AureTTY-.*-(win|linux)-x64\.(zip|sha256)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
