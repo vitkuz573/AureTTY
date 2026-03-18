@@ -1,0 +1,61 @@
+version: "{build}"
+image: Visual Studio 2022
+clone_depth: 1
+
+skip_non_tags: true
+skip_branch_with_pr: true
+
+environment:
+  DOTNET_INSTALL_DIR: C:\dotnet
+  DOTNET_INSTALL_VERSION: 10.0.103
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_ROOT: C:\dotnet
+  NUGET_XMLDOC_MODE: skip
+
+install:
+  - ps: >-
+      $ErrorActionPreference = "Stop";
+      if (-not (Test-Path "$env:DOTNET_INSTALL_DIR")) { New-Item -ItemType Directory -Path "$env:DOTNET_INSTALL_DIR" | Out-Null };
+      Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1 -UseBasicParsing;
+      .\dotnet-install.ps1 -Version $env:DOTNET_INSTALL_VERSION -InstallDir $env:DOTNET_INSTALL_DIR -NoPath;
+      & "$env:DOTNET_INSTALL_DIR\dotnet.exe" --info
+
+init:
+  - cmd: "%DOTNET_ROOT%\dotnet.exe" --info
+
+build_script:
+  - cmd: "%DOTNET_ROOT%\dotnet.exe" restore AureTTY.slnx
+  - cmd: "%DOTNET_ROOT%\dotnet.exe" build AureTTY.slnx -c Release --no-restore
+  - cmd: "%DOTNET_ROOT%\dotnet.exe" test tests\AureTTY.Core.Tests\AureTTY.Core.Tests.csproj -c Release --no-build
+  - cmd: if exist artifacts\publish rmdir /s /q artifacts\publish
+  - cmd: "%DOTNET_ROOT%\dotnet.exe" publish src\AureTTY\AureTTY.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts\publish\win-x64
+  - cmd: "%DOTNET_ROOT%\dotnet.exe" publish src\AureTTY\AureTTY.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -o artifacts\publish\linux-x64
+  - ps: |
+      $ErrorActionPreference = "Stop"
+      New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+
+      $tag = if ($env:APPVEYOR_REPO_TAG_NAME) { $env:APPVEYOR_REPO_TAG_NAME } else { "dev" }
+      $winArchive = "artifacts/AureTTY-$tag-win-x64.zip"
+      $linuxArchive = "artifacts/AureTTY-$tag-linux-x64.zip"
+
+      Compress-Archive -Path "artifacts/publish/win-x64/*" -DestinationPath $winArchive -Force
+      Compress-Archive -Path "artifacts/publish/linux-x64/*" -DestinationPath $linuxArchive -Force
+
+      Get-FileHash $winArchive -Algorithm SHA256 | ForEach-Object {
+          "$($_.Hash)  $(Split-Path -Leaf $winArchive)"
+      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64.sha256"
+
+      Get-FileHash $linuxArchive -Algorithm SHA256 | ForEach-Object {
+          "$($_.Hash)  $(Split-Path -Leaf $linuxArchive)"
+      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64.sha256"
+
+artifacts:
+  - path: artifacts\AureTTY-*-win-x64.zip
+    name: auretty-win-x64
+  - path: artifacts\AureTTY-*-linux-x64.zip
+    name: auretty-linux-x64
+  - path: artifacts\AureTTY-*-win-x64.sha256
+    name: auretty-win-x64-sha256
+  - path: artifacts\AureTTY-*-linux-x64.sha256
+    name: auretty-linux-x64-sha256
