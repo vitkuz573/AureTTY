@@ -70,6 +70,7 @@ Linux notes:
 
 - `src/` runtime and platform projects
 - `tests/` unit tests
+- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`)
 
 ## License
 
