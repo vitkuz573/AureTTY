@@ -71,8 +71,14 @@ deploy_script:
           throw "GITHUB_TOKEN is not configured in AppVeyor project settings."
       }
 
-      $repo = $env:APPVEYOR_REPO_NAME
-      $tag = $env:APPVEYOR_REPO_TAG_NAME
+      $repo = if ($env:APPVEYOR_REPO_NAME) { $env:APPVEYOR_REPO_NAME.Trim() } else { "" }
+      $tag = if ($env:APPVEYOR_REPO_TAG_NAME) { $env:APPVEYOR_REPO_TAG_NAME.Trim() } else { "" }
+      if ([string]::IsNullOrWhiteSpace($repo)) {
+          throw "APPVEYOR_REPO_NAME is empty."
+      }
+      if ([string]::IsNullOrWhiteSpace($tag)) {
+          throw "APPVEYOR_REPO_TAG_NAME is empty."
+      }
       $apiBase = "https://api.github.com"
       $headers = @{
           Authorization = "Bearer $env:GITHUB_TOKEN"
@@ -119,6 +125,8 @@ deploy_script:
           throw "GitHub release id is missing in API response."
       }
       $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
+      Write-Host "Release upload context: Repo='$repo' Tag='$tag' ReleaseId='$($release.id)'."
+      Write-Host "Upload base URL: $uploadUrl"
       $assetPattern = '^AureTTY-.*-(win|linux)-x64\.(zip|sha256)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
@@ -129,10 +137,23 @@ deploy_script:
       foreach ($asset in $assets) {
           $existing = @($release.assets | Where-Object { $_.name -eq $asset.Name })
           foreach ($existingAsset in $existing) {
-              Invoke-RestMethod -Method Delete -Uri "$apiBase/repos/$repo/releases/assets/$($existingAsset.id)" -Headers $headers
+              if (-not $existingAsset.id) {
+                  continue
+              }
+
+              $deleteUri = "$apiBase/repos/$repo/releases/assets/$($existingAsset.id)"
+              if (-not [Uri]::IsWellFormedUriString($deleteUri, [UriKind]::Absolute)) {
+                  throw "Delete URI is invalid: '$deleteUri'"
+              }
+
+              Invoke-RestMethod -Method Delete -Uri $deleteUri -Headers $headers
           }
 
           $uploadUri = "$uploadUrl?name=$([Uri]::EscapeDataString($asset.Name))"
+          if (-not [Uri]::IsWellFormedUriString($uploadUri, [UriKind]::Absolute)) {
+              throw "Upload URI is invalid: '$uploadUri'"
+          }
+
           Invoke-RestMethod -Method Post -Uri $uploadUri -Headers $headers -InFile $asset.FullName -ContentType "application/octet-stream"
           Write-Host "Uploaded release asset $($asset.Name)"
       }
