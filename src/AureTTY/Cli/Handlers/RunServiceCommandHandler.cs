@@ -32,7 +32,11 @@ public sealed class RunServiceCommandHandler
         if (!options.EnableHttpApi)
         {
             var hostBuilder = Host.CreateApplicationBuilder();
-            hostBuilder.Services.AddWindowsService();
+            if (OperatingSystem.IsWindows())
+            {
+                hostBuilder.Services.AddWindowsService();
+            }
+
             hostBuilder.Services.AddAureTTYTerminalServices(options);
 
             var host = hostBuilder.Build();
@@ -41,7 +45,11 @@ public sealed class RunServiceCommandHandler
         }
 
         var webBuilder = WebApplication.CreateSlimBuilder();
-        webBuilder.Host.UseWindowsService();
+        if (OperatingSystem.IsWindows())
+        {
+            webBuilder.Host.UseWindowsService();
+        }
+
         webBuilder.WebHost.UseUrls(options.HttpListenUrl);
         webBuilder.Services.AddAureTTYTerminalServices(options);
         webBuilder.Services.AddControllers();

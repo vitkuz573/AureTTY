@@ -75,14 +75,8 @@ public sealed class TerminalViewerSessionsController(ITerminalSessionService ter
             };
 
             var handle = await _terminalSessionService.StartAsync(viewerId, startRequest, cancellationToken);
-            return CreatedAtAction(
-                nameof(GetSessionAsync),
-                new
-                {
-                    viewerId,
-                    sessionId = handle.SessionId
-                },
-                handle);
+            var location = $"/{TerminalApiRoutes.ApiBase}/viewers/{Uri.EscapeDataString(viewerId)}/sessions/{Uri.EscapeDataString(handle.SessionId)}";
+            return Created(location, handle);
         }
         catch (Exception ex)
         {

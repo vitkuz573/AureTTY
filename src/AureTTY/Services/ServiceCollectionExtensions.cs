@@ -3,8 +3,7 @@ using AureTTY.Contracts.Abstractions;
 using AureTTY.Core.Services;
 using AureTTY.Execution.Abstractions;
 using AureTTY.Execution.Services;
-using AureTTY.Windows.Abstractions;
-using AureTTY.Windows.Services;
+using AureTTY.Linux.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace AureTTY.Services;
@@ -20,8 +19,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IFileSystem, FileSystem>();
         services.AddTransient<IProcessWrapperFactory, ProcessWrapperFactory>();
         services.AddSingleton<IProcessService, ProcessService>();
+        if (!OperatingSystem.IsLinux())
+        {
+            throw new PlatformNotSupportedException("Current AureTTY build contains Linux process backend only.");
+        }
+
         services.AddSingleton<ICommandLineProvider, CommandLineProvider>();
-        services.AddSingleton<ISessionService, SessionService>();
         services.AddSingleton<INativeProcessFactory, NativeProcessFactory>();
         services.AddSingleton<INativeProcessOptionsProvider, NativeProcessOptionsProvider>();
         services.AddSingleton<IScriptProcessFactory, ScriptProcessFactory>();

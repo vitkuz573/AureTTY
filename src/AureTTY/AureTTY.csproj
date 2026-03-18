@@ -1,11 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <AssemblyName>AureTTY</AssemblyName>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
     <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
   </PropertyGroup>
 
@@ -25,7 +23,7 @@
     <ProjectReference Include="..\AureTTY.Contracts\AureTTY.Contracts.csproj" />
     <ProjectReference Include="..\AureTTY.Core\AureTTY.Core.csproj" />
     <ProjectReference Include="..\AureTTY.Protocol\AureTTY.Protocol.csproj" />
-    <ProjectReference Include="..\AureTTY.Windows\AureTTY.Windows.csproj" />
+    <ProjectReference Include="..\AureTTY.Linux\AureTTY.Linux.csproj" />
   </ItemGroup>
 
 </Project>

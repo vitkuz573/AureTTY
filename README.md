@@ -6,12 +6,17 @@ It can be integrated from any language through the HTTP API and SSE event stream
 ## Integration Modes
 
 - REST API (`/api/v1/*`) + SSE (`/api/v1/viewers/{viewerId}/events`) for language-agnostic clients.
-- Local IPC API (named pipe) for legacy/hosted integrations on Windows.
+- Local IPC API (named pipe) for co-located integrations.
 - Both transports can run together.
+
+Current platform backend:
+
+- Linux process backend is active (`AureTTY.Linux`) and uses pseudo-terminal launch through `script` (util-linux).
+- Windows backend source still exists in `src/AureTTY.Windows`, but runtime wiring is currently Linux-first.
 
 ## Quick Start
 
-Run `AureTTY.exe` (Windows service or foreground) and connect over HTTP:
+Run `AureTTY` as a foreground process or service and connect over HTTP:
 
 - Base URL: `http://127.0.0.1:17850`
 - API version: `v1`
@@ -55,6 +60,11 @@ OpenAPI document:
 - `--pipe-token` / `AURETTY_PIPE_TOKEN`
 
 At least one transport must be enabled.
+
+Linux notes:
+
+- Install `script` binary (usually from `util-linux`).
+- Explicit credential switching (`UserName`/`Password`) is not implemented yet on Linux.
 
 ## Repository Layout
 
