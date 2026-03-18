@@ -705,25 +705,21 @@ public sealed class TerminalSessionService(
 
         if (OperatingSystem.IsWindows())
         {
-            // xterm sends Backspace as DEL (0x7F), but Windows console apps (via ConPTY)
-            // expect Backspace control (0x08) for interactive line editing.
-            var normalized = value.Replace('\u007f', '\b');
-
-            // Match native Windows console Enter semantics: a single CR.
-            // This avoids injecting an extra LF into interactive password prompts.
-            if (normalized.IndexOfAny(['\r', '\n']) < 0)
+            // Keep terminal control input as-is and normalize only Enter semantics.
+            // Input key semantics (DEL/BS/ESC combos) belong to the client+shell contract.
+            if (value.IndexOfAny(['\r', '\n']) < 0)
             {
-                return normalized;
+                return value;
             }
 
-            var builder = new StringBuilder(normalized.Length + 8);
-            for (var index = 0; index < normalized.Length; index++)
+            var builder = new StringBuilder(value.Length + 8);
+            for (var index = 0; index < value.Length; index++)
             {
-                var ch = normalized[index];
+                var ch = value[index];
                 if (ch == '\r')
                 {
                     builder.Append('\r');
-                    if (index + 1 < normalized.Length && normalized[index + 1] == '\n')
+                    if (index + 1 < value.Length && value[index + 1] == '\n')
                     {
                         index++;
                     }

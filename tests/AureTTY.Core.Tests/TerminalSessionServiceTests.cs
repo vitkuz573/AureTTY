@@ -277,11 +277,29 @@ public sealed class TerminalSessionServiceTests
 
         await service.SendInputAsync("viewer-1", new TerminalSessionInputRequest("session-delete-char", "a\u007fb", 1));
 
-        var expected = OperatingSystem.IsWindows()
-            ? "a\bb"
-            : "a\u007fb";
-        Assert.Equal(expected, process.GetInputBuffer());
+        Assert.Equal("a\u007fb", process.GetInputBuffer());
         await service.CloseAsync("viewer-1", "session-delete-char");
+    }
+
+    [Fact]
+    public async Task SendInputAsync_WhenPayloadContainsBackspaceChar_ShouldPreserveBackspaceCharacter()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-backspace-char", Shell.Pwsh));
+        await Task.Delay(100);
+
+        await service.SendInputAsync("viewer-1", new TerminalSessionInputRequest("session-backspace-char", "a\bb", 1));
+
+        Assert.Equal("a\bb", process.GetInputBuffer());
+        await service.CloseAsync("viewer-1", "session-backspace-char");
     }
 
     [Fact]
