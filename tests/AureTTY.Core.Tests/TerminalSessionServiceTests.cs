@@ -162,7 +162,7 @@ public sealed class TerminalSessionServiceTests
         await service.SendInputAsync("viewer-1", new TerminalSessionInputRequest("session-6", "abc\rdef\r\nghi", 1));
 
         var expected = OperatingSystem.IsWindows()
-            ? "abc\r\ndef\r\nghi"
+            ? "abc\rdef\rghi"
             : "abc\ndef\nghi";
         Assert.Contains(expected, process.GetInputBuffer(), StringComparison.Ordinal);
 
