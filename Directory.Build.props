@@ -1,0 +1,21 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <NoWarn>$(NoWarn);1591;8509</NoWarn>
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura</CoverletOutputFormat>
+    <CoverletOutput>./TestResults/coverage/</CoverletOutput>
+    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <DefaultItemExcludesInProjectFolder>$(DefaultItemExcludesInProjectFolder);bin/**;obj/**;**/bin/**;**/obj/**</DefaultItemExcludesInProjectFolder>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

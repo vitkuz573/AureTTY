@@ -1,0 +1,3035 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>LumenRTC</name>
+    </assembly>
+    <members>
+        <member name="T:LumenRTC.AudioOptions">
+            <summary>
+            Audio processing options for microphone or custom audio sources.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.BundlePolicy">
+            <summary>
+            Controls how media streams are bundled on a single transport.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.CandidateNetworkPolicy">
+            <summary>
+            Controls which network types are used for ICE candidates.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.IceServer">
+            <summary>
+            Represents a STUN/TURN server configuration.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.IceTransportsType">
+            <summary>
+            Controls which ICE candidate types are used.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.MediaConstraints">
+            <summary>
+            Media constraints used when creating offers, answers, or sources.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.MediaSecurityType">
+            <summary>
+            Controls SRTP/DTLS media security mode.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcConfiguration">
+            <summary>
+            Configuration for creating a peer connection.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcConfigurationExtensions">
+            <summary>
+            Fluent helpers for configuring peer connection settings.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcpMuxPolicy">
+            <summary>
+            Controls RTCP multiplexing policy.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.SdpSemantics">
+            <summary>
+            Specifies SDP semantics (Plan B vs Unified Plan).
+            </summary>
+        </member>
+        <member name="T:LumenRTC.TcpCandidatePolicy">
+            <summary>
+            Controls whether TCP candidates are gathered.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.ConvenienceApi">
+            <summary>
+            Entry point for the high-level Convenience API.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.CoreApi">
+            <summary>
+            Entry point for the low-level Core API.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.CoreRtcOptions">
+            <summary>
+            Options for creating a Core API runtime session.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.CoreRtcSession">
+            <summary>
+            Core API session that exposes native runtime and factory primitives directly.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.LogSeverity">
+            <summary>
+            Logging severity for native WebRTC output.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.LumenRtc">
+            <summary>
+            Static entry point for initializing and terminating the native WebRTC runtime.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcContext">
+            <summary>
+            Manages the native runtime and a peer connection factory lifetime.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcContextOptions">
+            <summary>
+            Options for creating a managed WebRTC runtime context.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcLogging">
+            <summary>
+            Configures native WebRTC logging callbacks and verbosity.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioDevice">
+            <summary>
+            Wraps the native audio device module for device selection and volume.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DesktopCapturer">
+            <summary>
+            Captures frames from desktop sources.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DesktopDevice">
+            <summary>
+            Enumerates desktop sources for screen/window capture.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DesktopMediaList">
+            <summary>
+            Snapshot list of desktop capture sources.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.MediaSource">
+            <summary>
+            Represents a desktop capture source (screen or window).
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnectionFactory">
+            <summary>
+            Creates peer connections, tracks, and device sources.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnectionFactoryExtensions">
+            <summary>
+            Convenience helpers for creating peer connections and local tracks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoCapturer">
+            <summary>
+            Captures frames from a camera device.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoDevice">
+            <summary>
+            Enumerates and creates video capturers.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.Boolean">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.RtpCapabilitiesDto">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.RtpCodecCapabilityDto">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.RtpHeaderExtensionCapabilityDto">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.ListRtpCodecCapabilityDto">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.ListRtpHeaderExtensionCapabilityDto">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.Int32">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.String">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.StringArray">
+            <summary>
+            Defines the source generated JSON serialization contract metadata for a given type.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.Default">
+            <summary>
+            The default <see cref="T:System.Text.Json.Serialization.JsonSerializerContext"/> associated with a default <see cref="T:System.Text.Json.JsonSerializerOptions"/> instance.
+            </summary>
+        </member>
+        <member name="P:LumenRTC.Internal.LumenRtcJsonContext.GeneratedSerializerOptions">
+            <summary>
+            The source-generated options associated with this context.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.Internal.LumenRtcJsonContext.#ctor">
+            <inheritdoc/>
+        </member>
+        <member name="M:LumenRTC.Internal.LumenRtcJsonContext.#ctor(System.Text.Json.JsonSerializerOptions)">
+            <inheritdoc/>
+        </member>
+        <member name="M:LumenRTC.Internal.LumenRtcJsonContext.GetTypeInfo(System.Type)">
+            <inheritdoc/>
+        </member>
+        <member name="T:LumenRTC.AudioFrame">
+            <summary>
+            PCM audio frame data delivered by audio sinks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioSink">
+            <summary>
+            Receives audio frames from a track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioSource">
+            <summary>
+            Audio source used to create local audio tracks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioSourceType">
+            <summary>
+            Selects microphone or custom audio source mode.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioTrack">
+            <summary>
+            Local or remote audio track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioTrackOptions">
+            <summary>
+            Options for creating a local audio track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.CameraTrackOptions">
+            <summary>
+            Options for creating a local camera track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DesktopCaptureState">
+            <summary>
+            Capture state for desktop capturers.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DesktopType">
+            <summary>
+            Selects screen or window capture mode.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.LocalAudioTrack">
+            <summary>
+            Convenience wrapper for a local audio track and its source.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.LocalTrackLifecycleState">
+            <summary>
+            Lifecycle state of a local track wrapper.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.LocalVideoTrack">
+            <summary>
+            Convenience wrapper for a local video track and its capture pipeline.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.MediaStream">
+            <summary>
+            Collection of audio and video tracks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.MediaType">
+            <summary>
+            Media kind used in RTP and peer connection APIs.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.ScreenTrackOptions">
+            <summary>
+            Options for creating a local screen share track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.TrackState">
+            <summary>
+            Lifecycle state of a media track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoFrame">
+            <summary>
+            Video frame handle provided by sinks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoFrameFormat">
+            <summary>
+            Pixel format used when converting video frames.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoSink">
+            <summary>
+            Receives video frames from a track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoSource">
+            <summary>
+            Video source used to create local video tracks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoTrack">
+            <summary>
+            Local or remote video track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DataChannel">
+            <summary>
+            RTC data channel for arbitrary message transport.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DataChannelInit">
+            <summary>
+            Initialization parameters for a data channel.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DataChannelMessage">
+            <summary>
+            Message payload delivered by a data channel callback.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DataChannelMessage.#ctor(System.ReadOnlyMemory{System.Byte},System.Boolean)">
+            <summary>
+            Message payload delivered by a data channel callback.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DataChannelState">
+            <summary>
+            State of a data channel.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.IceCandidate">
+            <summary>
+            Represents an ICE candidate.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.IceCandidate.#ctor(System.String,System.Int32,System.String)">
+            <summary>
+            Represents an ICE candidate.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.IceConnectionState">
+            <summary>
+            State of the ICE connection.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.IceGatheringState">
+            <summary>
+            State of ICE candidate gathering.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnection">
+            <summary>
+            Represents a WebRTC peer connection.
+            </summary>
+            <summary>
+            Timeout-aware async wrappers for peer connection operations.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnectionBuilder">
+            <summary>
+            Fluent builder for creating peer connections with callbacks and defaults.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnectionExtensions">
+            <summary>
+            Convenience helpers for working with peer connections.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnectionState">
+            <summary>
+            Overall state of a peer connection.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.SdpType">
+            <summary>
+            SDP description types.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.SdpTypeExtensions">
+            <summary>
+            Helpers for converting SDP types to and from strings.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.SessionDescription">
+            <summary>
+            Represents an SDP session description.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.SessionDescription.#ctor(System.String,System.String)">
+            <summary>
+            Represents an SDP session description.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.SignalingState">
+            <summary>
+            Signaling state as defined by WebRTC.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DegradationPreference">
+            <summary>
+            Preference for video quality degradation behavior.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DtlsTransportInfo">
+            <summary>
+            DTLS transport information for an RTP sender or receiver.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtlsTransportInfo.#ctor(LumenRTC.DtlsTransportState,System.Int32,System.Int32)">
+            <summary>
+            DTLS transport information for an RTP sender or receiver.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DtlsTransportState">
+            <summary>
+            DTLS transport state.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DtmfInsertOptions">
+            <summary>
+            Options for DTMF insertion.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfInsertOptions.#ctor(System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Options for DTMF insertion.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DtmfSender">
+            <summary>
+            Sends DTMF tones over an audio RTP sender.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DtmfToneChange">
+            <summary>
+            DTMF tone change payload emitted by sender callbacks.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfToneChange.#ctor(System.String,System.String)">
+            <summary>
+            DTMF tone change payload emitted by sender callbacks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpCapabilities">
+            <summary>
+            Supported RTP codecs and header extensions.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpCapabilities.#ctor(System.Collections.Generic.IReadOnlyList{LumenRTC.RtpCodecCapability},System.Collections.Generic.IReadOnlyList{LumenRTC.RtpHeaderExtensionCapability})">
+            <summary>
+            Supported RTP codecs and header extensions.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpCodecCapability">
+            <summary>
+            Supported RTP codec capability.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpCodecCapability.#ctor(System.String,System.Int32,System.Int32,System.String)">
+            <summary>
+            Supported RTP codec capability.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpEncodingInfo">
+            <summary>
+            Effective encoding settings reported by RTP sender or receiver.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpEncodingInfo.#ctor(System.UInt32,System.Int32,System.Int32,System.Double,System.Double,System.Boolean,System.Double,LumenRTC.RtpPriority,System.Int32,System.Boolean,System.String,System.String)">
+            <summary>
+            Effective encoding settings reported by RTP sender or receiver.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpEncodingSettings">
+            <summary>
+            Encoding settings applied to RTP senders.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpHeaderExtensionCapability">
+            <summary>
+            Supported RTP header extension capability.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpHeaderExtensionCapability.#ctor(System.String,System.Int32,System.Boolean)">
+            <summary>
+            Supported RTP header extension capability.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpPriority">
+            <summary>
+            Network priority for RTP encodings.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpReceiver">
+            <summary>
+            RTP receiver for a remote media track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpSender">
+            <summary>
+            RTP sender for a local media track.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpTransceiver">
+            <summary>
+            RTP transceiver combining sender and receiver.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpTransceiverDirection">
+            <summary>
+            Direction of media flow for a transceiver.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtpTransceiverInit">
+            <summary>
+            Initialization parameters for creating a transceiver.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.Simulcast">
+            <summary>
+            Helpers for common simulcast encoding configurations.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoQuality">
+            <summary>
+            Helper for selecting presets based on resolution.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoQualityPreset">
+            <summary>
+            Represents a video quality preset for encoding.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoQualityPreset.#ctor(System.String,System.Int32,System.Double,System.Double,LumenRTC.DegradationPreference,LumenRTC.RtpPriority,System.Double,System.Nullable{System.Int32},System.String)">
+            <summary>
+            Represents a video quality preset for encoding.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoQualityPresets">
+            <summary>
+            Built-in video quality presets.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcStat">
+            <summary>
+            Single stats entry from a WebRTC stats report.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcStatQuery">
+            <summary>
+            Query options for filtering stats report entries.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtcStatQuery.#ctor(System.String,System.String,System.String,System.Nullable{System.UInt32},System.Func{LumenRTC.RtcStat,System.Boolean})">
+            <summary>
+            Query options for filtering stats report entries.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcStatsReport">
+            <summary>
+            Parsed WebRTC stats report.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.RtcStatTypes">
+            <summary>
+            Common WebRTC RTCStats type names.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.AudioSinkCallbacks">
+            <summary>
+            Audio sink callbacks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DataChannelCallbacks">
+            <summary>
+            Data channel event callbacks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.DtmfSenderCallbacks">
+            <summary>
+            DTMF sender event callbacks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.PeerConnectionCallbacks">
+            <summary>
+            Peer connection event callbacks.
+            </summary>
+        </member>
+        <member name="T:LumenRTC.VideoSinkCallbacks">
+            <summary>
+            Video sink callbacks.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32@)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiPlayoutDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_playout_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiPlayoutDevices(LumenRTC.AudioDevice)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_playout_devices</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiRecordingDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_recording_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiRecordingDevices(LumenRTC.AudioDevice)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_recording_devices</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiSetMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_set_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiSetPlayoutDevice(LumenRTC.AudioDevice,System.UInt16)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_set_playout_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiSetRecordingDevice(LumenRTC.AudioDevice,System.UInt16)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_set_recording_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiSetSpeakerVolume(LumenRTC.AudioDevice,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_set_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSurface.AbiSpeakerVolume(LumenRTC.AudioDevice,System.UInt32@)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_device_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32@)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawPlayoutDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_playout_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawPlayoutDevices(LumenRTC.AudioDevice)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_playout_devices</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawRecordingDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_recording_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawRecordingDevices(LumenRTC.AudioDevice)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_recording_devices</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawSetMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_set_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawSetPlayoutDevice(LumenRTC.AudioDevice,System.UInt16)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_set_playout_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawSetRecordingDevice(LumenRTC.AudioDevice,System.UInt16)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_set_recording_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawSetSpeakerVolume(LumenRTC.AudioDevice,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_set_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiFacade.RawSpeakerVolume(LumenRTC.AudioDevice,System.UInt32@)">
+            <summary>
+            Public facade over <c>lrtc_audio_device_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TryMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32@,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.MicrophoneVolume(LumenRTC.AudioDevice,System.UInt32@)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TryPlayoutDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_playout_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.PlayoutDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_playout_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TryRecordingDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_recording_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.RecordingDeviceName(LumenRTC.AudioDevice,System.UInt16,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_recording_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TrySetMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_set_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.SetMicrophoneVolume(LumenRTC.AudioDevice,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_set_microphone_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TrySetPlayoutDevice(LumenRTC.AudioDevice,System.UInt16,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_set_playout_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.SetPlayoutDevice(LumenRTC.AudioDevice,System.UInt16)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_set_playout_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TrySetRecordingDevice(LumenRTC.AudioDevice,System.UInt16,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_set_recording_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.SetRecordingDevice(LumenRTC.AudioDevice,System.UInt16)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_set_recording_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TrySetSpeakerVolume(LumenRTC.AudioDevice,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_set_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.SetSpeakerVolume(LumenRTC.AudioDevice,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_set_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.TrySpeakerVolume(LumenRTC.AudioDevice,System.UInt32@,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_device_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioDeviceAbiSafe.SpeakerVolume(LumenRTC.AudioDevice,System.UInt32@)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_device_speaker_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioSourceAbiSurface.AbiCaptureFrame(LumenRTC.AudioSource,System.IntPtr,System.Int32,System.Int32,System.UIntPtr,System.UIntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_source_capture_frame</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioSourceAbiFacade.RawCaptureFrame(LumenRTC.AudioSource,System.IntPtr,System.Int32,System.Int32,System.UIntPtr,System.UIntPtr)">
+            <summary>
+            Public facade over <c>lrtc_audio_source_capture_frame</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiAddSink(LumenRTC.AudioTrack,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_add_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiGetEnabled(LumenRTC.AudioTrack)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_get_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiGetId(LumenRTC.AudioTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiGetState(LumenRTC.AudioTrack)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_get_state</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiRemoveSink(LumenRTC.AudioTrack,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_remove_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiSetEnabled(LumenRTC.AudioTrack,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSurface.AbiSetVolume(LumenRTC.AudioTrack,System.Double)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_track_set_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawAddSink(LumenRTC.AudioTrack,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_add_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.TypedAddSink(LumenRTC.AudioTrack,LumenRTC.AudioSink)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_add_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawGetEnabled(LumenRTC.AudioTrack)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_get_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawGetId(LumenRTC.AudioTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawGetState(LumenRTC.AudioTrack)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_get_state</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawRemoveSink(LumenRTC.AudioTrack,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_remove_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.TypedRemoveSink(LumenRTC.AudioTrack,LumenRTC.AudioSink)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_remove_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawSetEnabled(LumenRTC.AudioTrack,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiFacade.RawSetVolume(LumenRTC.AudioTrack,System.Double)">
+            <summary>
+            Public facade over <c>lrtc_audio_track_set_volume</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSafe.TryGetId(LumenRTC.AudioTrack,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSafe.GetId(LumenRTC.AudioTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSafe.TrySetEnabled(LumenRTC.AudioTrack,System.Int32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_audio_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.AudioTrackAbiSafe.SetEnabled(LumenRTC.AudioTrack,System.Int32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_audio_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DataChannelAbiSurface.AbiClose(LumenRTC.DataChannel)">
+            <summary>
+            ABI forwarder for <c>lrtc_data_channel_close</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DataChannelAbiSurface.AbiSend(LumenRTC.DataChannel,System.IntPtr,System.UInt32,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_data_channel_send</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DataChannelAbiSurface.AbiSetCallbacks(LumenRTC.DataChannel,LumenRTC.Interop.LrtcDataChannelCallbacks@,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_data_channel_set_callbacks</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DataChannelAbiFacade.RawClose(LumenRTC.DataChannel)">
+            <summary>
+            Public facade over <c>lrtc_data_channel_close</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DataChannelAbiFacade.RawSend(LumenRTC.DataChannel,System.IntPtr,System.UInt32,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_data_channel_send</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopCapturerAbiSurface.AbiIsRunning(LumenRTC.DesktopCapturer)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_capturer_is_running</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopCapturerAbiSurface.AbiStart(LumenRTC.DesktopCapturer,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_capturer_start</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopCapturerAbiSurface.AbiStartRegion(LumenRTC.DesktopCapturer,System.UInt32,System.UInt32,System.UInt32,System.UInt32,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_capturer_start_region</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopCapturerAbiSurface.AbiStop(LumenRTC.DesktopCapturer)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_capturer_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopCapturerAbiFacade.RawIsRunning(LumenRTC.DesktopCapturer)">
+            <summary>
+            Public facade over <c>lrtc_desktop_capturer_is_running</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopCapturerAbiFacade.RawStop(LumenRTC.DesktopCapturer)">
+            <summary>
+            Public facade over <c>lrtc_desktop_capturer_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopDeviceAbiSurface.AbiCreateCapturer(LumenRTC.DesktopDevice,System.IntPtr,System.Boolean)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_device_create_capturer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopDeviceAbiSurface.AbiGetMediaList(LumenRTC.DesktopDevice,LumenRTC.Interop.LrtcDesktopType)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_device_get_media_list</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopDeviceAbiFacade.RawCreateCapturer(LumenRTC.DesktopDevice,System.IntPtr,System.Boolean)">
+            <summary>
+            Public facade over <c>lrtc_desktop_device_create_capturer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopDeviceAbiFacade.TypedCreateCapturer(LumenRTC.DesktopDevice,LumenRTC.MediaSource,System.Boolean)">
+            <summary>
+            Public facade over <c>lrtc_desktop_device_create_capturer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiSurface.AbiGetSource(LumenRTC.DesktopMediaList,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_media_list_get_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiSurface.AbiGetSourceCount(LumenRTC.DesktopMediaList)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_media_list_get_source_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiSurface.AbiUpdate(LumenRTC.DesktopMediaList,System.Boolean,System.Boolean)">
+            <summary>
+            ABI forwarder for <c>lrtc_desktop_media_list_update</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiFacade.RawGetSource(LumenRTC.DesktopMediaList,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_desktop_media_list_get_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiFacade.TypedGetSource(LumenRTC.DesktopMediaList,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_desktop_media_list_get_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiFacade.RawGetSourceCount(LumenRTC.DesktopMediaList)">
+            <summary>
+            Public facade over <c>lrtc_desktop_media_list_get_source_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiFacade.RawUpdate(LumenRTC.DesktopMediaList,System.Boolean,System.Boolean)">
+            <summary>
+            Public facade over <c>lrtc_desktop_media_list_update</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiSafe.TryUpdate(LumenRTC.DesktopMediaList,System.Boolean,System.Boolean,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_desktop_media_list_update</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DesktopMediaListAbiSafe.Update(LumenRTC.DesktopMediaList,System.Boolean,System.Boolean)">
+            <summary>
+            Throwing wrapper over <c>lrtc_desktop_media_list_update</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiCanInsert(LumenRTC.DtmfSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_can_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiCommaDelay(LumenRTC.DtmfSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_comma_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiDuration(LumenRTC.DtmfSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_duration</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiInsert(LumenRTC.DtmfSender,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiInterToneGap(LumenRTC.DtmfSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_inter_tone_gap</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiSetCallbacks(LumenRTC.DtmfSender,LumenRTC.Interop.LrtcDtmfSenderCallbacks@,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_set_callbacks</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSurface.AbiTones(LumenRTC.DtmfSender,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_dtmf_sender_tones</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiFacade.RawCanInsert(LumenRTC.DtmfSender)">
+            <summary>
+            Public facade over <c>lrtc_dtmf_sender_can_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiFacade.RawCommaDelay(LumenRTC.DtmfSender)">
+            <summary>
+            Public facade over <c>lrtc_dtmf_sender_comma_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiFacade.RawDuration(LumenRTC.DtmfSender)">
+            <summary>
+            Public facade over <c>lrtc_dtmf_sender_duration</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiFacade.RawInsert(LumenRTC.DtmfSender,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_dtmf_sender_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiFacade.RawInterToneGap(LumenRTC.DtmfSender)">
+            <summary>
+            Public facade over <c>lrtc_dtmf_sender_inter_tone_gap</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiFacade.RawTones(LumenRTC.DtmfSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_dtmf_sender_tones</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.TryCanInsert(LumenRTC.DtmfSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_dtmf_sender_can_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.CanInsert(LumenRTC.DtmfSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_dtmf_sender_can_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.TryCommaDelay(LumenRTC.DtmfSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_dtmf_sender_comma_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.CommaDelay(LumenRTC.DtmfSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_dtmf_sender_comma_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.TryDuration(LumenRTC.DtmfSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_dtmf_sender_duration</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.Duration(LumenRTC.DtmfSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_dtmf_sender_duration</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.TryInsert(LumenRTC.DtmfSender,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_dtmf_sender_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.Insert(LumenRTC.DtmfSender,System.IntPtr,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_dtmf_sender_insert</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.TryInterToneGap(LumenRTC.DtmfSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_dtmf_sender_inter_tone_gap</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.InterToneGap(LumenRTC.DtmfSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_dtmf_sender_inter_tone_gap</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.TryTones(LumenRTC.DtmfSender,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_dtmf_sender_tones</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.DtmfSenderAbiSafe.Tones(LumenRTC.DtmfSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_dtmf_sender_tones</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaConstraintsAbiSurface.AbiMediaConstraintsAddMandatory(LumenRTC.MediaConstraints,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_constraints_add_mandatory</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaConstraintsAbiSurface.AbiMediaConstraintsAddOptional(LumenRTC.MediaConstraints,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_constraints_add_optional</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaConstraintsAbiFacade.RawMediaConstraintsAddMandatory(LumenRTC.MediaConstraints,System.IntPtr,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_media_constraints_add_mandatory</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaConstraintsAbiFacade.RawMediaConstraintsAddOptional(LumenRTC.MediaConstraints,System.IntPtr,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_media_constraints_add_optional</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSurface.AbiGetId(LumenRTC.MediaSource,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_source_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSurface.AbiGetName(LumenRTC.MediaSource,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_source_get_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSurface.AbiGetType(LumenRTC.MediaSource)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_source_get_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiFacade.RawGetId(LumenRTC.MediaSource,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_media_source_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiFacade.RawGetName(LumenRTC.MediaSource,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_media_source_get_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiFacade.RawGetType(LumenRTC.MediaSource)">
+            <summary>
+            Public facade over <c>lrtc_media_source_get_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSafe.TryGetId(LumenRTC.MediaSource,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_media_source_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSafe.GetId(LumenRTC.MediaSource,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_media_source_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSafe.TryGetName(LumenRTC.MediaSource,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_media_source_get_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaSourceAbiSafe.GetName(LumenRTC.MediaSource,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_media_source_get_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSurface.AbiAddAudioTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_stream_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSurface.AbiAddVideoTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_stream_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSurface.AbiGetId(LumenRTC.MediaStream,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_stream_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSurface.AbiGetLabel(LumenRTC.MediaStream,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_stream_get_label</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSurface.AbiRemoveAudioTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_stream_remove_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSurface.AbiRemoveVideoTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_media_stream_remove_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.RawAddAudioTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.TypedAddAudioTrack(LumenRTC.MediaStream,LumenRTC.AudioTrack)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.RawAddVideoTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.TypedAddVideoTrack(LumenRTC.MediaStream,LumenRTC.VideoTrack)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.RawGetId(LumenRTC.MediaStream,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.RawGetLabel(LumenRTC.MediaStream,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_get_label</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.RawRemoveAudioTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_remove_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.TypedRemoveAudioTrack(LumenRTC.MediaStream,LumenRTC.AudioTrack)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_remove_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.RawRemoveVideoTrack(LumenRTC.MediaStream,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_remove_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiFacade.TypedRemoveVideoTrack(LumenRTC.MediaStream,LumenRTC.VideoTrack)">
+            <summary>
+            Public facade over <c>lrtc_media_stream_remove_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSafe.TryGetId(LumenRTC.MediaStream,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_media_stream_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSafe.GetId(LumenRTC.MediaStream,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_media_stream_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSafe.TryGetLabel(LumenRTC.MediaStream,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_media_stream_get_label</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.MediaStreamAbiSafe.GetLabel(LumenRTC.MediaStream,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_media_stream_get_label</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddAudioTrack(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddAudioTrackSender(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_audio_track_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddAudioTrackTransceiver(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_audio_track_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddAudioTrackTransceiverWithInit(LumenRTC.PeerConnection,System.IntPtr,LumenRTC.Interop.LrtcRtpTransceiverInit@)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_audio_track_transceiver_with_init</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddIceCandidate(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_ice_candidate</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddIceCandidateEx(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_ice_candidate_ex</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddStream(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddTransceiver(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcMediaType)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddTransceiverWithInit(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcMediaType,LumenRTC.Interop.LrtcRtpTransceiverInit@)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_transceiver_with_init</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddVideoTrack(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddVideoTrackSender(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_video_track_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddVideoTrackTransceiver(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_video_track_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiAddVideoTrackTransceiverWithInit(LumenRTC.PeerConnection,System.IntPtr,LumenRTC.Interop.LrtcRtpTransceiverInit@)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_add_video_track_transceiver_with_init</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiClose(LumenRTC.PeerConnection)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_close</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiCreateAnswer(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcSdpSuccessCb,LumenRTC.Interop.LrtcSdpErrorCb,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_create_answer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiCreateDataChannel(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_create_data_channel</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiCreateOffer(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcSdpSuccessCb,LumenRTC.Interop.LrtcSdpErrorCb,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_create_offer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetLocalDescription(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcSdpSuccessCb,LumenRTC.Interop.LrtcSdpErrorCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_local_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetReceiver(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_receiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetReceiverStats(LumenRTC.PeerConnection,System.IntPtr,LumenRTC.Interop.LrtcStatsSuccessCb,LumenRTC.Interop.LrtcStatsFailureCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_receiver_stats</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetRemoteDescription(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcSdpSuccessCb,LumenRTC.Interop.LrtcSdpErrorCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_remote_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetSender(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetSenderStats(LumenRTC.PeerConnection,System.IntPtr,LumenRTC.Interop.LrtcStatsSuccessCb,LumenRTC.Interop.LrtcStatsFailureCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_sender_stats</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetStats(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcStatsSuccessCb,LumenRTC.Interop.LrtcStatsFailureCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_stats</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiGetTransceiver(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_get_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiReceiverCount(LumenRTC.PeerConnection)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_receiver_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiRemoveStream(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_remove_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiRemoveTrack(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_remove_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiRestartIce(LumenRTC.PeerConnection)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_restart_ice</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiSenderCount(LumenRTC.PeerConnection)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_sender_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiSetCallbacks(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcPeerConnectionCallbacks@,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_set_callbacks</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiSetCodecPreferences(LumenRTC.PeerConnection,LumenRTC.Interop.LrtcMediaType,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_set_codec_preferences</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiSetLocalDescription(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,LumenRTC.Interop.LrtcVoidCb,LumenRTC.Interop.LrtcSdpErrorCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_set_local_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiSetRemoteDescription(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,LumenRTC.Interop.LrtcVoidCb,LumenRTC.Interop.LrtcSdpErrorCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_set_remote_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiSetTransceiverCodecPreferences(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_set_transceiver_codec_preferences</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSurface.AbiTransceiverCount(LumenRTC.PeerConnection)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_transceiver_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddAudioTrack(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddAudioTrack(LumenRTC.PeerConnection,LumenRTC.AudioTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddAudioTrackSender(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_audio_track_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddAudioTrackSender(LumenRTC.PeerConnection,LumenRTC.AudioTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_audio_track_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddAudioTrackTransceiver(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_audio_track_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddAudioTrackTransceiver(LumenRTC.PeerConnection,LumenRTC.AudioTrack)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_audio_track_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddIceCandidate(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_ice_candidate</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddIceCandidateEx(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_ice_candidate_ex</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddStream(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddStream(LumenRTC.PeerConnection,LumenRTC.MediaStream)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddVideoTrack(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddVideoTrack(LumenRTC.PeerConnection,LumenRTC.VideoTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddVideoTrackSender(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_video_track_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddVideoTrackSender(LumenRTC.PeerConnection,LumenRTC.VideoTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_video_track_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawAddVideoTrackTransceiver(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_video_track_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedAddVideoTrackTransceiver(LumenRTC.PeerConnection,LumenRTC.VideoTrack)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_add_video_track_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawClose(LumenRTC.PeerConnection)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_close</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawCreateDataChannel(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_create_data_channel</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedCreateDataChannel(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32,System.IntPtr,System.Int32,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_create_data_channel</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawGetReceiver(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_get_receiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedGetReceiver(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_get_receiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawGetSender(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_get_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedGetSender(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_get_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawGetTransceiver(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_get_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedGetTransceiver(LumenRTC.PeerConnection,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_get_transceiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawReceiverCount(LumenRTC.PeerConnection)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_receiver_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawRemoveStream(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_remove_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedRemoveStream(LumenRTC.PeerConnection,LumenRTC.MediaStream)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_remove_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawRemoveTrack(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_remove_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedRemoveTrack(LumenRTC.PeerConnection,LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_remove_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawRestartIce(LumenRTC.PeerConnection)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_restart_ice</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawSenderCount(LumenRTC.PeerConnection)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_sender_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawSetTransceiverCodecPreferences(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_set_transceiver_codec_preferences</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.TypedSetTransceiverCodecPreferences(LumenRTC.PeerConnection,LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_set_transceiver_codec_preferences</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiFacade.RawTransceiverCount(LumenRTC.PeerConnection)">
+            <summary>
+            Public facade over <c>lrtc_peer_connection_transceiver_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.TryAddAudioTrack(LumenRTC.PeerConnection,LumenRTC.AudioTrack,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_peer_connection_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.AddAudioTrack(LumenRTC.PeerConnection,LumenRTC.AudioTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_peer_connection_add_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.TryAddIceCandidateEx(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.IntPtr,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_peer_connection_add_ice_candidate_ex</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.AddIceCandidateEx(LumenRTC.PeerConnection,System.IntPtr,System.Int32,System.IntPtr)">
+            <summary>
+            Throwing wrapper over <c>lrtc_peer_connection_add_ice_candidate_ex</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.TryAddVideoTrack(LumenRTC.PeerConnection,LumenRTC.VideoTrack,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_peer_connection_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.AddVideoTrack(LumenRTC.PeerConnection,LumenRTC.VideoTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_peer_connection_add_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.TryRemoveTrack(LumenRTC.PeerConnection,LumenRTC.RtpSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_peer_connection_remove_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.RemoveTrack(LumenRTC.PeerConnection,LumenRTC.RtpSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_peer_connection_remove_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.TrySetTransceiverCodecPreferences(LumenRTC.PeerConnection,LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_peer_connection_set_transceiver_codec_preferences</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.SetTransceiverCodecPreferences(LumenRTC.PeerConnection,LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_peer_connection_set_transceiver_codec_preferences</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.CreateAnswerAsync(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_create_answer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.CreateOfferAsync(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_create_offer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.GetLocalDescriptionAsync(LumenRTC.PeerConnection)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_get_local_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.GetReceiverStatsAsync(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_get_receiver_stats</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.GetRemoteDescriptionAsync(LumenRTC.PeerConnection)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_get_remote_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.GetSenderStatsAsync(LumenRTC.PeerConnection,System.IntPtr)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_get_sender_stats</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.GetStatsAsync(LumenRTC.PeerConnection)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_get_stats</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.SetLocalDescriptionAsync(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_set_local_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionAbiSafe.SetRemoteDescriptionAsync(LumenRTC.PeerConnection,System.IntPtr,System.IntPtr)">
+            <summary>
+            Task wrapper over callback-based <c>lrtc_peer_connection_set_remote_description</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiCreateAudioSource(LumenRTC.PeerConnectionFactory,System.IntPtr,LumenRTC.Interop.LrtcAudioSourceType,LumenRTC.Interop.LrtcAudioOptions@)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create_audio_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiCreateAudioTrack(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiCreateDesktopSource(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create_desktop_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiCreateStream(LumenRTC.PeerConnectionFactory,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiCreateVideoSource(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create_video_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiCreateVideoTrack(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiGetAudioDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_get_audio_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiGetDesktopDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_get_desktop_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiGetRtpReceiverCapabilities(LumenRTC.PeerConnectionFactory,LumenRTC.Interop.LrtcMediaType,LumenRTC.Interop.LrtcStatsSuccessCb,LumenRTC.Interop.LrtcStatsFailureCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_get_rtp_receiver_capabilities</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiGetRtpSenderCapabilities(LumenRTC.PeerConnectionFactory,LumenRTC.Interop.LrtcMediaType,LumenRTC.Interop.LrtcStatsSuccessCb,LumenRTC.Interop.LrtcStatsFailureCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_get_rtp_sender_capabilities</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiGetRtpSenderCodecMimeTypes(LumenRTC.PeerConnectionFactory,LumenRTC.Interop.LrtcMediaType,LumenRTC.Interop.LrtcStatsSuccessCb,LumenRTC.Interop.LrtcStatsFailureCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_get_rtp_sender_codec_mime_types</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiGetVideoDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_get_video_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiInitialize(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_initialize</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiTerminate(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_terminate</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiSurface.AbiPeerConnectionCreate(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr,LumenRTC.Interop.LrtcPeerConnectionCallbacks@,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_peer_connection_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawCreateAudioTrack(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedCreateAudioTrack(LumenRTC.PeerConnectionFactory,LumenRTC.AudioSource,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawCreateDesktopSource(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_desktop_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedCreateDesktopSource(LumenRTC.PeerConnectionFactory,LumenRTC.DesktopCapturer,System.IntPtr,LumenRTC.MediaConstraints)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_desktop_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawCreateStream(LumenRTC.PeerConnectionFactory,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedCreateStream(LumenRTC.PeerConnectionFactory,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawCreateVideoSource(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_video_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedCreateVideoSource(LumenRTC.PeerConnectionFactory,LumenRTC.VideoCapturer,System.IntPtr,LumenRTC.MediaConstraints)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_video_source</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawCreateVideoTrack(LumenRTC.PeerConnectionFactory,System.IntPtr,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedCreateVideoTrack(LumenRTC.PeerConnectionFactory,LumenRTC.VideoSource,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_factory_create_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawGetAudioDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_get_audio_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedGetAudioDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_get_audio_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawGetDesktopDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_get_desktop_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedGetDesktopDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_get_desktop_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawGetVideoDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_get_video_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.TypedGetVideoDevice(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_get_video_device</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.PeerConnectionFactoryAbiFacade.RawTerminate(LumenRTC.PeerConnectionFactory)">
+            <summary>
+            Public facade over <c>lrtc_factory_terminate</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiEncodingCount(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_encoding_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetAudioTrack(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetDegradationPreference(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_degradation_preference</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetDtlsInfo(LumenRTC.RtpReceiver,LumenRTC.Interop.LrtcDtlsTransportInfo@)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_dtls_info</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetEncodingInfo(LumenRTC.RtpReceiver,System.UInt32,LumenRTC.Interop.LrtcRtpEncodingInfo@)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_encoding_info</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetEncodingRid(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetEncodingScalabilityMode(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetId(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetMediaType(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetParametersMid(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetStream(LumenRTC.RtpReceiver,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetStreamId(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiGetVideoTrack(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_get_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiSetJitterBufferMinDelay(LumenRTC.RtpReceiver,System.Double)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_set_jitter_buffer_min_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiStreamCount(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_stream_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSurface.AbiStreamIdCount(LumenRTC.RtpReceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_receiver_stream_id_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawEncodingCount(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_encoding_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetAudioTrack(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.TypedGetAudioTrack(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetDegradationPreference(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_degradation_preference</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetEncodingRid(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetEncodingScalabilityMode(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetId(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetMediaType(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetParametersMid(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetStream(LumenRTC.RtpReceiver,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.TypedGetStream(LumenRTC.RtpReceiver,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_stream</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetStreamId(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawGetVideoTrack(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.TypedGetVideoTrack(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_get_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawSetJitterBufferMinDelay(LumenRTC.RtpReceiver,System.Double)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_set_jitter_buffer_min_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawStreamCount(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_stream_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiFacade.RawStreamIdCount(LumenRTC.RtpReceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_receiver_stream_id_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.TryGetEncodingRid(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_receiver_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.GetEncodingRid(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_receiver_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.TryGetEncodingScalabilityMode(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_receiver_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.GetEncodingScalabilityMode(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_receiver_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.TryGetId(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_receiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.GetId(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_receiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.TryGetParametersMid(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_receiver_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.GetParametersMid(LumenRTC.RtpReceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_receiver_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.TryGetStreamId(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_receiver_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.GetStreamId(LumenRTC.RtpReceiver,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_receiver_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.TrySetJitterBufferMinDelay(LumenRTC.RtpReceiver,System.Double,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_receiver_set_jitter_buffer_min_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpReceiverAbiSafe.SetJitterBufferMinDelay(LumenRTC.RtpReceiver,System.Double)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_receiver_set_jitter_buffer_min_delay</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiEncodingCount(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_encoding_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetAudioTrack(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetDegradationPreference(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_degradation_preference</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetDtlsInfo(LumenRTC.RtpSender,LumenRTC.Interop.LrtcDtlsTransportInfo@)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_dtls_info</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetDtmfSender(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_dtmf_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetEncodingInfo(LumenRTC.RtpSender,System.UInt32,LumenRTC.Interop.LrtcRtpEncodingInfo@)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_encoding_info</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetEncodingRid(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetEncodingScalabilityMode(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetId(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetMediaType(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetParametersMid(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetSsrc(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_ssrc</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetStreamId(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiGetVideoTrack(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_get_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiReplaceAudioTrack(LumenRTC.RtpSender,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_replace_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiReplaceVideoTrack(LumenRTC.RtpSender,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_replace_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiSetEncodingParameters(LumenRTC.RtpSender,LumenRTC.Interop.LrtcRtpEncodingSettings@)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_set_encoding_parameters</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiSetEncodingParametersAt(LumenRTC.RtpSender,System.UInt32,LumenRTC.Interop.LrtcRtpEncodingSettings@)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_set_encoding_parameters_at</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiSetStreamIds(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_set_stream_ids</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSurface.AbiStreamIdCount(LumenRTC.RtpSender)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_sender_stream_id_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawEncodingCount(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_encoding_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetAudioTrack(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.TypedGetAudioTrack(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetDegradationPreference(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_degradation_preference</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetDtmfSender(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_dtmf_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.TypedGetDtmfSender(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_dtmf_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetEncodingRid(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetEncodingScalabilityMode(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetId(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetMediaType(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetParametersMid(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetSsrc(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_ssrc</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetStreamId(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawGetVideoTrack(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.TypedGetVideoTrack(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_get_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawReplaceAudioTrack(LumenRTC.RtpSender,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_replace_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.TypedReplaceAudioTrack(LumenRTC.RtpSender,LumenRTC.AudioTrack)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_replace_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawReplaceVideoTrack(LumenRTC.RtpSender,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_replace_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.TypedReplaceVideoTrack(LumenRTC.RtpSender,LumenRTC.VideoTrack)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_replace_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawSetStreamIds(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_set_stream_ids</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiFacade.RawStreamIdCount(LumenRTC.RtpSender)">
+            <summary>
+            Public facade over <c>lrtc_rtp_sender_stream_id_count</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetDegradationPreference(LumenRTC.RtpSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_degradation_preference</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetDegradationPreference(LumenRTC.RtpSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_degradation_preference</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetEncodingRid(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetEncodingRid(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_encoding_rid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetEncodingScalabilityMode(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetEncodingScalabilityMode(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_encoding_scalability_mode</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetId(LumenRTC.RtpSender,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetId(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetMediaType(LumenRTC.RtpSender,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetMediaType(LumenRTC.RtpSender)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetParametersMid(LumenRTC.RtpSender,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetParametersMid(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_parameters_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryGetStreamId(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.GetStreamId(LumenRTC.RtpSender,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_get_stream_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryReplaceAudioTrack(LumenRTC.RtpSender,LumenRTC.AudioTrack,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_replace_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.ReplaceAudioTrack(LumenRTC.RtpSender,LumenRTC.AudioTrack)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_replace_audio_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TryReplaceVideoTrack(LumenRTC.RtpSender,LumenRTC.VideoTrack,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_replace_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.ReplaceVideoTrack(LumenRTC.RtpSender,LumenRTC.VideoTrack)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_replace_video_track</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.TrySetStreamIds(LumenRTC.RtpSender,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_sender_set_stream_ids</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpSenderAbiSafe.SetStreamIds(LumenRTC.RtpSender,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_sender_set_stream_ids</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetCurrentDirection(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_current_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetDirection(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetFiredDirection(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_fired_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetId(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetMediaType(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetMid(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetReceiver(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_receiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetSender(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetStopped(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_stopped</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiGetStopping(LumenRTC.RtpTransceiver)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_get_stopping</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiSetDirection(LumenRTC.RtpTransceiver,LumenRTC.Interop.LrtcRtpTransceiverDirection,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_set_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSurface.AbiStop(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_rtp_transceiver_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetCurrentDirection(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_current_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetDirection(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetFiredDirection(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_fired_direction</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetId(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetMediaType(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_media_type</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetMid(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetReceiver(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_receiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.TypedGetReceiver(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_receiver</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetSender(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.TypedGetSender(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_sender</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetStopped(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_stopped</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawGetStopping(LumenRTC.RtpTransceiver)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_get_stopping</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiFacade.RawStop(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_rtp_transceiver_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSafe.TryGetId(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_transceiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSafe.GetId(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_transceiver_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSafe.TryGetMid(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_transceiver_get_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSafe.GetMid(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_transceiver_get_mid</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSafe.TryStop(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_rtp_transceiver_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.RtpTransceiverAbiSafe.Stop(LumenRTC.RtpTransceiver,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_rtp_transceiver_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoCapturerAbiSurface.AbiCaptureStarted(LumenRTC.VideoCapturer)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_capturer_capture_started</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoCapturerAbiSurface.AbiStart(LumenRTC.VideoCapturer)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_capturer_start</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoCapturerAbiSurface.AbiStop(LumenRTC.VideoCapturer)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_capturer_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoCapturerAbiFacade.RawCaptureStarted(LumenRTC.VideoCapturer)">
+            <summary>
+            Public facade over <c>lrtc_video_capturer_capture_started</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoCapturerAbiFacade.RawStart(LumenRTC.VideoCapturer)">
+            <summary>
+            Public facade over <c>lrtc_video_capturer_start</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoCapturerAbiFacade.RawStop(LumenRTC.VideoCapturer)">
+            <summary>
+            Public facade over <c>lrtc_video_capturer_stop</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiSurface.AbiCreateCapturer(LumenRTC.VideoDevice,System.IntPtr,System.UInt32,System.UIntPtr,System.UIntPtr,System.UIntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_device_create_capturer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiSurface.AbiGetDeviceName(LumenRTC.VideoDevice,System.UInt32,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_device_get_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiSurface.AbiNumberOfDevices(LumenRTC.VideoDevice)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_device_number_of_devices</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiFacade.RawCreateCapturer(LumenRTC.VideoDevice,System.IntPtr,System.UInt32,System.UIntPtr,System.UIntPtr,System.UIntPtr)">
+            <summary>
+            Public facade over <c>lrtc_video_device_create_capturer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiFacade.TypedCreateCapturer(LumenRTC.VideoDevice,System.IntPtr,System.UInt32,System.UIntPtr,System.UIntPtr,System.UIntPtr)">
+            <summary>
+            Public facade over <c>lrtc_video_device_create_capturer</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiFacade.RawGetDeviceName(LumenRTC.VideoDevice,System.UInt32,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_video_device_get_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiFacade.RawNumberOfDevices(LumenRTC.VideoDevice)">
+            <summary>
+            Public facade over <c>lrtc_video_device_number_of_devices</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiSafe.TryGetDeviceName(LumenRTC.VideoDevice,System.UInt32,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_video_device_get_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoDeviceAbiSafe.GetDeviceName(LumenRTC.VideoDevice,System.UInt32,System.IntPtr,System.UInt32,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_video_device_get_device_name</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiCopyI420(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.IntPtr,System.Int32,System.IntPtr,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_copy_i420</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiDataU(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_data_u</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiDataV(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_data_v</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiDataY(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_data_y</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiHeight(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_height</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiRetain(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_retain</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiStrideU(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_stride_u</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiStrideV(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_stride_v</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiStrideY(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_stride_y</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiToArgb(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_to_argb</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSurface.AbiWidth(LumenRTC.VideoFrame)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_frame_width</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawCopyI420(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.IntPtr,System.Int32,System.IntPtr,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_copy_i420</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawDataU(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_data_u</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawDataV(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_data_v</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawDataY(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_data_y</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawHeight(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_height</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawRetain(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_retain</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.TypedRetain(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_retain</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawStrideU(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_stride_u</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawStrideV(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_stride_v</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawStrideY(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_stride_y</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawToArgb(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_to_argb</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiFacade.RawWidth(LumenRTC.VideoFrame)">
+            <summary>
+            Public facade over <c>lrtc_video_frame_width</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSafe.TryCopyI420(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.IntPtr,System.Int32,System.IntPtr,System.Int32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_video_frame_copy_i420</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSafe.CopyI420(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.IntPtr,System.Int32,System.IntPtr,System.Int32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_video_frame_copy_i420</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSafe.TryToArgb(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_video_frame_to_argb</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoFrameAbiSafe.ToArgb(LumenRTC.VideoFrame,System.IntPtr,System.Int32,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_video_frame_to_argb</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSurface.AbiAddSink(LumenRTC.VideoTrack,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_track_add_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSurface.AbiGetEnabled(LumenRTC.VideoTrack)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_track_get_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSurface.AbiGetId(LumenRTC.VideoTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSurface.AbiGetState(LumenRTC.VideoTrack)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_track_get_state</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSurface.AbiRemoveSink(LumenRTC.VideoTrack,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_track_remove_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSurface.AbiSetEnabled(LumenRTC.VideoTrack,System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.RawAddSink(LumenRTC.VideoTrack,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_video_track_add_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.TypedAddSink(LumenRTC.VideoTrack,LumenRTC.VideoSink)">
+            <summary>
+            Public facade over <c>lrtc_video_track_add_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.RawGetEnabled(LumenRTC.VideoTrack)">
+            <summary>
+            Public facade over <c>lrtc_video_track_get_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.RawGetId(LumenRTC.VideoTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_video_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.RawGetState(LumenRTC.VideoTrack)">
+            <summary>
+            Public facade over <c>lrtc_video_track_get_state</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.RawRemoveSink(LumenRTC.VideoTrack,System.IntPtr)">
+            <summary>
+            Public facade over <c>lrtc_video_track_remove_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.TypedRemoveSink(LumenRTC.VideoTrack,LumenRTC.VideoSink)">
+            <summary>
+            Public facade over <c>lrtc_video_track_remove_sink</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiFacade.RawSetEnabled(LumenRTC.VideoTrack,System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_video_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSafe.TryGetId(LumenRTC.VideoTrack,System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_video_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSafe.GetId(LumenRTC.VideoTrack,System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_video_track_get_id</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSafe.TrySetEnabled(LumenRTC.VideoTrack,System.Int32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_video_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.VideoTrackAbiSafe.SetEnabled(LumenRTC.VideoTrack,System.Int32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_video_track_set_enabled</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiAbiVersionMajor">
+            <summary>
+            ABI forwarder for <c>lrtc_abi_version_major</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiAbiVersionMinor">
+            <summary>
+            ABI forwarder for <c>lrtc_abi_version_minor</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiAbiVersionPatch">
+            <summary>
+            ABI forwarder for <c>lrtc_abi_version_patch</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiAbiVersionString(System.IntPtr,System.UInt32)">
+            <summary>
+            ABI forwarder for <c>lrtc_abi_version_string</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiAudioSinkCreate(LumenRTC.Interop.LrtcAudioSinkCallbacks@,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_audio_sink_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiFactoryCreate">
+            <summary>
+            ABI forwarder for <c>lrtc_factory_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiInitialize">
+            <summary>
+            ABI forwarder for <c>lrtc_initialize</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiLoggingRemoveCallback">
+            <summary>
+            ABI forwarder for <c>lrtc_logging_remove_callback</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiLoggingSetCallback(System.Int32,LumenRTC.Interop.LrtcLogMessageCb,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_logging_set_callback</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiLoggingSetMinLevel(System.Int32)">
+            <summary>
+            ABI forwarder for <c>lrtc_logging_set_min_level</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiMediaConstraintsCreate">
+            <summary>
+            ABI forwarder for <c>lrtc_media_constraints_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiTerminate">
+            <summary>
+            ABI forwarder for <c>lrtc_terminate</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSurface.AbiVideoSinkCreate(LumenRTC.Interop.LrtcVideoSinkCallbacks@,System.IntPtr)">
+            <summary>
+            ABI forwarder for <c>lrtc_video_sink_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawAbiVersionMajor">
+            <summary>
+            Public facade over <c>lrtc_abi_version_major</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawAbiVersionMinor">
+            <summary>
+            Public facade over <c>lrtc_abi_version_minor</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawAbiVersionPatch">
+            <summary>
+            Public facade over <c>lrtc_abi_version_patch</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawAbiVersionString(System.IntPtr,System.UInt32)">
+            <summary>
+            Public facade over <c>lrtc_abi_version_string</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawFactoryCreate">
+            <summary>
+            Public facade over <c>lrtc_factory_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawLoggingRemoveCallback">
+            <summary>
+            Public facade over <c>lrtc_logging_remove_callback</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawLoggingSetMinLevel(System.Int32)">
+            <summary>
+            Public facade over <c>lrtc_logging_set_min_level</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawMediaConstraintsCreate">
+            <summary>
+            Public facade over <c>lrtc_media_constraints_create</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiFacade.RawTerminate">
+            <summary>
+            Public facade over <c>lrtc_terminate</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSafe.TryAbiVersionString(System.IntPtr,System.UInt32,System.Int32@)">
+            <summary>
+            Try wrapper over <c>lrtc_abi_version_string</c>.
+            </summary>
+        </member>
+        <member name="M:LumenRTC.GlobalAbiSafe.AbiVersionString(System.IntPtr,System.UInt32)">
+            <summary>
+            Throwing wrapper over <c>lrtc_abi_version_string</c>.
+            </summary>
+        </member>
+    </members>
+</doc>

@@ -1,0 +1,39 @@
+// Copyright © 2023-2026 Vitaly Kuzyaev. All rights reserved.
+// This file is part of the AureTTY project.
+// Licensed under the GNU Affero General Public License v3.0.
+
+using System.IO.Abstractions;
+using Microsoft.Extensions.DependencyInjection;
+using AureTTY.Execution.Abstractions;
+using AureTTY.Execution.Services;
+using AureTTY.Contracts.Abstractions;
+using AureTTY.Core.Services;
+using AureTTY.Windows.Abstractions;
+using AureTTY.Windows.Services;
+
+namespace AureTTY.Services;
+
+public static class ServiceCollectionExtensions
+{
+    public static IServiceCollection AddAureTTYTerminalServices(this IServiceCollection services, TerminalServiceOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(options);
+
+        services.AddSingleton(options);
+        services.AddSingleton<IFileSystem, FileSystem>();
+        services.AddTransient<IProcessWrapperFactory, ProcessWrapperFactory>();
+        services.AddSingleton<IProcessService, ProcessService>();
+        services.AddSingleton<ICommandLineProvider, CommandLineProvider>();
+        services.AddSingleton<ISessionService, SessionService>();
+        services.AddSingleton<INativeProcessFactory, NativeProcessFactory>();
+        services.AddSingleton<INativeProcessOptionsProvider, NativeProcessOptionsProvider>();
+        services.AddSingleton<IScriptProcessFactory, ScriptProcessFactory>();
+        services.AddSingleton<PipeTerminalSessionEventPublisher>();
+        services.AddSingleton<ITerminalSessionEventPublisher>(provider => provider.GetRequiredService<PipeTerminalSessionEventPublisher>());
+        services.AddSingleton<ITerminalSessionService, TerminalSessionService>();
+        services.AddHostedService<TerminalPipeServer>();
+
+        return services;
+    }
+}

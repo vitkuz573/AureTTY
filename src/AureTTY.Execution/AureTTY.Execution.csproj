@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ShouldUnsetParentConfigurationAndPlatform>false</ShouldUnsetParentConfigurationAndPlatform>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AureTTY.Contracts\AureTTY.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>
