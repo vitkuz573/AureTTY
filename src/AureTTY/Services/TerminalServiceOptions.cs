@@ -1,37 +1,25 @@
 namespace AureTTY.Services;
 
-public sealed record TerminalServiceOptions(string PipeName, string PipeToken)
+public sealed record TerminalServiceOptions(
+    string PipeName,
+    string PipeToken,
+    bool EnablePipeApi,
+    bool EnableHttpApi,
+    string HttpListenUrl,
+    string ApiKey)
 {
-    public static bool TryParse(string[] args, out TerminalServiceOptions? options, out string? error)
+    public const string ApiKeyHeaderName = "X-AureTTY-Key";
+    public const string DefaultHttpListenUrl = "http://127.0.0.1:17850";
+    public const string ApiVersion = "v1";
+
+    public TerminalServiceOptions(string pipeName, string pipeToken)
+        : this(
+            pipeName,
+            pipeToken,
+            EnablePipeApi: true,
+            EnableHttpApi: true,
+            HttpListenUrl: DefaultHttpListenUrl,
+            ApiKey: pipeToken)
     {
-        ArgumentNullException.ThrowIfNull(args);
-
-        options = null;
-        error = null;
-
-        string? pipeName = null;
-        string? pipeToken = null;
-
-        for (var i = 0; i < args.Length; i++)
-        {
-            var current = args[i];
-            if (string.Equals(current, "--pipe-name", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-            {
-                pipeName = args[++i]?.Trim();
-                continue;
-            }
-
-            if (string.Equals(current, "--pipe-token", StringComparison.OrdinalIgnoreCase) && i + 1 < args.Length)
-            {
-                pipeToken = args[++i]?.Trim();
-                continue;
-            }
-        }
-
-        pipeName = string.IsNullOrWhiteSpace(pipeName) ? AureTTY.Protocol.TerminalIpcDefaults.PipeName : pipeName;
-        pipeToken = string.IsNullOrWhiteSpace(pipeToken) ? AureTTY.Protocol.TerminalIpcDefaults.PipeToken : pipeToken;
-
-        options = new TerminalServiceOptions(pipeName, pipeToken);
-        return true;
     }
 }

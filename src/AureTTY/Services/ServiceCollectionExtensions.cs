@@ -1,11 +1,11 @@
 using System.IO.Abstractions;
-using Microsoft.Extensions.DependencyInjection;
-using AureTTY.Execution.Abstractions;
-using AureTTY.Execution.Services;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Core.Services;
+using AureTTY.Execution.Abstractions;
+using AureTTY.Execution.Services;
 using AureTTY.Windows.Abstractions;
 using AureTTY.Windows.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace AureTTY.Services;
 
@@ -26,9 +26,13 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<INativeProcessOptionsProvider, NativeProcessOptionsProvider>();
         services.AddSingleton<IScriptProcessFactory, ScriptProcessFactory>();
         services.AddSingleton<PipeTerminalSessionEventPublisher>();
-        services.AddSingleton<ITerminalSessionEventPublisher>(provider => provider.GetRequiredService<PipeTerminalSessionEventPublisher>());
+        services.AddSingleton<HttpTerminalSessionEventPublisher>();
+        services.AddSingleton<ITerminalSessionEventPublisher, CompositeTerminalSessionEventPublisher>();
         services.AddSingleton<ITerminalSessionService, TerminalSessionService>();
-        services.AddHostedService<TerminalPipeServer>();
+        if (options.EnablePipeApi)
+        {
+            services.AddHostedService<TerminalPipeServer>();
+        }
 
         return services;
     }
