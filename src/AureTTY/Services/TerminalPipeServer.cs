@@ -320,18 +320,41 @@ public sealed class TerminalPipeServer(
 
     private async Task DisposeTransportAsync()
     {
-        _reader?.Dispose();
+        try
+        {
+            _reader?.Dispose();
+        }
+        catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+        {
+            _logger.LogDebug(ex, "Terminal IPC reader disposal failed.");
+        }
         _reader = null;
 
         if (_writer is not null)
         {
-            await _writer.DisposeAsync();
+            try
+            {
+                await _writer.DisposeAsync();
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+            {
+                _logger.LogDebug(ex, "Terminal IPC writer disposal failed.");
+            }
+
             _writer = null;
         }
 
         if (_pipe is not null)
         {
-            await _pipe.DisposeAsync();
+            try
+            {
+                await _pipe.DisposeAsync();
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException)
+            {
+                _logger.LogDebug(ex, "Terminal IPC pipe disposal failed.");
+            }
+
             _pipe = null;
         }
     }

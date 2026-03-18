@@ -11,8 +11,8 @@ It can be integrated from any language through the HTTP API and SSE event stream
 
 Current platform backend:
 
-- Linux process backend is active (`AureTTY.Linux`) and uses pseudo-terminal launch through `script` (util-linux).
-- Windows backend source still exists in `src/AureTTY.Windows`, but runtime wiring is currently Linux-first.
+- Linux backend: `AureTTY.Linux` (pseudo-terminal launch through `script`, util-linux).
+- Windows backend: `AureTTY.Windows` (ConPTY/Windows process launch).
 
 ## Quick Start
 
@@ -66,11 +66,16 @@ Linux notes:
 - Install `script` binary (usually from `util-linux`).
 - Explicit credential switching (`UserName`/`Password`) is not implemented yet on Linux.
 
+Windows notes:
+
+- Run with PowerShell 7 (`pwsh`) or Windows PowerShell (`powershell`) for demos.
+- Full Windows transport smoke demo: `demos/windows/run-windows-transport-smoke.ps1`.
+
 ## Repository Layout
 
 - `src/` runtime and platform projects
 - `tests/` unit tests
-- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`)
+- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`)
 
 ## License
 

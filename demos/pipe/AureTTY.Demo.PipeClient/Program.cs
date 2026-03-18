@@ -165,7 +165,7 @@ static async Task<int> ExecuteAsync(
         TerminalIpcMethods.SendInput,
         new TerminalIpcInputRequest(
             viewerId,
-            new TerminalSessionInputRequest(startedSession.SessionId, "echo demo-pipe && uname -s\n", 1)),
+            new TerminalSessionInputRequest(startedSession.SessionId, BuildDemoInput(shell), 1)),
         jsonOptions,
         timeout.Token);
 
@@ -351,4 +351,15 @@ static bool SetShell(Shell value, out Shell shell)
 {
     shell = value;
     return true;
+}
+
+static string BuildDemoInput(Shell shell)
+{
+    return shell switch
+    {
+        Shell.Cmd => "echo demo-pipe && ver\r\n",
+        Shell.PowerShell or Shell.Pwsh => "Write-Output demo-pipe\r\n$PSVersionTable.PSEdition\r\n",
+        Shell.Bash => "echo demo-pipe && uname -s\n",
+        _ => throw new InvalidOperationException($"Unsupported shell '{shell}'.")
+    };
 }

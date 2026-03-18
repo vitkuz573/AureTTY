@@ -170,9 +170,9 @@ public sealed class TerminalPipeServerTests
             Text = "terminal output"
         };
 
+        var readEventTask = ReadMessageAsync(reader, timeout.Token);
         await eventPublisher.SendTerminalSessionEventAsync("viewer-event", terminalEvent);
-
-        var message = await ReadMessageAsync(reader, timeout.Token);
+        var message = await readEventTask;
         var payload = message.Payload?.Deserialize<TerminalIpcSessionEvent>(JsonOptions);
 
         Assert.Equal(TerminalIpcMessageTypes.Event, message.Type);
