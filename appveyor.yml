@@ -57,3 +57,79 @@ artifacts:
     name: auretty-win-x64-sha256
   - path: artifacts\AureTTY-*-linux-x64.sha256
     name: auretty-linux-x64-sha256
+
+deploy_script:
+  - ps: |
+      $ErrorActionPreference = "Stop"
+
+      if ($env:APPVEYOR_REPO_TAG -ne "true") {
+          Write-Host "Skipping GitHub release upload for non-tag build."
+          return
+      }
+
+      if ([string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
+          throw "GITHUB_TOKEN is not configured in AppVeyor project settings."
+      }
+
+      $repo = $env:APPVEYOR_REPO_NAME
+      $tag = $env:APPVEYOR_REPO_TAG_NAME
+      $apiBase = "https://api.github.com"
+      $headers = @{
+          Authorization = "Bearer $env:GITHUB_TOKEN"
+          Accept = "application/vnd.github+json"
+          "X-GitHub-Api-Version" = "2022-11-28"
+          "User-Agent" = "AureTTY-AppVeyor"
+      }
+
+      function Get-OrCreateRelease {
+          param(
+              [Parameter(Mandatory = $true)]
+              [string]$Repo,
+              [Parameter(Mandatory = $true)]
+              [string]$Tag,
+              [Parameter(Mandatory = $true)]
+              [hashtable]$Headers,
+              [Parameter(Mandatory = $true)]
+              [string]$ApiBase
+          )
+
+          try {
+              return Invoke-RestMethod -Method Get -Uri "$ApiBase/repos/$Repo/releases/tags/$Tag" -Headers $Headers
+          }
+          catch {
+              $statusCode = $_.Exception.Response.StatusCode.value__
+              if ($statusCode -ne 404) {
+                  throw
+              }
+          }
+
+          $payload = @{
+              tag_name = $Tag
+              name = $Tag
+              draft = $false
+              prerelease = $false
+              generate_release_notes = $true
+          } | ConvertTo-Json
+
+          return Invoke-RestMethod -Method Post -Uri "$ApiBase/repos/$Repo/releases" -Headers $Headers -ContentType "application/json" -Body $payload
+      }
+
+      $release = Get-OrCreateRelease -Repo $repo -Tag $tag -Headers $headers -ApiBase $apiBase
+      $uploadUrl = ($release.upload_url -replace '\{.*\}$', '')
+      $assetPattern = '^AureTTY-.*-(win|linux)-x64\.(zip|sha256)$'
+      $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
+
+      if (-not $assets) {
+          throw "No release assets found in artifacts directory."
+      }
+
+      foreach ($asset in $assets) {
+          $existing = @($release.assets | Where-Object { $_.name -eq $asset.Name })
+          foreach ($existingAsset in $existing) {
+              Invoke-RestMethod -Method Delete -Uri "$apiBase/repos/$repo/releases/assets/$($existingAsset.id)" -Headers $headers
+          }
+
+          $uploadUri = "$uploadUrl?name=$([Uri]::EscapeDataString($asset.Name))"
+          Invoke-RestMethod -Method Post -Uri $uploadUri -Headers $headers -InFile $asset.FullName -ContentType "application/octet-stream"
+          Write-Host "Uploaded release asset $($asset.Name)"
+      }
