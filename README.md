@@ -1,5 +1,11 @@
 # AureTTY
 
+[![Build](https://ci.appveyor.com/api/projects/status/github/vitkuz573/AureTTY?svg=true)](https://ci.appveyor.com/project/vitkuz573/AureTTY)
+[![Latest Release](https://img.shields.io/github/v/release/vitkuz573/AureTTY?sort=semver)](https://github.com/vitkuz573/AureTTY/releases/latest)
+[![Coverage](https://img.shields.io/badge/coverage-87.9%25-brightgreen)](#test-coverage)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE-MIT)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE-APACHE)
+
 AureTTY is a standalone terminal engine with transport-agnostic control APIs.
 It can be integrated from any language through the HTTP API and SSE event stream.
 
@@ -76,6 +82,21 @@ Windows notes:
 - `src/` runtime and platform projects
 - `tests/` unit tests
 - `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`)
+
+## Test Coverage
+
+Current local baseline (2026-03-18):
+
+- Line coverage: `87.9%`
+- Branch coverage: `72.2%`
+
+Recompute locally:
+
+```powershell
+dotnet test tests/AureTTY.Tests/AureTTY.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory coverage-results/tests
+dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory coverage-results/core
+.\.tools\reportgenerator.exe -reports:"coverage-results\**\coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"HtmlInline;TextSummary;Cobertura;Badges"
+```
 
 ## License
 

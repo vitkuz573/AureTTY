@@ -170,6 +170,49 @@ public sealed class TerminalSessionServiceTests
     }
 
     [Fact]
+    public async Task SendInputAsync_WhenInputIsEmpty_ShouldNotWriteToProcess()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-empty-input", Shell.Pwsh));
+        await Task.Delay(100);
+
+        await service.SendInputAsync("viewer-1", new TerminalSessionInputRequest("session-empty-input", string.Empty, 1));
+
+        Assert.Equal(string.Empty, process.GetInputBuffer());
+        await service.CloseAsync("viewer-1", "session-empty-input");
+    }
+
+    [Fact]
+    public async Task SendInputAsync_WhenInputContainsStandaloneLf_ShouldNormalizePlatformEnter()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-lf-input", Shell.Pwsh));
+        await Task.Delay(100);
+
+        await service.SendInputAsync("viewer-1", new TerminalSessionInputRequest("session-lf-input", "\n", 1));
+
+        var expected = OperatingSystem.IsWindows() ? "\r" : "\n";
+        Assert.Equal(expected, process.GetInputBuffer());
+        await service.CloseAsync("viewer-1", "session-lf-input");
+    }
+
+    [Fact]
     public async Task SendInputAsync_ShouldPreserveInputOrderAsReceived()
     {
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
@@ -413,6 +456,122 @@ public sealed class TerminalSessionServiceTests
     }
 
     [Fact]
+    public async Task GetSessionAsync_WhenViewerOwnsSession_ReturnsHandle()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-owner", new TerminalSessionStartRequest("session-owned-ok", Shell.Pwsh));
+
+        var session = await service.GetSessionAsync("viewer-owner", "session-owned-ok");
+
+        Assert.Equal("session-owned-ok", session.SessionId);
+        Assert.Equal(TerminalSessionState.Running, session.State);
+        await service.CloseAllSessionsAsync();
+    }
+
+    [Fact]
+    public async Task GetInputDiagnosticsAsync_WhenSessionExists_ReturnsSnapshot()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-diag", new TerminalSessionStartRequest("session-diag", Shell.Pwsh));
+        await Task.Delay(100);
+        await service.SendInputAsync("viewer-diag", new TerminalSessionInputRequest("session-diag", "B", 2));
+
+        var diagnostics = await service.GetInputDiagnosticsAsync("viewer-diag", "session-diag");
+
+        Assert.Equal("session-diag", diagnostics.SessionId);
+        Assert.Equal(1, diagnostics.NextExpectedSequence);
+        Assert.Contains(2, diagnostics.PendingSequences);
+        await service.CloseAllSessionsAsync();
+    }
+
+    [Fact]
+    public async Task CloseAsync_WhenSessionDoesNotExist_Completes()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        await service.CloseAsync("viewer-1", "missing-session");
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenSessionIdAlreadyExists_ThrowsConflictException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        var createdProcesses = new List<FakeTerminalProcess>();
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(() =>
+            {
+                var process = new FakeTerminalProcess(string.Empty, processId: 5000 + createdProcesses.Count);
+                createdProcesses.Add(process);
+                return process;
+            });
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-dup", Shell.Pwsh));
+
+        var act = () => service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-dup", Shell.Pwsh));
+        await Assert.ThrowsAsync<TerminalSessionConflictException>(act);
+
+        await service.CloseAllSessionsAsync();
+        foreach (var process in createdProcesses)
+        {
+            process.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenActiveSessionLimitReached_ThrowsConflictException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        var createdProcesses = new List<FakeTerminalProcess>();
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(() =>
+            {
+                var process = new FakeTerminalProcess(string.Empty, processId: 6000 + createdProcesses.Count);
+                createdProcesses.Add(process);
+                return process;
+            });
+
+        for (var index = 1; index <= 8; index++)
+        {
+            _ = await service.StartAsync("viewer-limit", new TerminalSessionStartRequest($"session-limit-{index}", Shell.Pwsh));
+        }
+
+        var act = () => service.StartAsync("viewer-limit", new TerminalSessionStartRequest("session-limit-overflow", Shell.Pwsh));
+        await Assert.ThrowsAsync<TerminalSessionConflictException>(act);
+
+        await service.CloseAllSessionsAsync();
+        foreach (var process in createdProcesses)
+        {
+            process.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task StartAsync_WhenProcessStartThrows_ShouldPublishFailedEvent()
     {
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
@@ -560,6 +719,161 @@ public sealed class TerminalSessionServiceTests
 
         firstProcess.Dispose();
         secondProcess.Dispose();
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenSessionIdIsMissing_ThrowsValidationException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        var act = () => service.StartAsync("viewer-1", new TerminalSessionStartRequest("   ", Shell.Pwsh));
+        await Assert.ThrowsAsync<TerminalSessionValidationException>(act);
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenCredentialsProvided_ForwardsCredentialOptions()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        ProcessCredentialOptions? capturedCredentials = null;
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Callback<ExecutionRunContext, ProcessCredentialOptions?, ProcessRuntimeOptions?>((_, credentials, _) => capturedCredentials = credentials)
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-credentials", Shell.Pwsh)
+        {
+            UserName = "demo-user",
+            Domain = "demo-domain",
+            Password = "demo-pass",
+            LoadUserProfile = false
+        });
+        await Task.Delay(100);
+
+        Assert.NotNull(capturedCredentials);
+        Assert.Equal("demo-user", capturedCredentials!.UserName);
+        Assert.Equal("demo-domain", capturedCredentials.Domain);
+        Assert.Equal("demo-pass", capturedCredentials.Password);
+        Assert.False(capturedCredentials.LoadUserProfile);
+
+        await service.CloseAsync("viewer-1", "session-credentials");
+    }
+
+    [Fact]
+    public async Task ResumeAsync_WhenSessionDoesNotExist_ThrowsNotFoundException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        var act = () => service.ResumeAsync("viewer-1", new TerminalSessionResumeRequest("missing-session"));
+        await Assert.ThrowsAsync<TerminalSessionNotFoundException>(act);
+    }
+
+    [Fact]
+    public async Task SendInputAsync_WhenSequenceIsInvalid_ThrowsValidationException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-seq", Shell.Pwsh));
+        await Task.Delay(100);
+
+        var act = () => service.SendInputAsync("viewer-1", new TerminalSessionInputRequest("session-seq", "hello", 0));
+        await Assert.ThrowsAsync<TerminalSessionValidationException>(act);
+
+        await service.CloseAsync("viewer-1", "session-seq");
+    }
+
+    [Fact]
+    public async Task SignalAsync_EndOfInput_ShouldCloseStandardInput()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-eof", Shell.Pwsh));
+        await Task.Delay(100);
+
+        await service.SignalAsync("viewer-1", "session-eof", TerminalSessionSignal.EndOfInput);
+        await service.CloseAsync("viewer-1", "session-eof");
+    }
+
+    [Fact]
+    public async Task SignalAsync_Terminate_ShouldKillProcess()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-term", Shell.Pwsh));
+        await Task.Delay(100);
+
+        await service.SignalAsync("viewer-1", "session-term", TerminalSessionSignal.Terminate);
+
+        Assert.True(process.HasExited);
+    }
+
+    [Fact]
+    public async Task SignalAsync_WhenSignalUnsupported_ThrowsValidationException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-signal-invalid", Shell.Pwsh));
+        await Task.Delay(100);
+
+        var act = () => service.SignalAsync("viewer-1", "session-signal-invalid", (TerminalSessionSignal)999);
+        await Assert.ThrowsAsync<TerminalSessionValidationException>(act);
+        await service.CloseAsync("viewer-1", "session-signal-invalid");
+    }
+
+    [Fact]
+    public async Task CloseAsync_WhenViewerDoesNotOwnSession_ThrowsForbiddenException()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        using var process = new FakeTerminalProcess(string.Empty);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(process);
+
+        _ = await service.StartAsync("viewer-owner", new TerminalSessionStartRequest("session-owned", Shell.Pwsh));
+        await Task.Delay(100);
+
+        var act = () => service.CloseAsync("viewer-other", "session-owned");
+        await Assert.ThrowsAsync<TerminalSessionForbiddenException>(act);
+
+        await service.CloseAsync("viewer-owner", "session-owned");
     }
 
     private static async Task WaitForEventAsync(SemaphoreSlim signal, int expectedCount)

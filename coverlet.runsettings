@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <Include>[AureTTY*]*,[AureTTY.Core*]*,[AureTTY.Execution*]*,[AureTTY.Contracts*]*,[AureTTY.Protocol*]*</Include>
+          <Exclude>[AureTTY.Linux*]*,[AureTTY.Windows*]*,[Windows.*]*,[MessagePack*]*,[Microsoft.AspNetCore.OpenApi.Generated*]*,[*.Tests]*</Exclude>
+          <ExcludeByFile>**/obj/**,**/Program.cs,**/Cli/CliApp.cs,**/Cli/Handlers/RunServiceCommandHandler.cs,**/AssemblyInfo.cs</ExcludeByFile>
+          <ExcludeByAttribute>GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute,DebuggerNonUserCodeAttribute</ExcludeByAttribute>
+          <UseSourceLink>false</UseSourceLink>
+          <SingleHit>false</SingleHit>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

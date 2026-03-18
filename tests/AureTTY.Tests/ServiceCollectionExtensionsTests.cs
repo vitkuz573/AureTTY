@@ -1,3 +1,4 @@
+using System.Reflection;
 using AureTTY.Execution.Abstractions;
 using AureTTY.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +8,28 @@ namespace AureTTY.Tests;
 
 public sealed class ServiceCollectionExtensionsTests
 {
+    [Fact]
+    public void AddAureTTYTerminalServices_WhenServicesNull_Throws()
+    {
+        var options = new TerminalServiceOptions(
+            PipeName: "pipe-test",
+            PipeToken: "token-test",
+            EnablePipeApi: true,
+            EnableHttpApi: true,
+            HttpListenUrl: "http://127.0.0.1:17850",
+            ApiKey: "token-test");
+
+        Assert.Throws<ArgumentNullException>(() => ServiceCollectionExtensions.AddAureTTYTerminalServices(null!, options));
+    }
+
+    [Fact]
+    public void AddAureTTYTerminalServices_WhenOptionsNull_Throws()
+    {
+        var services = new ServiceCollection();
+
+        Assert.Throws<ArgumentNullException>(() => services.AddAureTTYTerminalServices(null!));
+    }
+
     [Fact]
     public void AddAureTTYTerminalServices_WhenBuildingProvider_ResolvesProcessService()
     {
@@ -56,5 +79,28 @@ public sealed class ServiceCollectionExtensionsTests
 
         Assert.DoesNotContain(hostedServices, hostedService => hostedService is TerminalPipeServer);
         Assert.NotNull(provider.GetRequiredService<HttpTerminalSessionEventPublisher>());
+    }
+
+    [Fact]
+    public void AddLinuxProcessBackend_WhenInvoked_RegistersLinuxImplementations()
+    {
+        var services = new ServiceCollection();
+        var method = typeof(ServiceCollectionExtensions).GetMethod("AddLinuxProcessBackend", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        _ = method!.Invoke(null, [services]);
+
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(ICommandLineProvider) &&
+            descriptor.ImplementationType?.FullName == "AureTTY.Linux.Services.CommandLineProvider");
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(INativeProcessFactory) &&
+            descriptor.ImplementationType?.FullName == "AureTTY.Linux.Services.NativeProcessFactory");
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(INativeProcessOptionsProvider) &&
+            descriptor.ImplementationType?.FullName == "AureTTY.Linux.Services.NativeProcessOptionsProvider");
+        Assert.Contains(services, descriptor =>
+            descriptor.ServiceType == typeof(IScriptProcessFactory) &&
+            descriptor.ImplementationType?.FullName == "AureTTY.Linux.Services.ScriptProcessFactory");
     }
 }

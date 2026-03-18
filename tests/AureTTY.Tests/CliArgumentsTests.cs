@@ -1,3 +1,4 @@
+using System.Reflection;
 using AureTTY.Cli;
 using AureTTY.Protocol;
 using AureTTY.Services;
@@ -65,6 +66,75 @@ public sealed class CliArgumentsTests
     }
 
     [Fact]
+    public void TryCreate_WhenTransportNormalizationFails_ReturnsFalse()
+    {
+        var parseResult = Parse("--transport", "grpc");
+
+        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+
+        Assert.False(parsed);
+        Assert.Null(arguments);
+        Assert.NotNull(error);
+        Assert.Contains("Unsupported --transport value", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryCreate_WhenHttpTransportEnabledAndUrlInvalid_ReturnsFalse()
+    {
+        var parseResult = Parse("--transport", "http", "--http-listen-url", "notaurl");
+
+        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+
+        Assert.False(parsed);
+        Assert.Null(arguments);
+        Assert.NotNull(error);
+        Assert.Contains("Invalid --http-listen-url value", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryNormalizeTransports_WhenNullValues_ReturnsRequiredError()
+    {
+        var (parsed, normalized, error) = TryNormalizeTransports(values: null);
+
+        Assert.False(parsed);
+        Assert.Empty(normalized);
+        Assert.Equal("At least one --transport value is required.", error);
+    }
+
+    [Fact]
+    public void TryNormalizeTransports_WhenValuesContainOnlyWhitespace_ReturnsRequiredError()
+    {
+        var (parsed, normalized, error) = TryNormalizeTransports([" ", "\t"]);
+
+        Assert.False(parsed);
+        Assert.Empty(normalized);
+        Assert.Equal("At least one --transport value is required.", error);
+    }
+
+    [Fact]
+    public void Parse_WhenTransportEnvironmentVariableConfigured_UsesSplitDefaults()
+    {
+        var previous = Environment.GetEnvironmentVariable(CliArguments.TransportsEnvironmentVariable);
+        try
+        {
+            Environment.SetEnvironmentVariable(CliArguments.TransportsEnvironmentVariable, "http;pipe");
+
+            var parseResult = Parse();
+            var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+
+            Assert.True(parsed);
+            Assert.Null(error);
+            Assert.NotNull(arguments);
+            Assert.True(arguments.EnablePipeApi);
+            Assert.True(arguments.EnableHttpApi);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(CliArguments.TransportsEnvironmentVariable, previous);
+        }
+    }
+
+    [Fact]
     public void ToTerminalServiceOptions_WhenArgumentsAreValid_MapsAllProperties()
     {
         var parseResult = Parse(
@@ -102,5 +172,17 @@ public sealed class CliArgumentsTests
         var command = new System.CommandLine.RootCommand();
         CliOptions.AddTo(command);
         return command.Parse(args);
+    }
+
+    private static (bool Parsed, HashSet<string> Normalized, string? Error) TryNormalizeTransports(IEnumerable<string>? values)
+    {
+        var method = typeof(CliArguments).GetMethod("TryNormalizeTransports", BindingFlags.NonPublic | BindingFlags.Static);
+        Assert.NotNull(method);
+
+        var args = new object?[] { values, null, null };
+        var parsed = (bool)method!.Invoke(null, args)!;
+        var normalized = Assert.IsType<HashSet<string>>(args[1]);
+        var error = args[2] as string;
+        return (parsed, normalized, error);
     }
 }

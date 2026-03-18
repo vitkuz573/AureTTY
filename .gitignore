@@ -8,3 +8,6 @@
 .vs/
 
 **/terminal-publish/
+.tools/
+coverage-results*/
+coverage-report*/

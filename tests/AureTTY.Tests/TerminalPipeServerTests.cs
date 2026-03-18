@@ -232,6 +232,96 @@ public sealed class TerminalPipeServerTests
         terminalSessionService.VerifyAll();
     }
 
+    [Fact]
+    public async Task StartAsync_WhenMethodIsMissing_ReturnsErrorResponse()
+    {
+        var pipeName = $"auretty-terminal-tests-{Guid.NewGuid():N}";
+        var token = Guid.NewGuid().ToString("N");
+        var terminalSessionService = new Mock<ITerminalSessionService>(MockBehavior.Strict);
+        terminalSessionService
+            .Setup(service => service.CloseAllSessionsAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var eventPublisher = new PipeTerminalSessionEventPublisher();
+        using var sut = new TerminalPipeServer(
+            new TerminalServiceOptions(pipeName, token),
+            terminalSessionService.Object,
+            eventPublisher,
+            NullLogger<TerminalPipeServer>.Instance);
+
+        using var hostPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+        await sut.StartAsync(timeout.Token);
+        await hostPipe.ConnectAsync(timeout.Token);
+
+        using var reader = CreateReader(hostPipe);
+        await using var writer = CreateWriter(hostPipe);
+        await CompleteHandshakeAsync(reader, writer, token, timeout.Token);
+
+        var requestId = Guid.NewGuid().ToString("N");
+        await WriteMessageAsync(writer, new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = requestId,
+            Method = null,
+            Payload = JsonSerializer.SerializeToElement(new TerminalIpcAck(), JsonOptions)
+        }, timeout.Token);
+
+        var response = await ReadMessageAsync(reader, timeout.Token);
+        Assert.Equal(TerminalIpcMessageTypes.Error, response.Type);
+        Assert.Equal(requestId, response.Id);
+        Assert.Equal("Request method is required.", response.Error);
+
+        await sut.StopAsync(CancellationToken.None);
+        terminalSessionService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task StartAsync_WhenMethodIsUnsupported_ReturnsErrorResponse()
+    {
+        var pipeName = $"auretty-terminal-tests-{Guid.NewGuid():N}";
+        var token = Guid.NewGuid().ToString("N");
+        var terminalSessionService = new Mock<ITerminalSessionService>(MockBehavior.Strict);
+        terminalSessionService
+            .Setup(service => service.CloseAllSessionsAsync(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var eventPublisher = new PipeTerminalSessionEventPublisher();
+        using var sut = new TerminalPipeServer(
+            new TerminalServiceOptions(pipeName, token),
+            terminalSessionService.Object,
+            eventPublisher,
+            NullLogger<TerminalPipeServer>.Instance);
+
+        using var hostPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+        await sut.StartAsync(timeout.Token);
+        await hostPipe.ConnectAsync(timeout.Token);
+
+        using var reader = CreateReader(hostPipe);
+        await using var writer = CreateWriter(hostPipe);
+        await CompleteHandshakeAsync(reader, writer, token, timeout.Token);
+
+        var requestId = Guid.NewGuid().ToString("N");
+        await WriteMessageAsync(writer, new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = requestId,
+            Method = "terminal.unsupported",
+            Payload = JsonSerializer.SerializeToElement(new TerminalIpcAck(), JsonOptions)
+        }, timeout.Token);
+
+        var response = await ReadMessageAsync(reader, timeout.Token);
+        Assert.Equal(TerminalIpcMessageTypes.Error, response.Type);
+        Assert.Equal(requestId, response.Id);
+        Assert.Equal("Unsupported terminal IPC method 'terminal.unsupported'.", response.Error);
+
+        await sut.StopAsync(CancellationToken.None);
+        terminalSessionService.VerifyAll();
+    }
+
     private static StreamReader CreateReader(Stream stream)
     {
         return new StreamReader(stream, new UTF8Encoding(false), detectEncodingFromByteOrderMarks: false, leaveOpen: true);
