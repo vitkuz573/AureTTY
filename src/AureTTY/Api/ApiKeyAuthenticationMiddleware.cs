@@ -1,5 +1,8 @@
 using AureTTY.Services;
+using AureTTY.Api.Models;
+using AureTTY.Serialization;
 using Microsoft.AspNetCore.Http;
+using System.Text.Json;
 
 namespace AureTTY.Api;
 
@@ -31,11 +34,15 @@ public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next)
         }
 
         context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-        await context.Response.WriteAsJsonAsync(new
-        {
-            error = "Unauthorized",
-            message = $"Provide API key via '{TerminalServiceOptions.ApiKeyHeaderName}' header or 'api_key' query parameter."
-        });
+        context.Response.ContentType = "application/json; charset=utf-8";
+        var payload = JsonSerializer.Serialize(
+            new ApiErrorResponse
+            {
+                Error = "Unauthorized",
+                Message = $"Provide API key via '{TerminalServiceOptions.ApiKeyHeaderName}' header or 'api_key' query parameter."
+            },
+            AureTTYJsonSerializerContext.Default.ApiErrorResponse);
+        await context.Response.WriteAsync(payload, context.RequestAborted);
     }
 
     private static bool IsAuthorized(HttpContext context, string expectedApiKey)

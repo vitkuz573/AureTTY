@@ -1,10 +1,12 @@
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Protocol;
+using AureTTY.Serialization;
 
 namespace AureTTY.Services;
 
@@ -14,8 +16,6 @@ public sealed class TerminalPipeServer(
     PipeTerminalSessionEventPublisher eventPublisher,
     ILogger<TerminalPipeServer> logger) : BackgroundService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
     private readonly TerminalServiceOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly ITerminalSessionService _terminalSessionService = terminalSessionService ?? throw new ArgumentNullException(nameof(terminalSessionService));
     private readonly PipeTerminalSessionEventPublisher _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
@@ -99,7 +99,7 @@ public sealed class TerminalPipeServer(
             TerminalIpcMessage? message;
             try
             {
-                message = JsonSerializer.Deserialize<TerminalIpcMessage>(line, JsonOptions);
+                message = JsonSerializer.Deserialize(line, AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
             }
             catch (JsonException ex)
             {
@@ -121,7 +121,7 @@ public sealed class TerminalPipeServer(
     {
         var payload = JsonSerializer.SerializeToElement(
             new TerminalIpcHelloPayload(_options.PipeToken),
-            JsonOptions);
+            AureTTYJsonSerializerContext.Default.TerminalIpcHelloPayload);
 
         await WriteMessageAsync(new TerminalIpcMessage
         {
@@ -144,7 +144,7 @@ public sealed class TerminalPipeServer(
         var line = await _reader.ReadLineAsync(timeout.Token)
                    ?? throw new InvalidOperationException("Host closed IPC stream before hello handshake.");
 
-        var message = JsonSerializer.Deserialize<TerminalIpcMessage>(line, JsonOptions)
+        var message = JsonSerializer.Deserialize(line, AureTTYJsonSerializerContext.Default.TerminalIpcMessage)
                       ?? throw new InvalidOperationException("Host hello message is invalid.");
 
         if (!string.Equals(message.Type, TerminalIpcMessageTypes.Hello, StringComparison.Ordinal))
@@ -152,7 +152,7 @@ public sealed class TerminalPipeServer(
             throw new InvalidOperationException("Expected hello message from host.");
         }
 
-        var payload = DeserializePayload<TerminalIpcHelloPayload>(message)
+        var payload = DeserializePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcHelloPayload)
                       ?? throw new InvalidOperationException("Host hello payload is missing.");
 
         if (!string.Equals(payload.Token, _options.PipeToken, StringComparison.Ordinal))
@@ -174,68 +174,68 @@ public sealed class TerminalPipeServer(
             switch (method)
             {
                 case TerminalIpcMethods.Ping:
-                    return CreateResponse(message, new TerminalIpcAck());
+                    return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
 
                 case TerminalIpcMethods.Start:
                     {
-                        var payload = RequirePayload<TerminalIpcStartRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcStartRequest);
                         var handle = await _terminalSessionService.StartAsync(payload.ViewerId, payload.Request, cancellationToken);
-                        return CreateResponse(message, handle);
+                        return CreateResponse(message, handle, AureTTYJsonSerializerContext.Default.TerminalSessionHandle);
                     }
 
                 case TerminalIpcMethods.Resume:
                     {
-                        var payload = RequirePayload<TerminalIpcResumeRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcResumeRequest);
                         var handle = await _terminalSessionService.ResumeAsync(payload.ViewerId, payload.Request, cancellationToken);
-                        return CreateResponse(message, handle);
+                        return CreateResponse(message, handle, AureTTYJsonSerializerContext.Default.TerminalSessionHandle);
                     }
 
                 case TerminalIpcMethods.SendInput:
                     {
-                        var payload = RequirePayload<TerminalIpcInputRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcInputRequest);
                         await _terminalSessionService.SendInputAsync(payload.ViewerId, payload.Request, cancellationToken);
-                        return CreateResponse(message, new TerminalIpcAck());
+                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
                     }
 
                 case TerminalIpcMethods.GetInputDiagnostics:
                     {
-                        var payload = RequirePayload<TerminalIpcInputDiagnosticsRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcInputDiagnosticsRequest);
                         var diagnostics = await _terminalSessionService.GetInputDiagnosticsAsync(payload.ViewerId, payload.SessionId, cancellationToken);
-                        return CreateResponse(message, diagnostics);
+                        return CreateResponse(message, diagnostics, AureTTYJsonSerializerContext.Default.TerminalSessionInputDiagnostics);
                     }
 
                 case TerminalIpcMethods.Resize:
                     {
-                        var payload = RequirePayload<TerminalIpcResizeRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcResizeRequest);
                         await _terminalSessionService.ResizeAsync(payload.ViewerId, payload.Request, cancellationToken);
-                        return CreateResponse(message, new TerminalIpcAck());
+                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
                     }
 
                 case TerminalIpcMethods.Signal:
                     {
-                        var payload = RequirePayload<TerminalIpcSignalRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcSignalRequest);
                         await _terminalSessionService.SignalAsync(payload.ViewerId, payload.SessionId, payload.Signal, cancellationToken);
-                        return CreateResponse(message, new TerminalIpcAck());
+                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
                     }
 
                 case TerminalIpcMethods.Close:
                     {
-                        var payload = RequirePayload<TerminalIpcCloseRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcCloseRequest);
                         await _terminalSessionService.CloseAsync(payload.ViewerId, payload.SessionId, cancellationToken);
-                        return CreateResponse(message, new TerminalIpcAck());
+                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
                     }
 
                 case TerminalIpcMethods.CloseViewerSessions:
                     {
-                        var payload = RequirePayload<TerminalIpcCloseViewerSessionsRequest>(message);
+                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcCloseViewerSessionsRequest);
                         await _terminalSessionService.CloseViewerSessionsAsync(payload.ViewerId, cancellationToken);
-                        return CreateResponse(message, new TerminalIpcAck());
+                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
                     }
 
                 case TerminalIpcMethods.CloseAllSessions:
                     {
                         await _terminalSessionService.CloseAllSessionsAsync(cancellationToken);
-                        return CreateResponse(message, new TerminalIpcAck());
+                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
                     }
 
                 default:
@@ -249,30 +249,30 @@ public sealed class TerminalPipeServer(
         }
     }
 
-    private static T RequirePayload<T>(TerminalIpcMessage message)
+    private static T RequirePayload<T>(TerminalIpcMessage message, JsonTypeInfo<T> jsonTypeInfo)
     {
-        var payload = DeserializePayload<T>(message);
+        var payload = DeserializePayload(message, jsonTypeInfo);
         return payload ?? throw new InvalidOperationException($"Request payload for '{message.Method}' is missing or invalid.");
     }
 
-    private static T? DeserializePayload<T>(TerminalIpcMessage message)
+    private static T? DeserializePayload<T>(TerminalIpcMessage message, JsonTypeInfo<T> jsonTypeInfo)
     {
         if (message.Payload is not JsonElement payload)
         {
             return default;
         }
 
-        return payload.Deserialize<T>(JsonOptions);
+        return payload.Deserialize(jsonTypeInfo);
     }
 
-    private static TerminalIpcMessage CreateResponse<T>(TerminalIpcMessage request, T payload)
+    private static TerminalIpcMessage CreateResponse<T>(TerminalIpcMessage request, T payload, JsonTypeInfo<T> jsonTypeInfo)
     {
         return new TerminalIpcMessage
         {
             Type = TerminalIpcMessageTypes.Response,
             Id = request.Id,
             Method = request.Method,
-            Payload = JsonSerializer.SerializeToElement(payload, JsonOptions)
+            Payload = JsonSerializer.SerializeToElement(payload, jsonTypeInfo)
         };
     }
 
@@ -293,7 +293,7 @@ public sealed class TerminalPipeServer(
         {
             Type = TerminalIpcMessageTypes.Event,
             Method = TerminalIpcMethods.SessionEvent,
-            Payload = JsonSerializer.SerializeToElement(terminalEvent, JsonOptions)
+            Payload = JsonSerializer.SerializeToElement(terminalEvent, AureTTYJsonSerializerContext.Default.TerminalIpcSessionEvent)
         }, cancellationToken);
     }
 
@@ -304,7 +304,7 @@ public sealed class TerminalPipeServer(
             throw new InvalidOperationException("Terminal IPC writer is not initialized.");
         }
 
-        var line = JsonSerializer.Serialize(message, JsonOptions);
+        var line = JsonSerializer.Serialize(message, AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
 
         await _writeLock.WaitAsync(cancellationToken);
         try

@@ -76,12 +76,13 @@ Windows notes:
 
 - Run with PowerShell 7 (`pwsh`) or Windows PowerShell (`powershell`) for demos.
 - Full Windows transport smoke demo: `demos/windows/run-windows-transport-smoke.ps1`.
+- NativeAOT Windows smoke demo (published binary): `demos/windows/run-windows-aot-smoke.ps1`.
 
 ## Repository Layout
 
 - `src/` runtime and platform projects
 - `tests/` unit tests
-- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`)
+- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`, `demos/windows/run-windows-aot-smoke.ps1`)
 
 ## Test Coverage
 
@@ -97,6 +98,21 @@ dotnet test tests/AureTTY.Tests/AureTTY.Tests.csproj -c Debug --collect:"XPlat C
 dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Debug --collect:"XPlat Code Coverage" --settings coverlet.runsettings --results-directory coverage-results/core
 .\.tools\reportgenerator.exe -reports:"coverage-results\**\coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"HtmlInline;TextSummary;Cobertura;Badges"
 ```
+
+## NativeAOT (Preview)
+
+Windows AOT publish (experimental):
+
+```powershell
+dotnet publish src/AureTTY/AureTTY.csproj -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64-aot
+pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 -AureTTYExecutable artifacts/publish/win-x64-aot/AureTTY.exe
+```
+
+Notes:
+
+- `PublishAot=true` build path switches HTTP routing to AOT-friendly minimal endpoints (no MVC controllers in AOT binary).
+- Pipe transport JSON serialization uses source-generated metadata.
+- OpenAPI document generation is disabled for AOT publish command above.
 
 ## License
 

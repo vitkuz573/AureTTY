@@ -1,5 +1,6 @@
 using System.CommandLine;
 using AureTTY.Api;
+using AureTTY.Serialization;
 using AureTTY.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -67,14 +68,25 @@ public sealed class RunServiceCommandHandler
 
         webBuilder.WebHost.UseUrls(options.HttpListenUrl);
         webBuilder.Services.AddAureTTYTerminalServices(options);
+#if AURETTY_NATIVEAOT
+        webBuilder.Services.ConfigureHttpJsonOptions(static options =>
+        {
+            options.SerializerOptions.TypeInfoResolverChain.Insert(0, AureTTYJsonSerializerContext.Default);
+        });
+#else
         webBuilder.Services.AddControllers();
         webBuilder.Services.AddEndpointsApiExplorer();
         webBuilder.Services.AddOpenApi(TerminalServiceOptions.ApiVersion);
+#endif
 
         var app = webBuilder.Build();
         app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
+#if AURETTY_NATIVEAOT
+        app.MapTerminalHttpEndpoints();
+#else
         app.MapOpenApi();
         app.MapControllers();
+#endif
 
         await app.RunAsync(cancellationToken);
         return 0;

@@ -1,5 +1,7 @@
 using System.Text.Json;
 using AureTTY.Api;
+using AureTTY.Api.Models;
+using AureTTY.Serialization;
 using AureTTY.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,8 +11,6 @@ namespace AureTTY.Controllers;
 [Route(TerminalApiRoutes.ViewerEvents)]
 public sealed class TerminalViewerEventsController(HttpTerminalSessionEventPublisher eventPublisher) : ControllerBase
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
     private readonly HttpTerminalSessionEventPublisher _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
 
     [HttpGet]
@@ -20,7 +20,14 @@ public sealed class TerminalViewerEventsController(HttpTerminalSessionEventPubli
         if (string.IsNullOrWhiteSpace(viewerId))
         {
             Response.StatusCode = StatusCodes.Status400BadRequest;
-            await Response.WriteAsJsonAsync(new { error = "ViewerId is required." }, cancellationToken);
+            Response.ContentType = "application/json; charset=utf-8";
+            var payload = JsonSerializer.Serialize(
+                new ApiErrorResponse
+                {
+                    Error = "ViewerId is required."
+                },
+                AureTTYJsonSerializerContext.Default.ApiErrorResponse);
+            await Response.WriteAsync(payload, cancellationToken);
             return;
         }
 
@@ -34,7 +41,7 @@ public sealed class TerminalViewerEventsController(HttpTerminalSessionEventPubli
 
         await foreach (var terminalEvent in _eventPublisher.StreamViewerEventsAsync(viewerId, cancellationToken))
         {
-            var payload = JsonSerializer.Serialize(terminalEvent, JsonOptions);
+            var payload = JsonSerializer.Serialize(terminalEvent, AureTTYJsonSerializerContext.Default.TerminalSessionEvent);
             await Response.WriteAsync("event: terminal.session\n", cancellationToken);
             await Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
