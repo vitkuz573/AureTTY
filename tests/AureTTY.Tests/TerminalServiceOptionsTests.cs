@@ -11,7 +11,7 @@ public sealed class TerminalServiceOptionsTests
         var args = new[]
         {
             "--pipe-name",
-            "rm-pipe",
+            "auretty-pipe",
             "--pipe-token",
             "token-value"
         };
@@ -21,7 +21,7 @@ public sealed class TerminalServiceOptionsTests
         Assert.True(parsed);
         Assert.Null(error);
         Assert.NotNull(options);
-        Assert.Equal("rm-pipe", options.PipeName);
+        Assert.Equal("auretty-pipe", options.PipeName);
         Assert.Equal("token-value", options.PipeToken);
     }
 
@@ -49,7 +49,7 @@ public sealed class TerminalServiceOptionsTests
         var args = new[]
         {
             "--pipe-name",
-            "rm-pipe"
+            "auretty-pipe"
         };
 
         var parsed = TerminalServiceOptions.TryParse(args, out var options, out var error);
@@ -57,7 +57,7 @@ public sealed class TerminalServiceOptionsTests
         Assert.True(parsed);
         Assert.Null(error);
         Assert.NotNull(options);
-        Assert.Equal("rm-pipe", options.PipeName);
+        Assert.Equal("auretty-pipe", options.PipeName);
         Assert.Equal(TerminalIpcDefaults.PipeToken, options.PipeToken);
     }
 

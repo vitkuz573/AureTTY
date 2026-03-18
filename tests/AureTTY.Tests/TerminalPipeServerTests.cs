@@ -18,7 +18,7 @@ public sealed class TerminalPipeServerTests
     [Fact]
     public async Task StartAsync_WhenPingRequestReceived_ReturnsAckResponse()
     {
-        var pipeName = $"rm-terminal-tests-{Guid.NewGuid():N}";
+        var pipeName = $"auretty-terminal-tests-{Guid.NewGuid():N}";
         var token = Guid.NewGuid().ToString("N");
         var terminalSessionService = new Mock<ITerminalSessionService>(MockBehavior.Strict);
         terminalSessionService
@@ -66,7 +66,7 @@ public sealed class TerminalPipeServerTests
     [Fact]
     public async Task StartAsync_WhenStartRequestReceived_ForwardsToTerminalSessionService()
     {
-        var pipeName = $"rm-terminal-tests-{Guid.NewGuid():N}";
+        var pipeName = $"auretty-terminal-tests-{Guid.NewGuid():N}";
         var token = Guid.NewGuid().ToString("N");
         var expectedHandle = new TerminalSessionHandle("session-42")
         {
@@ -131,7 +131,7 @@ public sealed class TerminalPipeServerTests
     [Fact]
     public async Task StartAsync_WhenTerminalEventPublished_WritesEventToPipe()
     {
-        var pipeName = $"rm-terminal-tests-{Guid.NewGuid():N}";
+        var pipeName = $"auretty-terminal-tests-{Guid.NewGuid():N}";
         var token = Guid.NewGuid().ToString("N");
         var terminalSessionService = new Mock<ITerminalSessionService>(MockBehavior.Strict);
         terminalSessionService
@@ -189,7 +189,7 @@ public sealed class TerminalPipeServerTests
     [Fact]
     public async Task StartAsync_WhenCloseAllSessionsRequestReceived_ForwardsToTerminalSessionService()
     {
-        var pipeName = $"rm-terminal-tests-{Guid.NewGuid():N}";
+        var pipeName = $"auretty-terminal-tests-{Guid.NewGuid():N}";
         var token = Guid.NewGuid().ToString("N");
 
         var terminalSessionService = new Mock<ITerminalSessionService>(MockBehavior.Strict);

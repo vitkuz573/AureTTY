@@ -875,7 +875,7 @@ public sealed class TerminalSessionService(
 
     private static bool IsInputHexLoggingEnabled()
     {
-        var value = Environment.GetEnvironmentVariable("RM_TERMINAL_LOG_INPUT_HEX");
+        var value = Environment.GetEnvironmentVariable("AURETTY_TERMINAL_LOG_INPUT_HEX");
         if (string.IsNullOrWhiteSpace(value))
         {
             return false;

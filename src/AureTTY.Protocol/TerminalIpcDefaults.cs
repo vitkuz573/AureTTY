@@ -2,6 +2,6 @@ namespace AureTTY.Protocol;
 
 public static class TerminalIpcDefaults
 {
-    public const string PipeName = "rm-terminal";
-    public const string PipeToken = "remote-master-terminal";
+    public const string PipeName = "auretty-terminal";
+    public const string PipeToken = "auretty-terminal";
 }
