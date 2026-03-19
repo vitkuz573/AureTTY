@@ -27,6 +27,8 @@ pipe_session_id="${AURETTY_PIPE_SESSION_ID:-demo-pipe-session-$(date +%s)-$RANDO
 log_dir="${AURETTY_SMOKE_LOG_DIR:-/tmp/auretty-demos}"
 mkdir -p "$log_dir"
 server_log_path="${log_dir}/auretty-linux-smoke-server.log"
+auretty_executable="${AURETTY_EXECUTABLE:-}"
+server_pid=""
 
 cleanup() {
   if [[ -n "${server_pid:-}" ]] && kill -0 "$server_pid" >/dev/null 2>&1; then
@@ -36,15 +38,37 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "[linux-smoke] Starting AureTTY (http + pipe)..."
-dotnet run --project src/AureTTY/AureTTY.csproj -f net10.0 -c Debug -- \
-  --transport pipe --transport http \
-  --http-listen-url "$base_url" \
-  --api-key "$api_key" \
-  --pipe-name "$pipe_name" \
-  --pipe-token "$pipe_token" \
-  >"$server_log_path" 2>&1 &
-server_pid=$!
+if [[ -n "$auretty_executable" ]]; then
+  if [[ ! -f "$auretty_executable" ]]; then
+    echo "[linux-smoke] AureTTY executable not found: ${auretty_executable}" >&2
+    exit 1
+  fi
+
+  if [[ ! -x "$auretty_executable" ]]; then
+    echo "[linux-smoke] AureTTY executable is not executable: ${auretty_executable}" >&2
+    exit 1
+  fi
+
+  echo "[linux-smoke] Starting AureTTY executable (http + pipe): ${auretty_executable}"
+  "$auretty_executable" \
+    --transport pipe --transport http \
+    --http-listen-url "$base_url" \
+    --api-key "$api_key" \
+    --pipe-name "$pipe_name" \
+    --pipe-token "$pipe_token" \
+    >"$server_log_path" 2>&1 &
+  server_pid=$!
+else
+  echo "[linux-smoke] Starting AureTTY via dotnet run (http + pipe)..."
+  dotnet run --project src/AureTTY/AureTTY.csproj -f net10.0 -c Debug -- \
+    --transport pipe --transport http \
+    --http-listen-url "$base_url" \
+    --api-key "$api_key" \
+    --pipe-name "$pipe_name" \
+    --pipe-token "$pipe_token" \
+    >"$server_log_path" 2>&1 &
+  server_pid=$!
+fi
 
 echo "[linux-smoke] Waiting for health endpoint..."
 for _ in {1..120}; do

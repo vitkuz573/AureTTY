@@ -82,11 +82,15 @@ Windows notes:
 - Full Windows transport smoke demo: `demos/windows/run-windows-transport-smoke.ps1`.
 - NativeAOT Windows smoke demo (published binary): `demos/windows/run-windows-aot-smoke.ps1`.
 
+Linux NativeAOT notes:
+
+- NativeAOT Linux smoke demo (published binary): `demos/linux/run-linux-aot-smoke.sh`.
+
 ## Repository Layout
 
 - `src/` runtime and platform projects
 - `tests/` unit tests
-- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`, `demos/windows/run-windows-aot-smoke.ps1`)
+- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/linux/run-linux-aot-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`, `demos/windows/run-windows-aot-smoke.ps1`)
 
 ## Test Coverage
 
@@ -112,11 +116,18 @@ dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x
 pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 -AureTTYExecutable artifacts/publish/win-x64-aot/AureTTY.exe
 ```
 
+Linux AOT publish (experimental):
+
+```bash
+dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64-aot
+bash demos/linux/run-linux-aot-smoke.sh
+```
+
 Notes:
 
 - `PublishAot=true` build path switches HTTP routing to AOT-friendly minimal endpoints (no MVC controllers in AOT binary).
 - Pipe transport JSON serialization uses source-generated metadata.
-- OpenAPI document generation is disabled for AOT publish command above.
+- OpenAPI document generation is disabled for AOT publish commands above.
 
 ## License
 

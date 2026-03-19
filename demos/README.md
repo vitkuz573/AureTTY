@@ -30,6 +30,15 @@ The smoke script:
 - runs the pipe demo,
 - verifies that all sessions are cleaned up.
 
+## Run Full Linux NativeAOT Smoke (HTTP + Pipe)
+
+```bash
+dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64-aot
+bash demos/linux/run-linux-aot-smoke.sh
+```
+
+The AOT smoke script runs the same checks as the standard Linux smoke, but starts a published NativeAOT binary.
+
 ## Run Full Windows Smoke (HTTP + Pipe)
 
 ```powershell

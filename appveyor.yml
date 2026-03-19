@@ -31,6 +31,7 @@ build_script:
   - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\win-x64'
   - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\linux-x64'
   - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\win-x64-aot'
+  - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\linux-x64-aot'
   - ps: |
       $ErrorActionPreference = "Stop"
       New-Item -ItemType Directory -Path artifacts -Force | Out-Null
@@ -39,10 +40,12 @@ build_script:
       $winArchive = "artifacts/AureTTY-$tag-win-x64.zip"
       $linuxArchive = "artifacts/AureTTY-$tag-linux-x64.zip"
       $winAotArchive = "artifacts/AureTTY-$tag-win-x64-aot.zip"
+      $linuxAotArchive = "artifacts/AureTTY-$tag-linux-x64-aot.zip"
 
       Compress-Archive -Path "artifacts/publish/win-x64/*" -DestinationPath $winArchive -Force
       Compress-Archive -Path "artifacts/publish/linux-x64/*" -DestinationPath $linuxArchive -Force
       Compress-Archive -Path "artifacts/publish/win-x64-aot/*" -DestinationPath $winAotArchive -Force
+      Compress-Archive -Path "artifacts/publish/linux-x64-aot/*" -DestinationPath $linuxAotArchive -Force
 
       Get-FileHash $winArchive -Algorithm SHA256 | ForEach-Object {
           "$($_.Hash)  $(Split-Path -Leaf $winArchive)"
@@ -56,6 +59,10 @@ build_script:
           "$($_.Hash)  $(Split-Path -Leaf $winAotArchive)"
       } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64-aot.sha256"
 
+      Get-FileHash $linuxAotArchive -Algorithm SHA256 | ForEach-Object {
+          "$($_.Hash)  $(Split-Path -Leaf $linuxAotArchive)"
+      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-aot.sha256"
+
 artifacts:
   - path: artifacts\AureTTY-*-win-x64.zip
     name: auretty-win-x64
@@ -63,12 +70,16 @@ artifacts:
     name: auretty-linux-x64
   - path: artifacts\AureTTY-*-win-x64-aot.zip
     name: auretty-win-x64-aot
+  - path: artifacts\AureTTY-*-linux-x64-aot.zip
+    name: auretty-linux-x64-aot
   - path: artifacts\AureTTY-*-win-x64.sha256
     name: auretty-win-x64-sha256
   - path: artifacts\AureTTY-*-linux-x64.sha256
     name: auretty-linux-x64-sha256
   - path: artifacts\AureTTY-*-win-x64-aot.sha256
     name: auretty-win-x64-aot-sha256
+  - path: artifacts\AureTTY-*-linux-x64-aot.sha256
+    name: auretty-linux-x64-aot-sha256
 
 deploy_script:
   - ps: |
@@ -139,7 +150,7 @@ deploy_script:
       $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
       Write-Host "Release upload context: Repo='$repo' Tag='$tag' ReleaseId='$($release.id)'."
       Write-Host "Upload base URL: $uploadUrl"
-      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot)\.(zip|sha256)$'
+      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot)\.(zip|sha256)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
       if (-not $assets) {
