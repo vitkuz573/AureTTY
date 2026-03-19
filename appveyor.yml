@@ -15,7 +15,7 @@ environment:
 
 build_script:
   - ps: |
-      $ErrorActionPreference = "Stop"
+      $ErrorActionPreference = if ($IsWindows) { "Continue" } else { "Stop" }
       $dotnet = "dotnet"
 
       if ($IsWindows) {
