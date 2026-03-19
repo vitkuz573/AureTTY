@@ -1,6 +1,8 @@
 using AureTTY.Execution.Abstractions;
 using AureTTY.Services;
+#if WINDOWS
 using AureTTY.Windows.Abstractions;
+#endif
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -33,6 +35,11 @@ public sealed class ServiceCollectionExtensionsTests
     [Fact]
     public void AddAureTTYTerminalServices_WhenBuildingProvider_ResolvesProcessService()
     {
+        if (!IsCurrentHostCompatibleWithTarget())
+        {
+            return;
+        }
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddAureTTYTerminalServices(new TerminalServiceOptions(
@@ -59,6 +66,11 @@ public sealed class ServiceCollectionExtensionsTests
     [Fact]
     public void AddAureTTYTerminalServices_WhenPipeApiIsDisabled_DoesNotRegisterPipeServer()
     {
+        if (!IsCurrentHostCompatibleWithTarget())
+        {
+            return;
+        }
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddAureTTYTerminalServices(new TerminalServiceOptions(
@@ -82,8 +94,13 @@ public sealed class ServiceCollectionExtensionsTests
     }
 
     [Fact]
-    public void AddAureTTYTerminalServices_WhenBuildingProvider_RegistersWindowsBackendServices()
+    public void AddAureTTYTerminalServices_WhenBuildingProvider_RegistersPlatformBackendServices()
     {
+        if (!IsCurrentHostCompatibleWithTarget())
+        {
+            return;
+        }
+
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddAureTTYTerminalServices(new TerminalServiceOptions(
@@ -100,9 +117,21 @@ public sealed class ServiceCollectionExtensionsTests
             ValidateScopes = true
         });
 
+#if WINDOWS
         Assert.NotNull(provider.GetRequiredService<ISessionService>());
+#endif
         Assert.NotNull(provider.GetRequiredService<INativeProcessFactory>());
         Assert.NotNull(provider.GetRequiredService<INativeProcessOptionsProvider>());
         Assert.NotNull(provider.GetRequiredService<ICommandLineProvider>());
+        Assert.NotNull(provider.GetRequiredService<IScriptProcessFactory>());
+    }
+
+    private static bool IsCurrentHostCompatibleWithTarget()
+    {
+#if WINDOWS
+        return OperatingSystem.IsWindows();
+#else
+        return OperatingSystem.IsLinux();
+#endif
     }
 }

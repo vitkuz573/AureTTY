@@ -15,7 +15,15 @@ public sealed class RunServiceCommandHandler
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
-        if (!CliArguments.TryCreate(parseResult, out var cliArguments, out var parseError) || cliArguments is null)
+        var openApiApplicationName = parseResult.GetValue(CliOptions.ApplicationName);
+        var isOpenApiDocumentGeneration = !string.IsNullOrWhiteSpace(openApiApplicationName);
+
+        if (!CliArguments.TryCreate(
+                parseResult,
+                allowMissingSecrets: isOpenApiDocumentGeneration,
+                out var cliArguments,
+                out var parseError) ||
+            cliArguments is null)
         {
             using var loggerFactory = LoggerFactory.Create(static logging =>
             {
@@ -30,15 +38,15 @@ public sealed class RunServiceCommandHandler
         }
 
         var options = cliArguments.ToTerminalServiceOptions();
-        var openApiApplicationName = parseResult.GetValue(CliOptions.ApplicationName);
-        var isOpenApiDocumentGeneration = !string.IsNullOrWhiteSpace(openApiApplicationName);
         if (isOpenApiDocumentGeneration)
         {
             options = options with
             {
                 EnablePipeApi = false,
                 EnableHttpApi = true,
-                HttpListenUrl = TerminalServiceOptions.DefaultHttpListenUrl
+                HttpListenUrl = TerminalServiceOptions.DefaultHttpListenUrl,
+                ApiKey = "openapi-generation",
+                PipeToken = "openapi-generation"
             };
         }
 

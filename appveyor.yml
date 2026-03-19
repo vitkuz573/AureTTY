@@ -70,6 +70,11 @@ build_script:
           }
       }
       else {
+          & $dotnet test tests/AureTTY.Tests/AureTTY.Tests.csproj -c Release 2>&1
+          if ($LASTEXITCODE -ne 0) {
+              throw "dotnet test AureTTY.Tests failed with exit code $LASTEXITCODE."
+          }
+
           & $dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Release 2>&1
           if ($LASTEXITCODE -ne 0) {
               throw "dotnet test AureTTY.Core.Tests failed with exit code $LASTEXITCODE."

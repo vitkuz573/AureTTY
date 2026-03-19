@@ -30,7 +30,10 @@ public sealed class TerminalHealthController(TerminalServiceOptions options) : C
         {
             Status = "ok",
             ApiVersion = TerminalServiceOptions.ApiVersion,
-            Transports = [.. transports]
+            Transports = [.. transports],
+            AllowApiKeyQueryParameter = _options.AllowApiKeyQueryParameter,
+            MaxConcurrentSessions = _options.RuntimeLimits.MaxConcurrentSessions,
+            MaxSessionsPerViewer = _options.RuntimeLimits.MaxSessionsPerViewer
         });
     }
 }

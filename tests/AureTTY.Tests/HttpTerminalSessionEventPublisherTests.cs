@@ -68,4 +68,53 @@ public sealed class HttpTerminalSessionEventPublisherTests
         cancellationTokenSource.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await streamTask);
     }
+
+    [Fact]
+    public async Task StreamViewerEventsAsync_WhenSubscriberIsSlow_EmitsDroppedNotification()
+    {
+        var options = new TerminalServiceOptions(
+            PipeName: "pipe-test",
+            PipeToken: "pipe-token",
+            EnablePipeApi: false,
+            EnableHttpApi: true,
+            HttpListenUrl: "http://127.0.0.1:17850",
+            ApiKey: "api-key")
+        {
+            SseSubscriptionBufferCapacity = 1
+        };
+        var metrics = new AureTTY.Core.Services.TerminalMetrics();
+        var sut = new HttpTerminalSessionEventPublisher(options, metrics);
+
+        using var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var enumerator = sut.StreamViewerEventsAsync("viewer-1", cancellationTokenSource.Token)
+            .GetAsyncEnumerator(cancellationTokenSource.Token);
+
+        var firstMoveTask = enumerator.MoveNextAsync().AsTask();
+        await Task.Delay(100, cancellationTokenSource.Token);
+
+        await sut.SendTerminalSessionEventAsync(
+            "viewer-1",
+            new TerminalSessionEvent("session-1", TerminalSessionEventType.Output)
+            {
+                Text = "event-1"
+            });
+        Assert.True(await firstMoveTask.WaitAsync(cancellationTokenSource.Token));
+        Assert.Equal(TerminalSessionEventType.Output, enumerator.Current.EventType);
+
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            await sut.SendTerminalSessionEventAsync(
+                "viewer-1",
+                new TerminalSessionEvent("session-1", TerminalSessionEventType.Output)
+                {
+                    Text = $"event-overflow-{attempt}"
+                });
+        }
+
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.Equal(TerminalSessionEventType.Dropped, enumerator.Current.EventType);
+
+        Assert.True(await enumerator.MoveNextAsync());
+        Assert.Equal(TerminalSessionEventType.Output, enumerator.Current.EventType);
+    }
 }

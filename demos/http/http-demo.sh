@@ -12,7 +12,7 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 base_url="${AURETTY_BASE_URL:-http://127.0.0.1:17850}"
-api_key="${AURETTY_API_KEY:-auretty-terminal}"
+api_key="${AURETTY_API_KEY:-auretty-terminal-token}"
 viewer_id="${AURETTY_VIEWER_ID:-demo-http-$(date +%s)}"
 session_id="${AURETTY_SESSION_ID:-demo-http-session-$(date +%s)-$RANDOM}"
 

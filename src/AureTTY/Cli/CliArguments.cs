@@ -1,4 +1,5 @@
 using System.CommandLine;
+using AureTTY.Contracts.Configuration;
 using AureTTY.Protocol;
 using AureTTY.Services;
 
@@ -10,20 +11,33 @@ public sealed record CliArguments(
     bool EnablePipeApi,
     bool EnableHttpApi,
     string HttpListenUrl,
-    string ApiKey)
+    string ApiKey,
+    TerminalRuntimeLimits RuntimeLimits,
+    int SseSubscriptionBufferCapacity,
+    bool AllowApiKeyQueryParameter)
 {
     public const string PipeNameEnvironmentVariable = "AURETTY_PIPE_NAME";
     public const string PipeTokenEnvironmentVariable = "AURETTY_PIPE_TOKEN";
     public const string ApiKeyEnvironmentVariable = "AURETTY_API_KEY";
     public const string HttpListenUrlEnvironmentVariable = "AURETTY_HTTP_LISTEN_URL";
     public const string TransportsEnvironmentVariable = "AURETTY_TRANSPORTS";
+    public const string MaxConcurrentSessionsEnvironmentVariable = "AURETTY_MAX_CONCURRENT_SESSIONS";
+    public const string MaxSessionsPerViewerEnvironmentVariable = "AURETTY_MAX_SESSIONS_PER_VIEWER";
+    public const string ReplayBufferCapacityEnvironmentVariable = "AURETTY_REPLAY_BUFFER_CAPACITY";
+    public const string MaxPendingInputChunksEnvironmentVariable = "AURETTY_MAX_PENDING_INPUT_CHUNKS";
+    public const string SseSubscriptionBufferCapacityEnvironmentVariable = "AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY";
+    public const string AllowApiKeyQueryEnvironmentVariable = "AURETTY_ALLOW_API_KEY_QUERY";
 
     private const string PipeTransport = "pipe";
     private const string HttpTransport = "http";
 
     private static readonly string[] DefaultTransportNames = [PipeTransport, HttpTransport];
 
-    public static bool TryCreate(ParseResult parseResult, out CliArguments? arguments, out string? error)
+    public static bool TryCreate(
+        ParseResult parseResult,
+        bool allowMissingSecrets,
+        out CliArguments? arguments,
+        out string? error)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
@@ -45,15 +59,49 @@ public sealed record CliArguments(
         var pipeToken = parseResult.GetValue(CliOptions.PipeToken);
         var httpListenUrl = parseResult.GetValue(CliOptions.HttpListenUrl);
         var apiKey = parseResult.GetValue(CliOptions.ApiKey);
+        var maxConcurrentSessions = parseResult.GetValue(CliOptions.MaxConcurrentSessions);
+        var maxSessionsPerViewer = parseResult.GetValue(CliOptions.MaxSessionsPerViewer);
+        var replayBufferCapacity = parseResult.GetValue(CliOptions.ReplayBufferCapacity);
+        var maxPendingInputChunks = parseResult.GetValue(CliOptions.MaxPendingInputChunks);
+        var sseSubscriptionBufferCapacity = parseResult.GetValue(CliOptions.SseSubscriptionBufferCapacity);
+        var allowApiKeyQueryParameter = parseResult.GetValue(CliOptions.AllowApiKeyQueryParameter);
 
         pipeName = string.IsNullOrWhiteSpace(pipeName) ? TerminalIpcDefaults.PipeName : pipeName.Trim();
-        pipeToken = string.IsNullOrWhiteSpace(pipeToken) ? TerminalIpcDefaults.PipeToken : pipeToken.Trim();
+        pipeToken = string.IsNullOrWhiteSpace(pipeToken) ? string.Empty : pipeToken.Trim();
         httpListenUrl = string.IsNullOrWhiteSpace(httpListenUrl) ? TerminalServiceOptions.DefaultHttpListenUrl : httpListenUrl.Trim();
-        apiKey = string.IsNullOrWhiteSpace(apiKey) ? pipeToken : apiKey.Trim();
+        apiKey = string.IsNullOrWhiteSpace(apiKey) ? string.Empty : apiKey.Trim();
 
         if (enableHttpApi && !IsValidHttpListenUrl(httpListenUrl))
         {
             error = $"Invalid --http-listen-url value '{httpListenUrl}'. Use absolute http:// or https:// URL.";
+            return false;
+        }
+
+        if (!allowMissingSecrets && enablePipeApi && string.IsNullOrWhiteSpace(pipeToken))
+        {
+            error = "Pipe transport is enabled, but --pipe-token (or AURETTY_PIPE_TOKEN) is missing.";
+            return false;
+        }
+
+        if (!allowMissingSecrets && enableHttpApi && string.IsNullOrWhiteSpace(apiKey))
+        {
+            error = "HTTP transport is enabled, but --api-key (or AURETTY_API_KEY) is missing.";
+            return false;
+        }
+
+        var runtimeLimits = new TerminalRuntimeLimits(
+            maxConcurrentSessions,
+            maxSessionsPerViewer,
+            replayBufferCapacity,
+            maxPendingInputChunks);
+
+        try
+        {
+            runtimeLimits = runtimeLimits.Validate();
+        }
+        catch (ArgumentOutOfRangeException ex)
+        {
+            error = ex.Message;
             return false;
         }
 
@@ -63,7 +111,10 @@ public sealed record CliArguments(
             EnablePipeApi: enablePipeApi,
             EnableHttpApi: enableHttpApi,
             HttpListenUrl: httpListenUrl,
-            ApiKey: apiKey);
+            ApiKey: apiKey,
+            RuntimeLimits: runtimeLimits,
+            SseSubscriptionBufferCapacity: sseSubscriptionBufferCapacity,
+            AllowApiKeyQueryParameter: allowApiKeyQueryParameter);
         return true;
     }
 
@@ -75,7 +126,12 @@ public sealed record CliArguments(
             EnablePipeApi,
             EnableHttpApi,
             HttpListenUrl,
-            ApiKey);
+            ApiKey)
+        {
+            RuntimeLimits = RuntimeLimits,
+            SseSubscriptionBufferCapacity = SseSubscriptionBufferCapacity,
+            AllowApiKeyQueryParameter = AllowApiKeyQueryParameter
+        };
     }
 
     internal static string[] GetTransportDefaultsFromEnvironment()
@@ -140,5 +196,32 @@ public sealed record CliArguments(
 
         return string.Equals(uri.Scheme, "http", StringComparison.OrdinalIgnoreCase)
                || string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase);
+    }
+
+    internal static int GetDefaultIntFromEnvironment(string envName, int fallback)
+    {
+        var configured = Environment.GetEnvironmentVariable(envName);
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return fallback;
+        }
+
+        return int.TryParse(configured.Trim(), out var parsed)
+            ? parsed
+            : fallback;
+    }
+
+    internal static bool GetDefaultBoolFromEnvironment(string envName, bool fallback)
+    {
+        var configured = Environment.GetEnvironmentVariable(envName);
+        if (string.IsNullOrWhiteSpace(configured))
+        {
+            return fallback;
+        }
+
+        return string.Equals(configured, "1", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(configured, "true", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(configured, "yes", StringComparison.OrdinalIgnoreCase)
+               || string.Equals(configured, "on", StringComparison.OrdinalIgnoreCase);
     }
 }

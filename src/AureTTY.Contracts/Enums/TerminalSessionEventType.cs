@@ -4,6 +4,7 @@ public enum TerminalSessionEventType
 {
     Started,
     Output,
+    Dropped,
     Closed,
     Failed
 }

@@ -25,21 +25,30 @@ public sealed class ExecutionServicesTests
     [Fact]
     public void ShellLaunchPlanner_WhenUsingWindowsShells_ProducesExpectedStartInfo()
     {
-        var cmd = ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.Cmd, "C:\\");
-        var powershell = ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.PowerShell, null);
         var pwsh = ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.Pwsh, null);
         var bash = ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.Bash, null);
 
-        Assert.Equal("cmd", cmd.FileName);
-        Assert.Contains("/Q", cmd.ArgumentList);
-        Assert.Equal("C:\\", cmd.WorkingDirectory);
-        Assert.True(cmd.RedirectStandardOutput);
-        Assert.True(cmd.RedirectStandardInput);
+        if (OperatingSystem.IsWindows())
+        {
+            var cmd = ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.Cmd, "C:\\");
+            var powershell = ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.PowerShell, null);
 
-        Assert.Equal("powershell", powershell.FileName);
-        Assert.Contains("-NoLogo", powershell.ArgumentList);
-        Assert.Contains("-NoProfile", powershell.ArgumentList);
-        Assert.Contains("Bypass", powershell.ArgumentList);
+            Assert.Equal("cmd", cmd.FileName);
+            Assert.Contains("/Q", cmd.ArgumentList);
+            Assert.Equal("C:\\", cmd.WorkingDirectory);
+            Assert.True(cmd.RedirectStandardOutput);
+            Assert.True(cmd.RedirectStandardInput);
+
+            Assert.Equal("powershell", powershell.FileName);
+            Assert.Contains("-NoLogo", powershell.ArgumentList);
+            Assert.Contains("-NoProfile", powershell.ArgumentList);
+            Assert.Contains("Bypass", powershell.ArgumentList);
+        }
+        else
+        {
+            Assert.Throws<InvalidOperationException>(() => ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.Cmd, "/"));
+            Assert.Throws<InvalidOperationException>(() => ShellLaunchPlanner.BuildInteractiveShellStartInfo(Shell.PowerShell, "/"));
+        }
 
         Assert.Equal("pwsh", pwsh.FileName);
         Assert.Contains("-NoLogo", pwsh.ArgumentList);
@@ -86,12 +95,8 @@ public sealed class ExecutionServicesTests
         using var cancellationTokenSource = new CancellationTokenSource();
         cancellationTokenSource.Cancel();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => wrapper.StartAsync(new ProcessStartInfo
-        {
-            FileName = "cmd",
-            Arguments = "/c exit 0",
-            UseShellExecute = false
-        }, cancellationTokenSource.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            wrapper.StartAsync(CreateExitProcessStartInfo(), cancellationTokenSource.Token));
     }
 
     [Fact]
@@ -101,18 +106,7 @@ public sealed class ExecutionServicesTests
         var commandLineProvider = new Mock<ICommandLineProvider>(MockBehavior.Strict);
         using var wrapper = new ProcessWrapper(process, commandLineProvider.Object);
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "cmd",
-            Arguments = "/c exit 0",
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-
-        await wrapper.StartAsync(startInfo);
+        await wrapper.StartAsync(CreateExitProcessStartInfo());
         Assert.True(wrapper.WaitForExit(5000));
         await wrapper.WaitForExitAsync(CancellationToken.None);
     }
@@ -124,16 +118,7 @@ public sealed class ExecutionServicesTests
         var commandLineProvider = new Mock<ICommandLineProvider>(MockBehavior.Strict);
         using var wrapper = new ProcessWrapper(process, commandLineProvider.Object);
 
-        await wrapper.StartAsync(new ProcessStartInfo
-        {
-            FileName = "cmd",
-            Arguments = "/c ping 127.0.0.1 -n 5 > nul",
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        });
+        await wrapper.StartAsync(CreateLongRunningProcessStartInfo());
 
         Assert.Equal(process.Id, wrapper.Id);
         Assert.Equal(process.SessionId, wrapper.SessionId);
@@ -157,18 +142,7 @@ public sealed class ExecutionServicesTests
         var commandLineProvider = new Mock<ICommandLineProvider>(MockBehavior.Strict);
         using var wrapper = new ProcessWrapper(process, commandLineProvider.Object);
 
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "cmd",
-            Arguments = "/c ping 127.0.0.1 -n 10 > nul",
-            UseShellExecute = false,
-            RedirectStandardInput = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true
-        };
-
-        await wrapper.StartAsync(startInfo);
+        await wrapper.StartAsync(CreateLongRunningProcessStartInfo());
         Assert.False(wrapper.HasExited);
 
         wrapper.Kill(entireProcessTree: true);
@@ -182,16 +156,7 @@ public sealed class ExecutionServicesTests
         var commandLineProvider = new Mock<ICommandLineProvider>(MockBehavior.Strict);
         var wrapper = new ProcessWrapper(process, commandLineProvider.Object);
 
-        await wrapper.StartAsync(new ProcessStartInfo
-        {
-            FileName = "cmd",
-            Arguments = "/c exit 0",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            RedirectStandardInput = true,
-            CreateNoWindow = true
-        });
+        await wrapper.StartAsync(CreateExitProcessStartInfo());
         await wrapper.WaitForExitAsync();
 
         wrapper.Dispose();
@@ -236,5 +201,61 @@ public sealed class ExecutionServicesTests
         Assert.NotEmpty(all);
         Assert.NotNull(byName);
         processWrapperFactory.Verify(factory => factory.Create(It.IsAny<Process>()), Times.AtLeast(2));
+    }
+
+    private static ProcessStartInfo CreateExitProcessStartInfo()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new ProcessStartInfo
+            {
+                FileName = "cmd",
+                Arguments = "/c exit 0",
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+        }
+
+        return new ProcessStartInfo
+        {
+            FileName = "/bin/sh",
+            Arguments = "-lc \"exit 0\"",
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+    }
+
+    private static ProcessStartInfo CreateLongRunningProcessStartInfo()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new ProcessStartInfo
+            {
+                FileName = "cmd",
+                Arguments = "/c ping 127.0.0.1 -n 10 > nul",
+                UseShellExecute = false,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+        }
+
+        return new ProcessStartInfo
+        {
+            FileName = "/bin/sh",
+            Arguments = "-lc \"sleep 10\"",
+            UseShellExecute = false,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
     }
 }

@@ -1,4 +1,6 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
+using AureTTY.Contracts.Configuration;
 using AureTTY.Services;
 
 namespace AureTTY.Cli;
@@ -26,6 +28,31 @@ public static class CliOptions
         "--api-key",
         "HTTP API key sent via X-AureTTY-Key header.");
 
+    public static readonly Option<int> MaxConcurrentSessions = CreateInt(
+        "--max-concurrent-sessions",
+        "Global upper bound for active terminal sessions.");
+
+    public static readonly Option<int> MaxSessionsPerViewer = CreateInt(
+        "--max-sessions-per-viewer",
+        "Per-viewer upper bound for active terminal sessions.");
+
+    public static readonly Option<int> ReplayBufferCapacity = CreateInt(
+        "--replay-buffer-capacity",
+        "Replay buffer size (terminal output events per session).");
+
+    public static readonly Option<int> MaxPendingInputChunks = CreateInt(
+        "--max-pending-input-chunks",
+        "Maximum pending out-of-order input chunks per session.");
+
+    public static readonly Option<int> SseSubscriptionBufferCapacity = CreateInt(
+        "--sse-subscription-buffer-capacity",
+        "SSE buffered events per subscriber.");
+
+    public static readonly Option<bool> AllowApiKeyQueryParameter = new("--allow-api-key-query")
+    {
+        Description = "Allows passing API key via query parameter 'api_key' (disabled by default)."
+    };
+
     public static readonly Option<string?> ApplicationName = new("--applicationName")
     {
         Hidden = true
@@ -38,6 +65,24 @@ public static class CliOptions
         HttpListenUrl.DefaultValueFactory = _ => Environment.GetEnvironmentVariable(CliArguments.HttpListenUrlEnvironmentVariable);
         ApiKey.DefaultValueFactory = _ => Environment.GetEnvironmentVariable(CliArguments.ApiKeyEnvironmentVariable);
         Transports.DefaultValueFactory = _ => CliArguments.GetTransportDefaultsFromEnvironment();
+        MaxConcurrentSessions.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.MaxConcurrentSessionsEnvironmentVariable,
+            TerminalRuntimeLimits.DefaultMaxConcurrentSessions);
+        MaxSessionsPerViewer.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.MaxSessionsPerViewerEnvironmentVariable,
+            TerminalRuntimeLimits.DefaultMaxSessionsPerViewer);
+        ReplayBufferCapacity.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.ReplayBufferCapacityEnvironmentVariable,
+            TerminalRuntimeLimits.DefaultReplayBufferCapacity);
+        MaxPendingInputChunks.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.MaxPendingInputChunksEnvironmentVariable,
+            TerminalRuntimeLimits.DefaultMaxPendingInputChunks);
+        SseSubscriptionBufferCapacity.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.SseSubscriptionBufferCapacityEnvironmentVariable,
+            TerminalServiceOptions.DefaultSseSubscriptionBufferCapacity);
+        AllowApiKeyQueryParameter.DefaultValueFactory = _ => CliArguments.GetDefaultBoolFromEnvironment(
+            CliArguments.AllowApiKeyQueryEnvironmentVariable,
+            fallback: false);
 
         Transports.Validators.Add(result =>
         {
@@ -65,6 +110,12 @@ public static class CliOptions
 
             result.AddError($"Invalid --http-listen-url value '{value}'. Use absolute http:// or https:// URL.");
         });
+
+        MaxConcurrentSessions.Validators.Add(static result => ValidatePositiveInt(result, nameof(MaxConcurrentSessions)));
+        MaxSessionsPerViewer.Validators.Add(static result => ValidatePositiveInt(result, nameof(MaxSessionsPerViewer)));
+        ReplayBufferCapacity.Validators.Add(static result => ValidatePositiveInt(result, nameof(ReplayBufferCapacity)));
+        MaxPendingInputChunks.Validators.Add(static result => ValidatePositiveInt(result, nameof(MaxPendingInputChunks)));
+        SseSubscriptionBufferCapacity.Validators.Add(static result => ValidatePositiveInt(result, nameof(SseSubscriptionBufferCapacity)));
     }
 
     public static void AddTo(Command command)
@@ -76,6 +127,12 @@ public static class CliOptions
         command.Add(Transports);
         command.Add(HttpListenUrl);
         command.Add(ApiKey);
+        command.Add(MaxConcurrentSessions);
+        command.Add(MaxSessionsPerViewer);
+        command.Add(ReplayBufferCapacity);
+        command.Add(MaxPendingInputChunks);
+        command.Add(SseSubscriptionBufferCapacity);
+        command.Add(AllowApiKeyQueryParameter);
         command.Add(ApplicationName);
     }
 
@@ -98,5 +155,24 @@ public static class CliOptions
         option.AllowMultipleArgumentsPerToken = true;
         option.DefaultValueFactory = _ => [];
         return option;
+    }
+
+    private static Option<int> CreateInt(string name, string description)
+    {
+        return new Option<int>(name)
+        {
+            Description = description
+        };
+    }
+
+    private static void ValidatePositiveInt(OptionResult result, string optionName)
+    {
+        var value = result.GetValueOrDefault<int>();
+        if (value > 0)
+        {
+            return;
+        }
+
+        result.AddError($"{optionName} must be greater than zero.");
     }
 }

@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using AureTTY.Contracts.Abstractions;
+using AureTTY.Contracts.Configuration;
 using AureTTY.Contracts.DTOs;
 using AureTTY.Contracts.Enums;
 using AureTTY.Contracts.Exceptions;
@@ -15,17 +16,16 @@ namespace AureTTY.Core.Services;
 public sealed class TerminalSessionService(
     IScriptProcessFactory processFactory,
     ITerminalSessionEventPublisher eventPublisher,
+    TerminalRuntimeLimits runtimeLimits,
+    TerminalMetrics metrics,
     ILogger<TerminalSessionService> logger) : ITerminalSessionService
 {
-    private const int MaxConcurrentSessions = 8;
     private const int OutputReadBufferSize = 1024;
-    private const int ReplayBufferCapacity = 2048;
     private const int ActiveSessionSnapshotLimit = 8;
     private static readonly TimeSpan OutputPumpDrainTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan OutputPumpDrainTimeoutOnClose = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan OutputPumpForcedCloseTimeout = TimeSpan.FromMilliseconds(500);
     private static readonly TimeSpan ProcessExitAfterCloseTimeout = TimeSpan.FromSeconds(2);
-    private const int MaxPendingInputChunks = 8192;
     private const int InputDiagnosticsCapacity = 256;
     private static readonly bool EnableInputHexLogging = IsInputHexLoggingEnabled();
     private const int InputLogPreviewCharLimit = 96;
@@ -33,6 +33,8 @@ public sealed class TerminalSessionService(
 
     private readonly IScriptProcessFactory _processFactory = processFactory ?? throw new ArgumentNullException(nameof(processFactory));
     private readonly ITerminalSessionEventPublisher _eventPublisher = eventPublisher ?? throw new ArgumentNullException(nameof(eventPublisher));
+    private readonly TerminalRuntimeLimits _runtimeLimits = (runtimeLimits ?? throw new ArgumentNullException(nameof(runtimeLimits))).Validate();
+    private readonly TerminalMetrics _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     private readonly ILogger<TerminalSessionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, TerminalSessionInstance> _sessions = new(StringComparer.OrdinalIgnoreCase);
 
@@ -72,17 +74,31 @@ public sealed class TerminalSessionService(
         ArgumentNullException.ThrowIfNull(request);
 
         var activeSessionCount = GetActiveSessionCount();
-        if (activeSessionCount >= MaxConcurrentSessions)
+        if (activeSessionCount >= _runtimeLimits.MaxConcurrentSessions)
         {
+            _metrics.RecordSessionRejected();
             var snapshot = BuildActiveSessionSnapshot();
             _logger.LogWarning(
                 "Terminal session start rejected due to session limit. ViewerId={ViewerId} ActiveSessions={ActiveSessions} MaxSessions={MaxSessions} Snapshot={Snapshot}.",
                 viewerId,
                 activeSessionCount,
-                MaxConcurrentSessions,
+                _runtimeLimits.MaxConcurrentSessions,
                 snapshot);
 
-            throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions ({MaxConcurrentSessions}) has been reached.");
+            throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions ({_runtimeLimits.MaxConcurrentSessions}) has been reached.");
+        }
+
+        var viewerActiveSessionCount = GetViewerActiveSessionCount(viewerId);
+        if (viewerActiveSessionCount >= _runtimeLimits.MaxSessionsPerViewer)
+        {
+            _metrics.RecordSessionRejected();
+            _logger.LogWarning(
+                "Terminal session start rejected due to per-viewer limit. ViewerId={ViewerId} ViewerActiveSessions={ViewerActiveSessions} MaxPerViewer={MaxPerViewer}.",
+                viewerId,
+                viewerActiveSessionCount,
+                _runtimeLimits.MaxSessionsPerViewer);
+
+            throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions per viewer ({_runtimeLimits.MaxSessionsPerViewer}) has been reached.");
         }
 
         var sessionId = request.SessionId?.Trim();
@@ -103,9 +119,14 @@ public sealed class TerminalSessionService(
             Rows = NormalizeDimension(request.Rows)
         };
 
-        var session = new TerminalSessionInstance(viewerId, normalizedRequest);
+        var session = new TerminalSessionInstance(
+            viewerId,
+            normalizedRequest,
+            _runtimeLimits.ReplayBufferCapacity,
+            _runtimeLimits.MaxPendingInputChunks);
         if (!_sessions.TryAdd(session.SessionId, session))
         {
+            _metrics.RecordSessionRejected();
             throw new TerminalSessionConflictException($"Terminal session '{session.SessionId}' already exists.");
         }
 
@@ -193,6 +214,7 @@ public sealed class TerminalSessionService(
             var orderedInputChunks = session.AcceptOrderedInput(viewerId, request.Sequence, input);
             if (orderedInputChunks.Count == 0)
             {
+                _metrics.RecordInputRejected(1);
                 return;
             }
 
@@ -238,6 +260,7 @@ public sealed class TerminalSessionService(
             }
 
             await process.StandardInput.FlushAsync(cancellationToken);
+            _metrics.RecordInputAccepted(orderedInputChunks.Count);
         }
         finally
         {
@@ -428,6 +451,7 @@ public sealed class TerminalSessionService(
                 session.Request.Shell,
                 session.Request.RunContext,
                 session.ProcessId);
+            _metrics.RecordSessionStarted();
 
             await PublishEventAsync(session, TerminalSessionEventType.Started, TerminalSessionState.Running, processId: session.ProcessId);
 
@@ -444,6 +468,7 @@ public sealed class TerminalSessionService(
 
             session.State = TerminalSessionState.Closed;
             session.CompletedAtUtc = DateTimeOffset.UtcNow;
+            _metrics.RecordSessionClosed();
 
             await PublishEventAsync(
                 session,
@@ -462,6 +487,7 @@ public sealed class TerminalSessionService(
                 "Terminal session failed. SessionId={SessionId} ViewerId={ViewerId}.",
                 session.SessionId,
                 session.GetViewerIdForLog());
+            _metrics.RecordSessionFailed();
 
             await PublishEventAsync(
                 session,
@@ -831,6 +857,11 @@ public sealed class TerminalSessionService(
         return _sessions.Values.Count(static session => !session.IsCompleted);
     }
 
+    private int GetViewerActiveSessionCount(string viewerId)
+    {
+        return _sessions.Values.Count(session => !session.IsCompleted && session.IsViewer(viewerId));
+    }
+
     private string BuildActiveSessionSnapshot()
     {
         var activeSessions = _sessions.Values
@@ -974,7 +1005,11 @@ public sealed class TerminalSessionService(
         return session;
     }
 
-    private sealed class TerminalSessionInstance(string viewerId, TerminalSessionStartRequest request)
+    private sealed class TerminalSessionInstance(
+        string viewerId,
+        TerminalSessionStartRequest request,
+        int replayBufferCapacity,
+        int maxPendingInputChunks)
     {
         private readonly Lock _processSync = new();
         private readonly Lock _stateSync = new();
@@ -982,6 +1017,8 @@ public sealed class TerminalSessionService(
         private readonly Queue<TerminalOutputEntry> _outputBuffer = new();
         private readonly Queue<TerminalSessionInputChunkDiagnostics> _inputDiagnosticsBuffer = new();
         private readonly SortedDictionary<long, string> _pendingInputBySequence = new();
+        private readonly int _replayBufferCapacity = replayBufferCapacity;
+        private readonly int _maxPendingInputChunks = maxPendingInputChunks;
         private IProcess? _process;
         private string? _viewerId = viewerId;
         private string? _inputSequenceViewerId = viewerId;
@@ -1055,7 +1092,7 @@ public sealed class TerminalSessionService(
                 _lastOutputSequenceNumber++;
                 _outputBuffer.Enqueue(new TerminalOutputEntry(_lastOutputSequenceNumber, text, isStdErr));
 
-                while (_outputBuffer.Count > ReplayBufferCapacity)
+                while (_outputBuffer.Count > _replayBufferCapacity)
                 {
                     _ = _outputBuffer.Dequeue();
                 }
@@ -1113,7 +1150,7 @@ public sealed class TerminalSessionService(
                     return [];
                 }
 
-                if (_pendingInputBySequence.Count >= MaxPendingInputChunks)
+                if (_pendingInputBySequence.Count >= _maxPendingInputChunks)
                 {
                     throw new TerminalSessionConflictException("Terminal input sequence window overflow.");
                 }

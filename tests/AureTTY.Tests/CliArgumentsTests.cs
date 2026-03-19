@@ -1,5 +1,6 @@
 using System.Reflection;
 using AureTTY.Cli;
+using AureTTY.Contracts.Configuration;
 using AureTTY.Protocol;
 using AureTTY.Services;
 
@@ -8,21 +9,39 @@ namespace AureTTY.Tests;
 public sealed class CliArgumentsTests
 {
     [Fact]
-    public void TryCreate_WhenArgumentsAreMissing_UsesDefaults()
+    public void TryCreate_WhenSecretsAreMissing_ReturnsFalse()
     {
         var parseResult = Parse();
 
-        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+        var parsed = CliArguments.TryCreate(
+            parseResult,
+            allowMissingSecrets: false,
+            out var arguments,
+            out var error);
+
+        Assert.False(parsed);
+        Assert.Null(arguments);
+        Assert.NotNull(error);
+        Assert.Contains("--pipe-token", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TryCreate_WhenOpenApiModeAllowsMissingSecrets_ParsesSuccessfully()
+    {
+        var parseResult = Parse();
+
+        var parsed = CliArguments.TryCreate(
+            parseResult,
+            allowMissingSecrets: true,
+            out var arguments,
+            out var error);
 
         Assert.True(parsed);
         Assert.Null(error);
         Assert.NotNull(arguments);
         Assert.Equal(TerminalIpcDefaults.PipeName, arguments.PipeName);
-        Assert.Equal(TerminalIpcDefaults.PipeToken, arguments.PipeToken);
-        Assert.True(arguments.EnablePipeApi);
-        Assert.True(arguments.EnableHttpApi);
-        Assert.Equal(TerminalServiceOptions.DefaultHttpListenUrl, arguments.HttpListenUrl);
-        Assert.Equal(TerminalIpcDefaults.PipeToken, arguments.ApiKey);
+        Assert.Equal(string.Empty, arguments.PipeToken);
+        Assert.Equal(string.Empty, arguments.ApiKey);
     }
 
     [Fact]
@@ -34,9 +53,15 @@ public sealed class CliArgumentsTests
             "--http-listen-url",
             "http://127.0.0.1:18888",
             "--api-key",
-            "super-secret");
+            "super-secret",
+            "--pipe-token",
+            "pipe-secret");
 
-        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+        var parsed = CliArguments.TryCreate(
+            parseResult,
+            allowMissingSecrets: false,
+            out var arguments,
+            out var error);
 
         Assert.True(parsed);
         Assert.Null(error);
@@ -59,7 +84,13 @@ public sealed class CliArgumentsTests
     [Fact]
     public void Parse_WhenHttpListenUrlIsInvalid_ReturnsError()
     {
-        var parseResult = Parse("--http-listen-url", "notaurl");
+        var parseResult = Parse(
+            "--pipe-token",
+            "pipe-secret",
+            "--api-key",
+            "api-secret",
+            "--http-listen-url",
+            "notaurl");
 
         Assert.NotEmpty(parseResult.Errors);
         Assert.Contains(parseResult.Errors, error => error.Message.Contains("Invalid --http-listen-url value", StringComparison.Ordinal));
@@ -70,7 +101,11 @@ public sealed class CliArgumentsTests
     {
         var parseResult = Parse("--transport", "grpc");
 
-        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+        var parsed = CliArguments.TryCreate(
+            parseResult,
+            allowMissingSecrets: false,
+            out var arguments,
+            out var error);
 
         Assert.False(parsed);
         Assert.Null(arguments);
@@ -79,16 +114,28 @@ public sealed class CliArgumentsTests
     }
 
     [Fact]
-    public void TryCreate_WhenHttpTransportEnabledAndUrlInvalid_ReturnsFalse()
+    public void TryCreate_WhenRuntimeLimitsInvalid_ReturnsFalse()
     {
-        var parseResult = Parse("--transport", "http", "--http-listen-url", "notaurl");
+        var parseResult = Parse(
+            "--pipe-token",
+            "pipe-secret",
+            "--api-key",
+            "api-secret",
+            "--max-concurrent-sessions",
+            "2",
+            "--max-sessions-per-viewer",
+            "3");
 
-        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+        var parsed = CliArguments.TryCreate(
+            parseResult,
+            allowMissingSecrets: false,
+            out var arguments,
+            out var error);
 
         Assert.False(parsed);
         Assert.Null(arguments);
         Assert.NotNull(error);
-        Assert.Contains("Invalid --http-listen-url value", error, StringComparison.Ordinal);
+        Assert.Contains("MaxSessionsPerViewer", error, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -119,8 +166,12 @@ public sealed class CliArgumentsTests
         {
             Environment.SetEnvironmentVariable(CliArguments.TransportsEnvironmentVariable, "http;pipe");
 
-            var parseResult = Parse();
-            var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+            var parseResult = Parse("--pipe-token", "pipe-secret", "--api-key", "api-secret");
+            var parsed = CliArguments.TryCreate(
+                parseResult,
+                allowMissingSecrets: false,
+                out var arguments,
+                out var error);
 
             Assert.True(parsed);
             Assert.Null(error);
@@ -149,9 +200,24 @@ public sealed class CliArgumentsTests
             "--http-listen-url",
             "http://127.0.0.1:17851",
             "--api-key",
-            "api-key-value");
+            "api-key-value",
+            "--max-concurrent-sessions",
+            "64",
+            "--max-sessions-per-viewer",
+            "16",
+            "--replay-buffer-capacity",
+            "6000",
+            "--max-pending-input-chunks",
+            "16000",
+            "--sse-subscription-buffer-capacity",
+            "256",
+            "--allow-api-key-query");
 
-        var parsed = CliArguments.TryCreate(parseResult, out var arguments, out var error);
+        var parsed = CliArguments.TryCreate(
+            parseResult,
+            allowMissingSecrets: false,
+            out var arguments,
+            out var error);
 
         Assert.True(parsed);
         Assert.Null(error);
@@ -165,6 +231,11 @@ public sealed class CliArgumentsTests
         Assert.True(options.EnableHttpApi);
         Assert.Equal("http://127.0.0.1:17851", options.HttpListenUrl);
         Assert.Equal("api-key-value", options.ApiKey);
+        Assert.Equal(
+            new TerminalRuntimeLimits(64, 16, 6000, 16000),
+            options.RuntimeLimits);
+        Assert.Equal(256, options.SseSubscriptionBufferCapacity);
+        Assert.True(options.AllowApiKeyQueryParameter);
     }
 
     private static System.CommandLine.ParseResult Parse(params string[] args)

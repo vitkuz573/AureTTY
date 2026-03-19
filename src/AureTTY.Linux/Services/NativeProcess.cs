@@ -51,16 +51,20 @@ public sealed class NativeProcess : IProcess, IResizableTerminalProcess
         ArgumentNullException.ThrowIfNull(startInfo);
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (HasExplicitCredentials(_options))
-        {
-            throw new PlatformNotSupportedException(
-                "Explicit user credentials are not implemented for Linux yet. Use host process context.");
-        }
-
-        var effectiveStartInfo = BuildEffectiveStartInfo(startInfo, _options, out var usesPseudoTerminal);
+        var effectiveStartInfo = BuildEffectiveStartInfo(
+            startInfo,
+            _options,
+            out var usesPseudoTerminal,
+            out var initialSecretInput);
         _usesPseudoTerminal = usesPseudoTerminal;
 
         await _process.StartAsync(effectiveStartInfo, cancellationToken);
+
+        if (!string.IsNullOrEmpty(initialSecretInput))
+        {
+            await _process.StandardInput.WriteAsync(initialSecretInput.AsMemory(), cancellationToken);
+            await _process.StandardInput.FlushAsync(cancellationToken);
+        }
 
         if (_usesPseudoTerminal &&
             _options.PseudoTerminalColumns is int columns &&
@@ -120,12 +124,19 @@ public sealed class NativeProcess : IProcess, IResizableTerminalProcess
     private static ProcessStartInfo BuildEffectiveStartInfo(
         ProcessStartInfo requestedStartInfo,
         NativeProcessOptions options,
-        out bool usesPseudoTerminal)
+        out bool usesPseudoTerminal,
+        out string? initialSecretInput)
     {
         usesPseudoTerminal = false;
+        initialSecretInput = null;
+
+        var baseStartInfo = HasExplicitCredentials(options)
+            ? BuildCredentialWrappedStartInfo(requestedStartInfo, options, out initialSecretInput)
+            : CloneStartInfo(requestedStartInfo);
+
         if (!options.UsePseudoTerminal)
         {
-            return CloneStartInfo(requestedStartInfo);
+            return baseStartInfo;
         }
 
         if (!TryResolveScriptBinary(out var scriptPath))
@@ -136,10 +147,10 @@ public sealed class NativeProcess : IProcess, IResizableTerminalProcess
                     "Pseudo-terminal is required but 'script' binary was not found on this Linux host.");
             }
 
-            return CloneStartInfo(requestedStartInfo);
+            return baseStartInfo;
         }
 
-        var command = BuildCommandLine(requestedStartInfo);
+        var command = BuildCommandLine(baseStartInfo);
         var wrappedStartInfo = new ProcessStartInfo
         {
             FileName = scriptPath,
@@ -148,17 +159,17 @@ public sealed class NativeProcess : IProcess, IResizableTerminalProcess
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            StandardInputEncoding = requestedStartInfo.StandardInputEncoding,
-            StandardOutputEncoding = requestedStartInfo.StandardOutputEncoding,
-            StandardErrorEncoding = requestedStartInfo.StandardErrorEncoding
+            StandardInputEncoding = baseStartInfo.StandardInputEncoding,
+            StandardOutputEncoding = baseStartInfo.StandardOutputEncoding,
+            StandardErrorEncoding = baseStartInfo.StandardErrorEncoding
         };
 
-        if (!string.IsNullOrWhiteSpace(requestedStartInfo.WorkingDirectory))
+        if (!string.IsNullOrWhiteSpace(baseStartInfo.WorkingDirectory))
         {
-            wrappedStartInfo.WorkingDirectory = requestedStartInfo.WorkingDirectory;
+            wrappedStartInfo.WorkingDirectory = baseStartInfo.WorkingDirectory;
         }
 
-        foreach (var environment in requestedStartInfo.Environment)
+        foreach (var environment in baseStartInfo.Environment)
         {
             wrappedStartInfo.Environment[environment.Key] = environment.Value;
         }
@@ -172,6 +183,64 @@ public sealed class NativeProcess : IProcess, IResizableTerminalProcess
 
         usesPseudoTerminal = true;
         return wrappedStartInfo;
+    }
+
+    private static ProcessStartInfo BuildCredentialWrappedStartInfo(
+        ProcessStartInfo source,
+        NativeProcessOptions options,
+        out string? initialSecretInput)
+    {
+        var userName = options.UserName?.Trim();
+        if (string.IsNullOrWhiteSpace(userName))
+        {
+            initialSecretInput = null;
+            return CloneStartInfo(source);
+        }
+
+        if (!TryResolveSudoBinary(out var sudoPath))
+        {
+            throw new InvalidOperationException(
+                "Explicit credentials require 'sudo' on Linux host, but sudo executable was not found.");
+        }
+
+        var wrapped = new ProcessStartInfo
+        {
+            FileName = sudoPath,
+            UseShellExecute = false,
+            CreateNoWindow = source.CreateNoWindow,
+            RedirectStandardInput = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            StandardInputEncoding = source.StandardInputEncoding,
+            StandardOutputEncoding = source.StandardOutputEncoding,
+            StandardErrorEncoding = source.StandardErrorEncoding
+        };
+
+        if (!string.IsNullOrWhiteSpace(source.WorkingDirectory))
+        {
+            wrapped.WorkingDirectory = source.WorkingDirectory;
+        }
+
+        foreach (var environment in source.Environment)
+        {
+            wrapped.Environment[environment.Key] = environment.Value;
+        }
+
+        wrapped.ArgumentList.Add("-S");
+        wrapped.ArgumentList.Add("-p");
+        wrapped.ArgumentList.Add(string.Empty);
+        wrapped.ArgumentList.Add("-u");
+        wrapped.ArgumentList.Add(userName);
+        wrapped.ArgumentList.Add("--");
+        wrapped.ArgumentList.Add("/bin/sh");
+        wrapped.ArgumentList.Add("-lc");
+        wrapped.ArgumentList.Add(BuildCommandLine(source));
+
+        var password = options.Password ?? string.Empty;
+        initialSecretInput = string.IsNullOrEmpty(password)
+            ? null
+            : $"{password}\n";
+        return wrapped;
     }
 
     private static ProcessStartInfo CloneStartInfo(ProcessStartInfo source)
@@ -270,6 +339,39 @@ public sealed class NativeProcess : IProcess, IResizableTerminalProcess
         }
 
         scriptPath = string.Empty;
+        return false;
+    }
+
+    private static bool TryResolveSudoBinary(out string sudoPath)
+    {
+        if (File.Exists("/usr/bin/sudo"))
+        {
+            sudoPath = "/usr/bin/sudo";
+            return true;
+        }
+
+        if (File.Exists("/bin/sudo"))
+        {
+            sudoPath = "/bin/sudo";
+            return true;
+        }
+
+        var pathValue = Environment.GetEnvironmentVariable("PATH");
+        if (!string.IsNullOrWhiteSpace(pathValue))
+        {
+            var candidates = pathValue.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            foreach (var candidate in candidates)
+            {
+                var resolved = Path.Combine(candidate, "sudo");
+                if (File.Exists(resolved))
+                {
+                    sudoPath = resolved;
+                    return true;
+                }
+            }
+        }
+
+        sudoPath = string.Empty;
         return false;
     }
 

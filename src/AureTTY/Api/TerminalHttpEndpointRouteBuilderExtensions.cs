@@ -35,7 +35,10 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
                     {
                         Status = "ok",
                         ApiVersion = TerminalServiceOptions.ApiVersion,
-                        Transports = [.. transports]
+                        Transports = [.. transports],
+                        AllowApiKeyQueryParameter = options.AllowApiKeyQueryParameter,
+                        MaxConcurrentSessions = options.RuntimeLimits.MaxConcurrentSessions,
+                        MaxSessionsPerViewer = options.RuntimeLimits.MaxSessionsPerViewer
                     },
                     AureTTYJsonSerializerContext.Default.TerminalHealthResponse);
             });

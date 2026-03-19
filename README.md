@@ -6,8 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE-MIT)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE-APACHE)
 
-AureTTY is a standalone terminal engine with transport-agnostic control APIs.
-It can be integrated from any language through the HTTP API and SSE event stream.
+AureTTY is a standalone terminal runtime with HTTP+SSE and local pipe transports.
 
 ## Integration Modes
 
@@ -15,30 +14,51 @@ It can be integrated from any language through the HTTP API and SSE event stream
 - Local IPC API (named pipe) for co-located integrations.
 - Both transports can run together.
 
-Current platform backend:
+Platform backends:
 
-- Linux backend: `AureTTY.Linux` (pseudo-terminal launch through `script`, util-linux).
-- Windows backend: `AureTTY.Windows` (ConPTY/Windows process launch).
-- Host multi-targeting: `net10.0` (Linux backend only) and `net10.0-windows` (Windows backend only).
-- Direct host run/publish from project file should specify framework explicitly:
-  - Linux: `-f net10.0`
-  - Windows: `-f net10.0-windows`
+- Linux backend: `AureTTY.Linux` (PTY launch through `script` from `util-linux`).
+- Windows backend: `AureTTY.Windows` (ConPTY/native Windows process launch).
+- Host multi-targeting:
+  - Linux: `net10.0`
+  - Windows: `net10.0-windows` and `net10.0`
+
+## Breaking Security Model
+
+- HTTP API key is mandatory when HTTP transport is enabled.
+- Pipe token is mandatory when pipe transport is enabled.
+- API key is accepted only via `X-AureTTY-Key` header by default.
+- Query parameter auth (`api_key`) is disabled by default.
 
 ## Quick Start
 
-Run `AureTTY` as a foreground process or service and connect over HTTP:
+Run with both transports:
 
-- Base URL: `http://127.0.0.1:17850`
-- API version: `v1`
-- Auth header: `X-AureTTY-Key: <api-key>`
+```powershell
+dotnet run --project src/AureTTY/AureTTY.csproj -f net10.0-windows -c Debug -- `
+  --transport pipe --transport http `
+  --pipe-name auretty-terminal `
+  --pipe-token auretty-terminal-token `
+  --http-listen-url http://127.0.0.1:17850 `
+  --api-key auretty-terminal-token
+```
 
-Defaults:
+Linux host uses the same arguments, with `-f net10.0`.
 
-- `--http-listen-url` default: `http://127.0.0.1:17850`
-- `--api-key` default: value of `--pipe-token`
-- `--pipe-name` default: `auretty-terminal`
-- `--pipe-token` default: `auretty-terminal`
+## Defaults
+
 - `--transport` default: `pipe,http`
+- `--pipe-name` default: `auretty-terminal`
+- `--http-listen-url` default: `http://127.0.0.1:17850`
+- `--pipe-token`: no default (required when pipe is enabled)
+- `--api-key`: no default (required when HTTP is enabled)
+
+Runtime limits defaults:
+
+- `--max-concurrent-sessions`: `32`
+- `--max-sessions-per-viewer`: `8`
+- `--replay-buffer-capacity`: `4096`
+- `--max-pending-input-chunks`: `8192`
+- `--sse-subscription-buffer-capacity`: `2048`
 
 ## HTTP Endpoints
 
@@ -59,38 +79,50 @@ Defaults:
 
 OpenAPI document:
 
-- `GET /openapi/v1.json`
+- `GET /openapi/v1.json` (requires `X-AureTTY-Key` when HTTP auth is enabled)
 
-## CLI/Environment Configuration
+SSE backpressure notice:
+
+- Stream may emit `TerminalSessionEventType.Dropped` system events when a subscriber is too slow and events are dropped.
+
+## CLI / Environment
 
 - `--transport pipe|http` (repeatable) / `AURETTY_TRANSPORTS=pipe,http`
-- `--http-listen-url` / `AURETTY_HTTP_LISTEN_URL`
-- `--api-key` / `AURETTY_API_KEY`
 - `--pipe-name` / `AURETTY_PIPE_NAME`
 - `--pipe-token` / `AURETTY_PIPE_TOKEN`
+- `--http-listen-url` / `AURETTY_HTTP_LISTEN_URL`
+- `--api-key` / `AURETTY_API_KEY`
+- `--max-concurrent-sessions` / `AURETTY_MAX_CONCURRENT_SESSIONS`
+- `--max-sessions-per-viewer` / `AURETTY_MAX_SESSIONS_PER_VIEWER`
+- `--replay-buffer-capacity` / `AURETTY_REPLAY_BUFFER_CAPACITY`
+- `--max-pending-input-chunks` / `AURETTY_MAX_PENDING_INPUT_CHUNKS`
+- `--sse-subscription-buffer-capacity` / `AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY`
+- `--allow-api-key-query` / `AURETTY_ALLOW_API_KEY_QUERY`
 
 At least one transport must be enabled.
 
-Linux notes:
+## Platform Notes
 
-- Install `script` binary (usually from `util-linux`).
-- Explicit credential switching (`UserName`/`Password`) is not implemented yet on Linux.
+Linux:
 
-Windows notes:
+- Install `script` binary (`util-linux`).
+- Explicit credential switching on Linux uses `sudo -S`; host must provide `sudo`.
 
-- Run with PowerShell 7 (`pwsh`) or Windows PowerShell (`powershell`) for demos.
-- Full Windows transport smoke demo: `demos/windows/run-windows-transport-smoke.ps1`.
-- NativeAOT Windows smoke demo (published binary): `demos/windows/run-windows-aot-smoke.ps1`.
+Windows:
 
-Linux NativeAOT notes:
+- Run demos with PowerShell 7 (`pwsh`) or Windows PowerShell (`powershell`).
+- Windows transport smoke demo: `demos/windows/run-windows-transport-smoke.ps1`.
+- Windows NativeAOT smoke demo: `demos/windows/run-windows-aot-smoke.ps1`.
 
-- NativeAOT Linux smoke demo (published binary): `demos/linux/run-linux-aot-smoke.sh`.
+Linux NativeAOT:
+
+- Linux NativeAOT smoke demo: `demos/linux/run-linux-aot-smoke.sh`.
 
 ## Repository Layout
 
 - `src/` runtime and platform projects
 - `tests/` unit tests
-- `demos/` runnable transport demos (`demos/linux/run-linux-transport-smoke.sh`, `demos/linux/run-linux-aot-smoke.sh`, `demos/windows/run-windows-transport-smoke.ps1`, `demos/windows/run-windows-aot-smoke.ps1`)
+- `demos/` runnable transport demos
 
 ## Test Coverage
 
@@ -107,27 +139,21 @@ dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Debug --collec
 .\.tools\reportgenerator.exe -reports:"coverage-results\**\coverage.cobertura.xml" -targetdir:"coverage-report" -reporttypes:"HtmlInline;TextSummary;Cobertura;Badges"
 ```
 
-## NativeAOT (Preview)
+## NativeAOT
 
-Windows AOT publish (experimental):
+Windows AOT publish:
 
 ```powershell
 dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64-aot
 pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 -AureTTYExecutable artifacts/publish/win-x64-aot/AureTTY.exe
 ```
 
-Linux AOT publish (experimental):
+Linux AOT publish:
 
 ```bash
 dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64-aot
 bash demos/linux/run-linux-aot-smoke.sh
 ```
-
-Notes:
-
-- `PublishAot=true` build path switches HTTP routing to AOT-friendly minimal endpoints (no MVC controllers in AOT binary).
-- Pipe transport JSON serialization uses source-generated metadata.
-- OpenAPI document generation is disabled for AOT publish commands above.
 
 ## License
 

@@ -56,7 +56,7 @@ The smoke script:
 
 ```bash
 AURETTY_BASE_URL=http://127.0.0.1:17850 \
-AURETTY_API_KEY=auretty-terminal \
+AURETTY_API_KEY=auretty-terminal-token \
 bash demos/http/http-demo.sh
 ```
 
@@ -65,7 +65,7 @@ bash demos/http/http-demo.sh
 ```powershell
 pwsh -NoLogo -NoProfile -File demos/http/http-demo.ps1 `
   -BaseUrl http://127.0.0.1:17850 `
-  -ApiKey auretty-terminal `
+  -ApiKey auretty-terminal-token `
   -Shell pwsh
 ```
 
@@ -74,7 +74,7 @@ pwsh -NoLogo -NoProfile -File demos/http/http-demo.ps1 `
 ```bash
 dotnet run --project demos/pipe/AureTTY.Demo.PipeClient/AureTTY.Demo.PipeClient.csproj -- \
   --pipe-name auretty-terminal \
-  --pipe-token auretty-terminal \
+  --pipe-token auretty-terminal-token \
   --shell bash
 ```
 
@@ -83,6 +83,6 @@ dotnet run --project demos/pipe/AureTTY.Demo.PipeClient/AureTTY.Demo.PipeClient.
 ```powershell
 pwsh -NoLogo -NoProfile -File demos/pipe/run-pipe-demo.ps1 `
   --pipe-name auretty-terminal `
-  --pipe-token auretty-terminal `
+  --pipe-token auretty-terminal-token `
   --shell pwsh
 ```

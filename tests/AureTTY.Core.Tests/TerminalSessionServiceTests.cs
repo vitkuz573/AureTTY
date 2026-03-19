@@ -38,7 +38,7 @@ public sealed class TerminalSessionServiceTests
             .Callback<ExecutionRunContext, ProcessCredentialOptions?, ProcessRuntimeOptions?>((_, _, runtime) => capturedRuntimeOptions = runtime)
             .Returns(process);
 
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
         var request = new TerminalSessionStartRequest("session-1", Shell.Pwsh)
         {
             Columns = 120,
@@ -81,7 +81,7 @@ public sealed class TerminalSessionServiceTests
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
             .Returns(process);
 
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
         var request = new TerminalSessionStartRequest("session-2", Shell.Pwsh);
         _ = await service.StartAsync("viewer-1", request);
         await WaitForEventAsync(signal, expectedCount: 2);
@@ -106,7 +106,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -129,7 +129,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty, processId: 0);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -150,7 +150,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -175,7 +175,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -196,7 +196,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -218,7 +218,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -241,7 +241,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -264,7 +264,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -287,7 +287,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -309,7 +309,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -330,7 +330,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -351,7 +351,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -372,7 +372,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -394,7 +394,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -417,7 +417,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -441,7 +441,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -461,7 +461,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -482,7 +482,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -505,7 +505,7 @@ public sealed class TerminalSessionServiceTests
     {
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         await service.CloseAsync("viewer-1", "missing-session");
     }
@@ -516,7 +516,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         var createdProcesses = new List<FakeTerminalProcess>();
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -545,7 +545,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         var createdProcesses = new List<FakeTerminalProcess>();
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -593,7 +593,7 @@ public sealed class TerminalSessionServiceTests
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
             .Returns(process);
 
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
         _ = await service.StartAsync("viewer-1", new TerminalSessionStartRequest("session-5", Shell.Pwsh));
         await WaitForEventAsync(signal, expectedCount: 1);
 
@@ -616,7 +616,7 @@ public sealed class TerminalSessionServiceTests
                 return process;
             });
 
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         Exception? failure = null;
         try
@@ -662,7 +662,7 @@ public sealed class TerminalSessionServiceTests
                 return process;
             });
 
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         Exception? failure = null;
         try
@@ -705,7 +705,7 @@ public sealed class TerminalSessionServiceTests
             .Setup(f => f.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
             .Returns(() => processQueue.Dequeue());
 
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         _ = await service.StartAsync("viewer-one", new TerminalSessionStartRequest("session-all-1", Shell.Pwsh));
         _ = await service.StartAsync("viewer-two", new TerminalSessionStartRequest("session-all-2", Shell.Pwsh));
@@ -726,7 +726,7 @@ public sealed class TerminalSessionServiceTests
     {
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         var act = () => service.StartAsync("viewer-1", new TerminalSessionStartRequest("   ", Shell.Pwsh));
         await Assert.ThrowsAsync<TerminalSessionValidationException>(act);
@@ -739,7 +739,7 @@ public sealed class TerminalSessionServiceTests
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
         ProcessCredentialOptions? capturedCredentials = null;
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -769,7 +769,7 @@ public sealed class TerminalSessionServiceTests
     {
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         var act = () => service.ResumeAsync("viewer-1", new TerminalSessionResumeRequest("missing-session"));
         await Assert.ThrowsAsync<TerminalSessionNotFoundException>(act);
@@ -781,7 +781,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -802,7 +802,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -821,7 +821,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -841,7 +841,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -861,7 +861,7 @@ public sealed class TerminalSessionServiceTests
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
         var processFactory = new Mock<IScriptProcessFactory>();
         using var process = new FakeTerminalProcess(string.Empty);
-        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, NullLogger<TerminalSessionService>.Instance);
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, AureTTY.Contracts.Configuration.TerminalRuntimeLimits.Default, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
 
         processFactory
             .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
@@ -1257,3 +1257,4 @@ public sealed class TerminalSessionServiceTests
         }
     }
 }
+

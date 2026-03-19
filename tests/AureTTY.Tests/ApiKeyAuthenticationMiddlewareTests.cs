@@ -8,37 +8,14 @@ namespace AureTTY.Tests;
 public sealed class ApiKeyAuthenticationMiddlewareTests
 {
     [Fact]
-    public async Task InvokeAsync_WhenPathIsNotApi_CallsNext()
+    public async Task InvokeAsync_WhenApiKeyIsNotConfigured_Throws()
     {
-        var wasCalled = false;
         var middleware = new ApiKeyAuthenticationMiddleware(_ =>
-        {
-            wasCalled = true;
-            return Task.CompletedTask;
-        });
+            Task.CompletedTask);
 
         var context = CreateContext("/health");
 
-        await middleware.InvokeAsync(context, CreateOptions("secret"));
-
-        Assert.True(wasCalled);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WhenApiKeyIsEmpty_CallsNext()
-    {
-        var wasCalled = false;
-        var middleware = new ApiKeyAuthenticationMiddleware(_ =>
-        {
-            wasCalled = true;
-            return Task.CompletedTask;
-        });
-
-        var context = CreateContext("/api/v1/health");
-
-        await middleware.InvokeAsync(context, CreateOptions("   "));
-
-        Assert.True(wasCalled);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => middleware.InvokeAsync(context, CreateOptions(" ")));
     }
 
     [Fact]
@@ -60,7 +37,7 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenQueryKeyMatches_CallsNext()
+    public async Task InvokeAsync_WhenQueryKeyMatchesAndDisabled_ReturnsUnauthorized()
     {
         var wasCalled = false;
         var middleware = new ApiKeyAuthenticationMiddleware(_ =>
@@ -73,6 +50,25 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
         context.Request.QueryString = new QueryString("?api_key=secret");
 
         await middleware.InvokeAsync(context, CreateOptions("secret"));
+
+        Assert.False(wasCalled);
+        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenQueryKeyMatchesAndEnabled_CallsNext()
+    {
+        var wasCalled = false;
+        var middleware = new ApiKeyAuthenticationMiddleware(_ =>
+        {
+            wasCalled = true;
+            return Task.CompletedTask;
+        });
+
+        var context = CreateContext("/api/v1/health");
+        context.Request.QueryString = new QueryString("?api_key=secret");
+
+        await middleware.InvokeAsync(context, CreateOptions("secret", allowApiKeyQuery: true));
 
         Assert.True(wasCalled);
     }
@@ -101,6 +97,7 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
         using var document = JsonDocument.Parse(payload);
         Assert.Equal("Unauthorized", document.RootElement.GetProperty("error").GetString());
         Assert.Contains(TerminalServiceOptions.ApiKeyHeaderName, document.RootElement.GetProperty("message").GetString(), StringComparison.Ordinal);
+        Assert.DoesNotContain("api_key", document.RootElement.GetProperty("message").GetString(), StringComparison.Ordinal);
     }
 
     private static DefaultHttpContext CreateContext(string path)
@@ -111,7 +108,7 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
         return context;
     }
 
-    private static TerminalServiceOptions CreateOptions(string apiKey)
+    private static TerminalServiceOptions CreateOptions(string apiKey, bool allowApiKeyQuery = false)
     {
         return new TerminalServiceOptions(
             PipeName: "pipe-auth",
@@ -119,6 +116,9 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
             EnablePipeApi: true,
             EnableHttpApi: true,
             HttpListenUrl: "http://127.0.0.1:17850",
-            ApiKey: apiKey);
+            ApiKey: apiKey)
+        {
+            AllowApiKeyQueryParameter = allowApiKeyQuery
+        };
     }
 }

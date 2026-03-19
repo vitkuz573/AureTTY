@@ -1,6 +1,6 @@
 param(
     [string]$BaseUrl = $(if ([string]::IsNullOrWhiteSpace($env:AURETTY_BASE_URL)) { "http://127.0.0.1:17850" } else { $env:AURETTY_BASE_URL }),
-    [string]$ApiKey = $(if ([string]::IsNullOrWhiteSpace($env:AURETTY_API_KEY)) { "auretty-terminal" } else { $env:AURETTY_API_KEY }),
+    [string]$ApiKey = $(if ([string]::IsNullOrWhiteSpace($env:AURETTY_API_KEY)) { "auretty-terminal-token" } else { $env:AURETTY_API_KEY }),
     [string]$ViewerId = $(if ([string]::IsNullOrWhiteSpace($env:AURETTY_VIEWER_ID)) { "demo-http-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())" } else { $env:AURETTY_VIEWER_ID }),
     [string]$SessionId = $(if ([string]::IsNullOrWhiteSpace($env:AURETTY_SESSION_ID)) { "demo-http-session-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())-$([System.Guid]::NewGuid().ToString('N').Substring(0, 6))" } else { $env:AURETTY_SESSION_ID }),
     [ValidateSet("cmd", "powershell", "pwsh", "bash")]
