@@ -1,40 +1,51 @@
 version: "{build}"
-image: Visual Studio 2022
+image:
+  - Visual Studio 2022
+  - Ubuntu2204
 clone_depth: 1
 
 skip_non_tags: true
 skip_branch_with_pr: true
 
 environment:
-  DOTNET_INSTALL_DIR: C:\dotnet
   DOTNET_INSTALL_VERSION: 10.0.103
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
-  DOTNET_ROOT: C:\dotnet
-  PATH: C:\dotnet;%PATH%
   NUGET_XMLDOC_MODE: skip
 
-install:
-  - ps: >-
-      $ErrorActionPreference = "Stop";
-      if (-not (Test-Path "$env:DOTNET_INSTALL_DIR")) { New-Item -ItemType Directory -Path "$env:DOTNET_INSTALL_DIR" | Out-Null };
-      Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1 -UseBasicParsing;
-      .\dotnet-install.ps1 -Version $env:DOTNET_INSTALL_VERSION -InstallDir $env:DOTNET_INSTALL_DIR -NoPath;
-      & "$env:DOTNET_INSTALL_DIR\dotnet.exe" --info
-
 build_script:
-  - cmd: '%DOTNET_ROOT%\dotnet.exe restore AureTTY.slnx'
-  - cmd: '%DOTNET_ROOT%\dotnet.exe build AureTTY.slnx -c Release --no-restore -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false'
-  - cmd: '%DOTNET_ROOT%\dotnet.exe test tests\AureTTY.Tests\AureTTY.Tests.csproj -c Release --no-build'
-  - cmd: '%DOTNET_ROOT%\dotnet.exe test tests\AureTTY.Core.Tests\AureTTY.Core.Tests.csproj -c Release --no-build'
-  - cmd: if exist artifacts\publish rmdir /s /q artifacts\publish
-  - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\win-x64'
-  - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\linux-x64'
-  - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\win-x64-aot'
-  - cmd: '%DOTNET_ROOT%\dotnet.exe publish src\AureTTY\AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts\publish\linux-x64-aot'
   - ps: |
       $ErrorActionPreference = "Stop"
-      New-Item -ItemType Directory -Path artifacts -Force | Out-Null
+      $dotnet = "dotnet"
+
+      if ($IsWindows) {
+          $dotnetInstallDir = "C:\dotnet"
+          if (-not (Test-Path $dotnetInstallDir)) {
+              New-Item -ItemType Directory -Path $dotnetInstallDir | Out-Null
+          }
+
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile dotnet-install.ps1 -UseBasicParsing
+          .\dotnet-install.ps1 -Version $env:DOTNET_INSTALL_VERSION -InstallDir $dotnetInstallDir -NoPath
+          $dotnet = "$dotnetInstallDir\dotnet.exe"
+      }
+
+      & $dotnet --info
+      & $dotnet restore AureTTY.slnx
+
+      if ($IsWindows) {
+          & $dotnet build AureTTY.slnx -c Release --no-restore -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false
+          & $dotnet test tests/AureTTY.Tests/AureTTY.Tests.csproj -c Release --no-build
+          & $dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Release --no-build
+      }
+      else {
+          & $dotnet test tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj -c Release
+      }
+
+      if (Test-Path "artifacts/publish") {
+          Remove-Item -Recurse -Force "artifacts/publish"
+      }
+
+      New-Item -ItemType Directory -Path "artifacts" -Force | Out-Null
 
       $tag = if ($env:APPVEYOR_REPO_TAG_NAME) { $env:APPVEYOR_REPO_TAG_NAME } else { "dev" }
       $winArchive = "artifacts/AureTTY-$tag-win-x64.zip"
@@ -42,43 +53,52 @@ build_script:
       $winAotArchive = "artifacts/AureTTY-$tag-win-x64-aot.zip"
       $linuxAotArchive = "artifacts/AureTTY-$tag-linux-x64-aot.zip"
 
-      Compress-Archive -Path "artifacts/publish/win-x64/*" -DestinationPath $winArchive -Force
-      Compress-Archive -Path "artifacts/publish/linux-x64/*" -DestinationPath $linuxArchive -Force
-      Compress-Archive -Path "artifacts/publish/win-x64-aot/*" -DestinationPath $winAotArchive -Force
-      Compress-Archive -Path "artifacts/publish/linux-x64-aot/*" -DestinationPath $linuxAotArchive -Force
+      if ($IsWindows) {
+          & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64
+          & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64
+          & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64-aot
 
-      Get-FileHash $winArchive -Algorithm SHA256 | ForEach-Object {
-          "$($_.Hash)  $(Split-Path -Leaf $winArchive)"
-      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64.sha256"
+          Compress-Archive -Path "artifacts/publish/win-x64/*" -DestinationPath $winArchive -Force
+          Compress-Archive -Path "artifacts/publish/linux-x64/*" -DestinationPath $linuxArchive -Force
+          Compress-Archive -Path "artifacts/publish/win-x64-aot/*" -DestinationPath $winAotArchive -Force
 
-      Get-FileHash $linuxArchive -Algorithm SHA256 | ForEach-Object {
-          "$($_.Hash)  $(Split-Path -Leaf $linuxArchive)"
-      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64.sha256"
+          Get-FileHash $winArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $winArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64.sha256"
 
-      Get-FileHash $winAotArchive -Algorithm SHA256 | ForEach-Object {
-          "$($_.Hash)  $(Split-Path -Leaf $winAotArchive)"
-      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64-aot.sha256"
+          Get-FileHash $linuxArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $linuxArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64.sha256"
 
-      Get-FileHash $linuxAotArchive -Algorithm SHA256 | ForEach-Object {
-          "$($_.Hash)  $(Split-Path -Leaf $linuxAotArchive)"
-      } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-aot.sha256"
+          Get-FileHash $winAotArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $winAotArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64-aot.sha256"
+      }
+      else {
+          & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64-aot
+
+          Compress-Archive -Path "artifacts/publish/linux-x64-aot/*" -DestinationPath $linuxAotArchive -Force
+          Get-FileHash $linuxAotArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $linuxAotArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-aot.sha256"
+      }
 
 artifacts:
-  - path: artifacts\AureTTY-*-win-x64.zip
+  - path: artifacts/AureTTY-*-win-x64.zip
     name: auretty-win-x64
-  - path: artifacts\AureTTY-*-linux-x64.zip
+  - path: artifacts/AureTTY-*-linux-x64.zip
     name: auretty-linux-x64
-  - path: artifacts\AureTTY-*-win-x64-aot.zip
+  - path: artifacts/AureTTY-*-win-x64-aot.zip
     name: auretty-win-x64-aot
-  - path: artifacts\AureTTY-*-linux-x64-aot.zip
+  - path: artifacts/AureTTY-*-linux-x64-aot.zip
     name: auretty-linux-x64-aot
-  - path: artifacts\AureTTY-*-win-x64.sha256
+  - path: artifacts/AureTTY-*-win-x64.sha256
     name: auretty-win-x64-sha256
-  - path: artifacts\AureTTY-*-linux-x64.sha256
+  - path: artifacts/AureTTY-*-linux-x64.sha256
     name: auretty-linux-x64-sha256
-  - path: artifacts\AureTTY-*-win-x64-aot.sha256
+  - path: artifacts/AureTTY-*-win-x64-aot.sha256
     name: auretty-win-x64-aot-sha256
-  - path: artifacts\AureTTY-*-linux-x64-aot.sha256
+  - path: artifacts/AureTTY-*-linux-x64-aot.sha256
     name: auretty-linux-x64-aot-sha256
 
 deploy_script:
