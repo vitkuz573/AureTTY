@@ -10,7 +10,8 @@ public sealed class ProtocolPayloadsTests
     public void ProtocolConstants_AreStable()
     {
         Assert.Equal("auretty-terminal", TerminalIpcDefaults.PipeName);
-        Assert.Equal("auretty-terminal", TerminalIpcDefaults.PipeToken);
+        Assert.Equal("auretty-terminal-token", TerminalIpcDefaults.PipeToken);
+        Assert.NotEqual(TerminalIpcDefaults.PipeName, TerminalIpcDefaults.PipeToken);
         Assert.Equal("hello", TerminalIpcMethods.Hello);
         Assert.Equal("request", TerminalIpcMessageTypes.Request);
     }
