@@ -92,6 +92,7 @@ public sealed class RunServiceCommandHandler
 #endif
 
         var app = webBuilder.Build();
+        app.UseWebSockets();
         app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 #if AURETTY_NATIVEAOT
         app.MapTerminalHttpEndpoints();

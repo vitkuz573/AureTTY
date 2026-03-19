@@ -19,10 +19,11 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
         app.MapGet($"/{TerminalApiRoutes.Health}",
             (TerminalServiceOptions options) =>
             {
-                var transports = new List<string>(2);
+                var transports = new List<string>(3);
                 if (options.EnableHttpApi)
                 {
                     transports.Add("http");
+                    transports.Add("ws");
                 }
 
                 if (options.EnablePipeApi)
@@ -272,6 +273,9 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
                     return TerminalApiProblemMapper.Map(ex);
                 }
             });
+
+        app.MapGet($"/{TerminalApiRoutes.ViewerWebSocket}",
+            (string viewerId, HttpContext context) => TerminalWebSocketHandler.HandleAsync(viewerId, context));
 
         return app;
     }

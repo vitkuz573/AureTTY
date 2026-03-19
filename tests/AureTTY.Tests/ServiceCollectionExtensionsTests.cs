@@ -91,6 +91,7 @@ public sealed class ServiceCollectionExtensionsTests
 
         Assert.DoesNotContain(hostedServices, hostedService => hostedService is TerminalPipeServer);
         Assert.NotNull(provider.GetRequiredService<HttpTerminalSessionEventPublisher>());
+        Assert.NotNull(provider.GetRequiredService<WebSocketTerminalSessionEventPublisher>());
     }
 
     [Fact]

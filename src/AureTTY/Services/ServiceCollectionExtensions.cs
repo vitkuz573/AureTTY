@@ -38,6 +38,7 @@ public static partial class ServiceCollectionExtensions
         services.AddSingleton<TerminalMetrics>();
         services.AddSingleton<PipeTerminalSessionEventPublisher>();
         services.AddSingleton<HttpTerminalSessionEventPublisher>();
+        services.AddSingleton<WebSocketTerminalSessionEventPublisher>();
         services.AddSingleton<ITerminalSessionEventPublisher, CompositeTerminalSessionEventPublisher>();
         services.AddSingleton<ITerminalSessionService, TerminalSessionService>();
         if (options.EnablePipeApi)
