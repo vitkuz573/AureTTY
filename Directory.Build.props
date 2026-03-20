@@ -13,6 +13,11 @@
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
     <DefaultItemExcludesInProjectFolder>$(DefaultItemExcludesInProjectFolder);bin/**;obj/**;**/bin/**;**/obj/**</DefaultItemExcludesInProjectFolder>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'AureTTY.OpenWRT'">
+    <BaseIntermediateOutputPath>obj/openwrt/</BaseIntermediateOutputPath>
+    <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
+    <BaseOutputPath>bin/openwrt/</BaseOutputPath>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
       <PrivateAssets>all</PrivateAssets>

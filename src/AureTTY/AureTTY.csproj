@@ -32,6 +32,7 @@
           AfterTargets="Build"
           Condition="'$(Configuration)' == 'Release'
                      and '$(TargetFramework)' == 'net10.0'
+                     and '$(OpenApiGenerateDocuments)' == 'true'
                      and '$(DesignTimeBuild)' != 'true'">
     <CallTarget Targets="GenerateOpenApiDocuments" />
   </Target>
