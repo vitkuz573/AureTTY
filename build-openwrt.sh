@@ -20,12 +20,15 @@ case "$ARCH" in
     aarch64|arm64)
         RID="linux-musl-arm64"
         ;;
+    armv7|armhf)
+        RID="linux-musl-arm"
+        ;;
     mips|mipsel)
         RID="linux-musl-mips64"
         ;;
     *)
         echo "Unsupported architecture: $ARCH"
-        echo "Supported: x86_64, aarch64, arm64, mips, mipsel"
+        echo "Supported: x86_64, aarch64, arm64, armv7, armhf, mips, mipsel"
         exit 1
         ;;
 esac
@@ -50,9 +53,22 @@ dotnet restore "$PROJECT_FILE" -r "$RID"
 # Build and publish
 echo "Building NativeAOT binary..."
 
-# Set linker to musl-gcc wrapper for musl targets
+# Set linker to appropriate cross-compiler for musl targets
 if [[ "$RID" == *"musl"* ]]; then
-    export CppCompilerAndLinker="$SCRIPT_DIR/musl-gcc-wrapper.sh"
+    case "$ARCH" in
+        x86_64)
+            export CppCompilerAndLinker="$SCRIPT_DIR/musl-gcc-wrapper.sh"
+            ;;
+        aarch64|arm64)
+            export CppCompilerAndLinker="$SCRIPT_DIR/aarch64-gcc-wrapper.sh"
+            ;;
+        armv7|armhf)
+            export CppCompilerAndLinker="arm-linux-gnueabihf-gcc"
+            ;;
+        *)
+            export CppCompilerAndLinker="$SCRIPT_DIR/musl-gcc-wrapper.sh"
+            ;;
+    esac
 fi
 
 dotnet publish "$PROJECT_FILE" \
