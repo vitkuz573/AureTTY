@@ -84,9 +84,15 @@ public sealed class RunServiceCommandHandler
         webBuilder.Services.ConfigureHttpJsonOptions(static options =>
         {
             options.SerializerOptions.TypeInfoResolverChain.Insert(0, AureTTYJsonSerializerContext.Default);
+            options.SerializerOptions.Converters.Add(new ShellJsonConverter());
         });
 #else
-        webBuilder.Services.AddControllers();
+        webBuilder.Services
+            .AddControllers()
+            .AddJsonOptions(static options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new ShellJsonConverter());
+            });
         webBuilder.Services.AddEndpointsApiExplorer();
         webBuilder.Services.AddOpenApi(TerminalServiceOptions.ApiVersion);
 #endif

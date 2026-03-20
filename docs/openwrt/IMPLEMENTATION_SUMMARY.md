@@ -1,188 +1,76 @@
 # OpenWRT Support Implementation Summary
 
-## Completed Tasks ✅
+## Status (2026-03-20)
 
-### 1. Cross-Compilation Setup (x86_64)
-- ✅ Created `AureTTY.OpenWRT.csproj` with size optimizations
-- ✅ Created `build-openwrt.sh` build script
-- ✅ Created `musl-gcc-wrapper.sh` to handle toolchain flags
-- ✅ Successfully built 15 MB binary for linux-musl-x64
+OpenWRT support is now split by architecture maturity:
 
-### 2. Binary Size Optimization
-- ✅ NativeAOT compilation with `IlcOptimizationPreference=Size`
-- ✅ Aggressive trimming and feature disabling
-- ✅ Symbol stripping
-- ✅ InvariantGlobalization
-- ✅ Result: 15 MB (down from 17 MB glibc build)
+- `x86_64`: production-ready in this repository
+- `aarch64`: preview (musl-only toolchain required, on-device validation pending)
+- `armv7`: experimental (toolchain-dependent)
+- `mips`: not supported in current .NET musl RID pipeline
 
-### 3. OpenWRT Package Structure
-- ✅ Created `package/auretty/Makefile` for OpenWRT SDK
-- ✅ Created `package/auretty/files/auretty.init` (procd init script)
-- ✅ Created `package/auretty/files/auretty.config` (UCI configuration)
-- ✅ All files follow OpenWRT conventions
+## What Is Implemented
 
-### 4. Testing Infrastructure
-- ✅ Created `test-qemu.sh` for QEMU VM testing
-- ✅ Created `test-openwrt-api.sh` with 9 automated tests
-- ✅ Verified all API endpoints work correctly
-- ✅ Confirmed binary runs on musl libc
+### Build Pipeline
 
-### 5. Documentation
-- ✅ Created `docs/openwrt/README.md` - Overview
-- ✅ Created `docs/openwrt/BUILD.md` - Build guide (5,800+ lines)
-- ✅ Created `docs/openwrt/PACKAGE.md` - Package guide (4,200+ lines)
-- ✅ Created `docs/openwrt/QEMU_TESTING.md` - Testing guide (3,100+ lines)
-- ✅ Updated main `README.md` with OpenWRT section
-- ✅ Updated `docs/INDEX.md` with OpenWRT links
+- Dedicated OpenWRT project: `src/AureTTY/AureTTY.OpenWRT.csproj`
+- NativeAOT and size optimization flags enabled
+- Architecture-aware build script: `build-openwrt.sh`
+- Toolchain wrappers:
+  - `musl-gcc-wrapper.sh` (x86_64)
+  - `aarch64-gcc-wrapper.sh`
+  - `armv7-gcc-wrapper.sh`
 
-## Technical Achievements
+### Safety Improvements
 
-### Build System
-```bash
-# Single command build
-ARCH=x86_64 ./build-openwrt.sh
+- Strict musl compiler detection by architecture
+- Fast fail when required cross-compiler is missing
+- ELF interpreter verification after build:
+  - x86_64 -> `/lib/ld-musl-x86_64.so.1`
+  - aarch64 -> `/lib/ld-musl-aarch64.so.1`
+  - armv7 -> `/lib/ld-musl-armhf.so.1`
+- Removed false-positive "successful" ARM64 glibc outputs from normal flow
 
-# Output
-Binary size: 15M
-Location: artifacts/openwrt/x86_64/auretty
-```
+### API/Runtime Compatibility Improvements
 
-### Binary Characteristics
-- **Format**: ELF 64-bit LSB pie executable
-- **Architecture**: x86-64
-- **Interpreter**: /lib/ld-musl-x86_64.so.1
-- **Size**: 15 MB (stripped)
-- **Memory**: ~20-30 MB RAM at runtime
+- Added explicit `Shell.Sh` option in shell enum
+- Linux/OpenWRT default shell changed to `sh` when omitted
+- String shell aliases accepted in HTTP JSON (`sh`, `ash`, `bash`, `pwsh`, `powershell`, `cmd`)
+- Existing numeric enum wire format remains intact for backward compatibility
 
-### Optimizations Applied
-1. `PublishAot=true` - Ahead-of-time compilation
-2. `IlcOptimizationPreference=Size` - Size-optimized IL
-3. `InvariantGlobalization=true` - No locale data
-4. `IlcGenerateStackTraceData=false` - No stack traces
-5. `EventSourceSupport=false` - No event sources
-6. `DebuggerSupport=false` - No debugger
-7. `StripSymbols=true` - Remove debug symbols
-8. `OpenApiGenerateDocuments=false` - No OpenAPI docs
+### Packaging and Service Integration
 
-### Test Results
-All 9 API tests passing:
-1. ✅ Health check endpoint
-2. ✅ Session creation
-3. ✅ Send input
-4. ✅ Get session info
-5. ✅ List sessions
-6. ✅ Resize terminal
-7. ✅ Multiple inputs
-8. ✅ Close session
-9. ✅ Verify closed
+- OpenWRT package skeleton retained (`package/auretty`)
+- Makefile improved:
+  - explicit missing-binary check
+  - overridable artifact folder selector: `AURETTY_ARCH_DIR`
+- procd init and UCI config remain in place
 
-## Files Created
+### Testing and CI
 
-### Build System (3 files)
-- `build-openwrt.sh` - Main build script
-- `musl-gcc-wrapper.sh` - Toolchain wrapper
-- `src/AureTTY/AureTTY.OpenWRT.csproj` - Project file
+- `test-openwrt-api.sh` fixed and now passes end-to-end (9/9)
+- Full unit/integration test suites pass:
+  - `AureTTY.Tests`
+  - `AureTTY.Core.Tests`
+- `AureTTY.OpenWRT.csproj` added to solution
+- AppVeyor Linux branch now builds solution before tests (broader compile coverage)
 
-### Package (3 files)
-- `package/auretty/Makefile` - OpenWRT package
-- `package/auretty/files/auretty.init` - Init script
-- `package/auretty/files/auretty.config` - UCI config
+## Verified Results in This Repository
 
-### Documentation (4 files)
-- `docs/openwrt/README.md` - Overview
-- `docs/openwrt/BUILD.md` - Build guide
-- `docs/openwrt/PACKAGE.md` - Package guide
-- `docs/openwrt/QEMU_TESTING.md` - Testing guide
+- x86_64 OpenWRT build completes successfully (`~15 MB` stripped)
+- Built x86_64 binary starts and serves API
+- OpenWRT API smoke suite passes fully against built binary
+- ARM64 build now correctly fails early when no musl cross-compiler is available
 
-### Testing (2 files)
-- `test-qemu.sh` - QEMU VM launcher
-- `test-openwrt-api.sh` - API test suite
+## Remaining Work
 
-### Updates (2 files)
-- `README.md` - Added OpenWRT section
-- `docs/INDEX.md` - Added OpenWRT links
-
-**Total: 14 new files, 2 updated files**
-
-## Commits
-
-1. **feat(openwrt): add OpenWRT platform support with optimized builds**
-   - 12 files changed, 1666 insertions(+)
-   - Build system, package structure, documentation
-
-2. **test(openwrt): add QEMU and API test scripts**
-   - 2 files changed, 231 insertions(+)
-   - Testing infrastructure
-
-## Platform Support Matrix
-
-| Platform | Status | Binary Size | Memory | Notes |
-|----------|--------|-------------|--------|-------|
-| Linux (glibc) | ✅ Stable | 17 MB | 30 MB | Standard build |
-| Windows (ConPTY) | ✅ Stable | 18 MB | 35 MB | Native ConPTY |
-| OpenWRT x86_64 | ✅ Stable | 15 MB | 20-30 MB | musl libc |
-| OpenWRT ARM64 | 📋 Planned | TBD | TBD | Next phase |
-| OpenWRT MIPS | 📋 Planned | TBD | TBD | Experimental |
-
-## Next Steps (Optional)
-
-### Phase 5: ARM64 Support
-- Extend build script for aarch64
-- Test on ARM-based routers
-- Update documentation
-
-### Phase 6: QEMU Integration Testing
-- Automated QEMU tests in CI
-- Multi-architecture testing
-- Performance benchmarks
-
-### Phase 7: Package Repository
-- Create OpenWRT package feed
-- Automated package builds
-- Version management
-
-## Performance Metrics
-
-### Binary Size Comparison
-- Regular linux-x64: 17 MB
-- OpenWRT (musl): 15 MB (12% reduction)
-- With UPX: 8-10 MB (optional)
-
-### Memory Usage
-- Minimal config: ~20 MB (4 sessions)
-- Standard config: ~30 MB (16 sessions)
-- High config: ~50 MB (32 sessions)
-
-### Startup Time
-- Cold start: ~200ms
-- First request: ~5ms
-- Subsequent requests: ~1-2ms
-
-## Requirements Met
-
-✅ OpenWRT 23.05+ support
-✅ x86_64 architecture
-✅ musl libc compatibility
-✅ Small binary size (<20 MB)
-✅ Low memory footprint (<50 MB)
-✅ Full API functionality
-✅ Session management
-✅ WebSocket support
-✅ MessagePack protocol
-✅ Reconnection with replay
-✅ UCI configuration
-✅ Init script with procd
-✅ Comprehensive documentation
-✅ Automated testing
+1. Validate ARM64 on real OpenWRT hardware (or reproducible emulator path)
+2. Add CI job with musl cross toolchains for ARM targets
+3. Decide long-term strategy for ARMv7 (maintain or drop)
+4. Add package release automation (`ipk` artifacts per target)
 
 ## Conclusion
 
-OpenWRT support is **production-ready** for x86_64 architecture. The implementation includes:
+OpenWRT support for `x86_64` is solid and reproducible.
 
-- Complete build system with optimization
-- OpenWRT package structure
-- Comprehensive documentation (13,000+ lines)
-- Automated testing infrastructure
-- All features working correctly
-
-The binary is optimized for embedded systems with minimal resource usage while maintaining full functionality.
+Cross-arch behavior is now explicit and safe: unsupported or misconfigured toolchains fail fast instead of producing misleading artifacts.

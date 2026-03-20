@@ -12,6 +12,7 @@ PKG_MIRROR_HASH:=skip
 PKG_LICENSE:=MIT Apache-2.0
 PKG_LICENSE_FILES:=LICENSE-MIT LICENSE-APACHE
 PKG_MAINTAINER:=Vitaly Kuzyaev <vitkuz573@gmail.com>
+AURETTY_ARCH_DIR?=$(ARCH)
 
 include $(INCLUDE_DIR)/package.mk
 
@@ -36,12 +37,14 @@ endef
 
 define Build/Compile
 	# Binary is pre-built using build-openwrt.sh
-	# Copy from artifacts/openwrt/$(ARCH)/auretty
+	# Copy from artifacts/openwrt/$(AURETTY_ARCH_DIR)/auretty
 endef
 
 define Package/auretty/install
 	$(INSTALL_DIR) $(1)/usr/bin
-	$(INSTALL_BIN) $(PKG_BUILD_DIR)/artifacts/openwrt/$(ARCH)/auretty $(1)/usr/bin/
+	[ -f "$(PKG_BUILD_DIR)/artifacts/openwrt/$(AURETTY_ARCH_DIR)/auretty" ] || \
+		{ echo "Missing prebuilt binary: artifacts/openwrt/$(AURETTY_ARCH_DIR)/auretty"; exit 1; }
+	$(INSTALL_BIN) $(PKG_BUILD_DIR)/artifacts/openwrt/$(AURETTY_ARCH_DIR)/auretty $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/auretty.init $(1)/etc/init.d/auretty

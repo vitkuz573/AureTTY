@@ -5,5 +5,6 @@ public enum Shell
     Cmd,
     PowerShell,
     Pwsh,
-    Bash
+    Bash,
+    Sh
 }

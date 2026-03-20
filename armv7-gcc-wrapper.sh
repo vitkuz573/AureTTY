@@ -1,15 +1,15 @@
 #!/bin/bash
-# Wrapper for AArch64 musl GCC that filters out incompatible flags
+# Wrapper for ARMv7 musl GCC that filters out incompatible flags.
 
 set -euo pipefail
 
 args=()
 for arg in "$@"; do
-    # Skip --target flag (not supported by gcc)
+    # Skip --target flag (not supported by gcc frontends).
     if [[ "$arg" == --target=* ]]; then
         continue
     fi
-    # Replace -fuse-ld=gnu with -fuse-ld=bfd
+    # GNU ld alias is not always available across cross-toolchains.
     if [[ "$arg" == "-fuse-ld=gnu" ]]; then
         args+=("-fuse-ld=bfd")
         continue
@@ -17,7 +17,7 @@ for arg in "$@"; do
     args+=("$arg")
 done
 
-compiler="${AARCH64_CC:-aarch64-linux-musl-gcc}"
+compiler="${ARMV7_CC:-arm-linux-musleabihf-gcc}"
 if ! command -v "$compiler" >/dev/null 2>&1; then
     echo "Error: compiler '$compiler' not found in PATH." >&2
     exit 1

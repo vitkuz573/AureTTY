@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # AureTTY OpenWRT Automated Test Suite
 # Tests AureTTY functionality via HTTP API
@@ -25,12 +25,12 @@ FAILED=0
 
 test_pass() {
     echo -e "${GREEN}✓ PASS${NC}: $1"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
 }
 
 test_fail() {
     echo -e "${RED}✗ FAIL${NC}: $1"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
 }
 
 # Test 1: Health check
@@ -48,7 +48,7 @@ echo "Test 2: Create session"
 RESPONSE=$(curl -s -X POST \
   -H "X-AureTTY-Key: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"shell":3}' \
+  -d '{"shell":"sh"}' \
   "$BASE_URL/viewers/$VIEWER_ID/sessions")
 
 SESSION_ID=$(echo "$RESPONSE" | grep -o '"sessionId":"[^"]*"' | cut -d'"' -f4)
@@ -100,7 +100,7 @@ echo "Test 6: Resize terminal"
 if curl -s -f -X PUT \
   -H "X-AureTTY-Key: $API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"rows":40,"cols":120}' \
+  -d '{"rows":40,"columns":120}' \
   "$BASE_URL/viewers/$VIEWER_ID/sessions/$SESSION_ID/terminal-size" > /dev/null; then
     test_pass "Terminal resized"
 else

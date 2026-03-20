@@ -1,232 +1,138 @@
 # OpenWRT Support for AureTTY
 
-AureTTY now supports OpenWRT routers and embedded devices with optimized NativeAOT builds.
+AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native service packaging.
+
+## Current Status
+
+| Architecture | Status | Notes |
+|--------------|--------|-------|
+| x86_64 | ✅ Stable | Fully validated in local build + API smoke tests |
+| ARM64 (aarch64) | ⚠️ Preview | Requires musl cross-compiler and on-device validation |
+| ARMv7 (armhf) | 🧪 Experimental | Build pipeline available, requires external musl toolchain |
+| MIPS | ❌ Not supported | No supported musl RID in current .NET pipeline |
 
 ## Features
 
-- **Small binary size**: ~15 MB (stripped, musl libc)
-- **Low memory footprint**: ~20-30 MB RAM at runtime
-- **Multiple architectures**: x86_64, ARM64, MIPS (experimental)
-- **UCI configuration**: Native OpenWRT configuration system
-- **Init script**: Automatic startup with procd
-- **Resource limits**: Configurable for low-memory devices
+- NativeAOT binary optimized for size (`~15 MB` on x86_64, stripped)
+- Low runtime footprint for embedded devices
+- OpenWRT package layout (`ipk`), UCI config, and procd init script
+- Automated HTTP API smoke tests (`test-openwrt-api.sh`)
+- QEMU test workflow for x86_64
 
 ## Quick Start
 
-### Build for OpenWRT
+### 1. Build x86_64 Binary
 
 ```bash
-# Install musl toolchain
+# Install build prerequisites (Debian/Ubuntu)
 sudo apt-get install musl-tools musl-dev
 
-# Build for x86_64
+# Build
 ARCH=x86_64 ./build-openwrt.sh
 
-# Output: artifacts/openwrt/x86_64/auretty (15 MB)
+# Output
+# artifacts/openwrt/x86_64/auretty
 ```
 
-### Install on Device
+### 2. Deploy to Device
 
 ```bash
-# Copy binary
 scp artifacts/openwrt/x86_64/auretty root@router:/usr/bin/
-
-# SSH to router
-ssh root@router
-
-# Make executable
-chmod +x /usr/bin/auretty
-
-# Run
-auretty --transport http --http-listen-url http://0.0.0.0:17850 --api-key your-key
+ssh root@router 'chmod +x /usr/bin/auretty && /usr/bin/auretty --version'
 ```
 
-## Supported Architectures
-
-| Architecture | Status | Devices |
-|--------------|--------|---------|
-| x86_64 | ✅ Stable | x86 routers, QEMU |
-| ARM64 (aarch64) | ✅ Stable | ARM Cortex-A routers, RPi 3/4 |
-| MIPS | 📋 Planned | MIPS routers (experimental) |
-
-## Documentation
-
-- **[Build Guide](docs/openwrt/BUILD.md)** - Building for OpenWRT
-- **[Package Guide](docs/openwrt/PACKAGE.md)** - Creating OpenWRT packages
-- **[QEMU Testing](docs/openwrt/QEMU_TESTING.md)** - Testing in QEMU VM
-
-## Configuration
-
-### Low-Memory Devices (64-128 MB RAM)
+### 3. Run Service
 
 ```bash
 auretty \
   --transport http \
   --http-listen-url http://0.0.0.0:17850 \
-  --api-key your-key \
-  --max-concurrent-sessions 4 \
-  --max-sessions-per-viewer 2 \
-  --replay-buffer-capacity 1024 \
-  --sse-subscription-buffer-capacity 512
+  --api-key your-key
 ```
 
-### Standard Devices (256+ MB RAM)
+Notes:
+- For Linux/OpenWRT clients, prefer `"shell":"sh"` in session create requests.
+- If `shell` is omitted, Linux/OpenWRT defaults to `sh`.
+
+## ARM64 Build Notes
+
+ARM64 builds are strict musl-only now. The script fails fast if no musl compiler is available.
+
+Supported ARM64 compiler names (auto-detected):
+- `aarch64-linux-musl-gcc`
+- `aarch64-openwrt-linux-musl-gcc`
+
+You can override compiler path/name:
 
 ```bash
-auretty \
-  --transport http \
-  --http-listen-url http://0.0.0.0:17850 \
-  --api-key your-key \
-  --max-concurrent-sessions 16 \
-  --max-sessions-per-viewer 4 \
-  --replay-buffer-capacity 2048 \
-  --sse-subscription-buffer-capacity 1024
+AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./build-openwrt.sh
 ```
 
 ## OpenWRT Package
 
-### Install Package
+Package files live in `package/auretty/`:
+- `Makefile`
+- `files/auretty.init`
+- `files/auretty.config`
+
+Install example:
 
 ```bash
-# Install from IPK
 opkg install auretty_0.0.0-1_x86_64.ipk
-
-# Configure via UCI
 uci set auretty.config.enabled='1'
 uci set auretty.config.api_key='your-secret-key'
 uci commit auretty
-
-# Start service
-/etc/init.d/auretty start
 /etc/init.d/auretty enable
+/etc/init.d/auretty start
 ```
 
-### UCI Configuration
+## Testing
+
+### API Smoke Tests
 
 ```bash
-# View configuration
-uci show auretty
-
-# Modify settings
-uci set auretty.config.http_url='http://0.0.0.0:8080'
-uci set auretty.config.max_sessions='8'
-uci commit auretty
-
-# Restart service
-/etc/init.d/auretty restart
+# Start service first, then:
+./test-openwrt-api.sh
 ```
 
-## Testing in QEMU
+### QEMU (x86_64)
 
-```bash
-# Download OpenWRT image
-wget https://downloads.openwrt.org/releases/23.05.0/targets/x86/64/openwrt-23.05.0-x86-64-generic-ext4-combined.img.gz
-gunzip openwrt-23.05.0-x86-64-generic-ext4-combined.img.gz
-
-# Start QEMU
-qemu-system-x86_64 \
-  -enable-kvm \
-  -m 256M \
-  -nographic \
-  -device e1000,netdev=net0 \
-  -netdev user,id=net0,hostfwd=tcp::2222-:22,hostfwd=tcp::17850-:17850 \
-  -drive file=openwrt-23.05.0-x86-64-generic-ext4-combined.img,format=raw
-
-# Transfer binary
-scp -P 2222 artifacts/openwrt/x86_64/auretty root@localhost:/usr/bin/
-
-# Test
-ssh -p 2222 root@localhost
-auretty --version
-```
-
-## Performance
-
-### Binary Size Comparison
-
-| Build Type | Size | Notes |
-|------------|------|-------|
-| Regular linux-x64 | 17 MB | glibc, not stripped |
-| OpenWRT (musl) | 15 MB | musl, stripped |
-| OpenWRT + UPX | 8-10 MB | compressed (optional) |
-
-### Memory Usage
-
-| Configuration | RAM Usage | Max Sessions |
-|---------------|-----------|--------------|
-| Minimal | ~20 MB | 4 sessions |
-| Standard | ~30 MB | 16 sessions |
-| High | ~50 MB | 32 sessions |
-
-## Requirements
-
-### System Requirements
-
-- OpenWRT 23.05+ (kernel 5.15+)
-- 64 MB RAM minimum (128 MB recommended)
-- 20-30 MB flash storage
-- util-linux-script package (for PTY support)
-
-### Dependencies
-
-```bash
-# Install required packages
-opkg update
-opkg install util-linux-script
-```
+See [QEMU Testing](QEMU_TESTING.md).
 
 ## Troubleshooting
 
-### Binary Won't Run
+### `Error: unable to find aarch64 musl compiler in PATH`
+
+Install/provide a musl cross-compiler and retry:
 
 ```bash
-# Check binary type
+AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./build-openwrt.sh
+```
+
+### `binary interpreter mismatch`
+
+`build-openwrt.sh` verifies the ELF interpreter. This error means a glibc compiler was used by mistake.
+
+Expected interpreters:
+- x86_64: `/lib/ld-musl-x86_64.so.1`
+- aarch64: `/lib/ld-musl-aarch64.so.1`
+- armv7: `/lib/ld-musl-armhf.so.1`
+
+### Binary does not start on device
+
+```bash
 file /usr/bin/auretty
-# Should show: ELF 64-bit, dynamically linked, interpreter /lib/ld-musl-x86_64.so.1
-
-# Check musl runtime
-ls -l /lib/ld-musl-x86_64.so.1
-
-# Test execution
 /usr/bin/auretty --version
 ```
 
-### Out of Memory
+Validate architecture and musl runtime on target.
 
-```bash
-# Reduce limits
-auretty \
-  --max-concurrent-sessions 2 \
-  --max-sessions-per-viewer 1 \
-  --replay-buffer-capacity 512 \
-  --sse-subscription-buffer-capacity 256
-```
+## Documentation
 
-### Permission Denied
-
-```bash
-# Fix permissions
-chmod +x /usr/bin/auretty
-
-# Check ownership
-ls -l /usr/bin/auretty
-```
-
-## Roadmap
-
-- [x] x86_64 support
-- [x] Build system and scripts
-- [x] OpenWRT package structure
-- [x] QEMU testing guide
-- [ ] ARM64 support
-- [ ] MIPS support (experimental)
-- [ ] LuCI web interface
-- [ ] Package repository
-
-## Contributing
-
-See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development guidelines.
+- [Build Guide](BUILD.md)
+- [Package Guide](PACKAGE.md)
+- [QEMU Testing](QEMU_TESTING.md)
 
 ## License
 
-Dual licensed under MIT and Apache-2.0. See [LICENSE-MIT](../../LICENSE-MIT) and [LICENSE-APACHE](../../LICENSE-APACHE).
+Dual licensed under MIT and Apache-2.0.

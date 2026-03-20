@@ -8,7 +8,7 @@ public sealed class CreateTerminalSessionRequest
     public string? SessionId { get; init; }
 
     [EnumDataType(typeof(Shell))]
-    public Shell Shell { get; init; } = Shell.Pwsh;
+    public Shell? Shell { get; init; }
 
     [EnumDataType(typeof(ExecutionRunContext))]
     public ExecutionRunContext RunContext { get; init; } = ExecutionRunContext.InteractiveUser;

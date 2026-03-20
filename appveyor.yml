@@ -70,6 +70,11 @@ build_script:
           }
       }
       else {
+          & $dotnet build AureTTY.slnx -c Release --no-restore -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false 2>&1
+          if ($LASTEXITCODE -ne 0) {
+              throw "dotnet build AureTTY.slnx failed with exit code $LASTEXITCODE."
+          }
+
           & $dotnet test tests/AureTTY.Tests/AureTTY.Tests.csproj -c Release 2>&1
           if ($LASTEXITCODE -ne 0) {
               throw "dotnet test AureTTY.Tests failed with exit code $LASTEXITCODE."

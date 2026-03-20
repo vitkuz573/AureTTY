@@ -2,6 +2,7 @@ using AureTTY.Api;
 using AureTTY.Api.Models;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
+using AureTTY.Contracts.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AureTTY.Controllers;
@@ -62,7 +63,8 @@ public sealed class TerminalViewerSessionsController(ITerminalSessionService ter
             var sessionId = string.IsNullOrWhiteSpace(request.SessionId)
                 ? Guid.NewGuid().ToString("N")
                 : request.SessionId.Trim();
-            var startRequest = new TerminalSessionStartRequest(sessionId, request.Shell)
+            var shell = request.Shell ?? ResolveDefaultShell();
+            var startRequest = new TerminalSessionStartRequest(sessionId, shell)
             {
                 RunContext = request.RunContext,
                 UserName = request.UserName,
@@ -219,5 +221,12 @@ public sealed class TerminalViewerSessionsController(ITerminalSessionService ter
         {
             return TerminalApiProblemMapper.Map(this, ex);
         }
+    }
+
+    private static Shell ResolveDefaultShell()
+    {
+        return OperatingSystem.IsWindows()
+            ? Shell.Pwsh
+            : Shell.Sh;
     }
 }

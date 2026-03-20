@@ -10,7 +10,6 @@
     <OpenApiDocumentsDirectory>$(MSBuildProjectDirectory)</OpenApiDocumentsDirectory>
     <OpenApiGenerateDocuments>true</OpenApiGenerateDocuments>
     <OpenApiGenerateDocumentsOnBuild>false</OpenApiGenerateDocumentsOnBuild>
-    <OpenApiGenerateDocumentsOnBuild Condition="'$(Configuration)' == 'Release'">true</OpenApiGenerateDocumentsOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -28,6 +27,14 @@
   <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0'">
     <DefineConstants>$(DefineConstants);AURETTY_LINUX_BACKEND</DefineConstants>
   </PropertyGroup>
+
+  <Target Name="GenerateOpenApiOnReleaseBuild"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release'
+                     and '$(TargetFramework)' == 'net10.0'
+                     and '$(DesignTimeBuild)' != 'true'">
+    <CallTarget Targets="GenerateOpenApiDocuments" />
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

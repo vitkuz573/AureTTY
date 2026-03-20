@@ -27,8 +27,8 @@ All transports can run simultaneously and share the same session state.
 - **Linux**: PTY backend via `script` from `util-linux` (target: `net10.0`)
 - **Windows**: Native ConPTY backend (targets: `net10.0-windows`, `net10.0`)
 - **OpenWRT**: Optimized musl builds for routers and embedded devices
-  - x86_64: ~15 MB binary
-  - ARM64 (aarch64): ~16 MB binary
+  - x86_64: ~15 MB binary (stable)
+  - ARM64 (aarch64): ~16 MB binary (preview, musl cross-toolchain required)
 - **NativeAOT**: Full support for ahead-of-time compilation on all platforms
 
 ### Advanced Capabilities
@@ -376,6 +376,7 @@ pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 `
 
 **Requirements:**
 - musl toolchain: `sudo apt-get install musl-tools musl-dev`
+- for ARM64 cross-builds: `aarch64-linux-musl-gcc` (or OpenWRT SDK equivalent)
 - OpenWRT 23.05+ device or QEMU VM
 
 **Build for OpenWRT:**
@@ -526,8 +527,9 @@ Current baseline (2026-03-20):
 - Update Windows to latest version
 
 **OpenWRT: Binary won't run**
-- Ensure musl runtime is available: `ls -l /lib/ld-musl-x86_64.so.1`
-- Check architecture matches: `file /usr/bin/auretty`
+- Verify ELF interpreter and architecture: `file /usr/bin/auretty`
+- x86_64 interpreter should be `/lib/ld-musl-x86_64.so.1`
+- ARM64 interpreter should be `/lib/ld-musl-aarch64.so.1`
 - See [OpenWRT Troubleshooting](docs/openwrt/BUILD.md#troubleshooting)
 
 ### Debug Logging

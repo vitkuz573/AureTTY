@@ -8,7 +8,7 @@ namespace AureTTY.Serialization;
 
 [JsonSourceGenerationOptions(
     JsonSerializerDefaults.Web,
-    Converters = [typeof(TerminalIpcPayloadConverter)])]
+    Converters = [typeof(TerminalIpcPayloadConverter), typeof(ShellJsonConverter)])]
 [JsonSerializable(typeof(ApiErrorResponse))]
 [JsonSerializable(typeof(ApiProblemResponse))]
 [JsonSerializable(typeof(AttachTerminalSessionRequest))]

@@ -743,7 +743,14 @@
             ]
           },
           "shell": {
-            "$ref": "#/components/schemas/Shell"
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/Shell"
+              }
+            ]
           },
           "runContext": {
             "$ref": "#/components/schemas/ExecutionRunContext"

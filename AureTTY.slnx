@@ -7,6 +7,7 @@
     <Project Path="src/AureTTY.Protocol/AureTTY.Protocol.csproj" />
     <Project Path="src/AureTTY.Windows/AureTTY.Windows.csproj" />
     <Project Path="src/AureTTY/AureTTY.csproj" />
+    <Project Path="src/AureTTY/AureTTY.OpenWRT.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AureTTY.Core.Tests/AureTTY.Core.Tests.csproj" />

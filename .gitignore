@@ -11,3 +11,5 @@
 .tools/
 coverage-results*/
 coverage-report*/
+
+/artifacts/

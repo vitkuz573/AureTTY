@@ -1,255 +1,132 @@
 # Building AureTTY for OpenWRT
 
-This guide explains how to build AureTTY for OpenWRT routers and embedded devices.
+This guide covers cross-compiling AureTTY NativeAOT binaries for OpenWRT targets.
+
+## Supported Targets
+
+| Architecture | RID | Status | Required Compiler |
+|--------------|-----|--------|-------------------|
+| x86_64 | linux-musl-x64 | ✅ Stable | `musl-gcc` (or compatible) |
+| aarch64/arm64 | linux-musl-arm64 | ⚠️ Preview | `aarch64-linux-musl-gcc` or OpenWRT equivalent |
+| armv7/armhf | linux-musl-arm | 🧪 Experimental | `arm-linux-musleabihf-gcc` or OpenWRT equivalent |
+| mips/mipsel | - | ❌ Not supported | No supported musl RID in current pipeline |
 
 ## Prerequisites
 
 - .NET 10 SDK
-- musl toolchain: `sudo apt-get install musl-tools musl-dev`
-- ARM64 cross-compiler (for ARM builds): `sudo apt-get install gcc-aarch64-linux-gnu`
 - Git
+- musl toolchain for host x86_64 builds:
 
-## Quick Start
-
-```bash
-# Build for x86_64 (most common OpenWRT target)
-ARCH=x86_64 ./build-openwrt.sh
-
-# Build for ARM64
-ARCH=aarch64 ./build-openwrt.sh
-
-# Output: artifacts/openwrt/{arch}/auretty
-```
-
-## Supported Architectures
-
-| Architecture | RID | OpenWRT Devices |
-|--------------|-----|-----------------|
-| x86_64 | linux-musl-x64 | x86 routers, QEMU |
-| aarch64/arm64 | linux-musl-arm64 | ARM Cortex-A routers, RPi 3/4 |
-| mips/mipsel | linux-musl-mips64 | MIPS routers (experimental) |
-
-## Binary Size
-
-- **x86_64**: ~15 MB (stripped)
-- **ARM64**: ~16 MB (stripped)
-- **With UPX compression**: ~8-10 MB (optional)
-- **Memory usage**: ~20-30 MB RAM at runtime
-
-## Build Options
-
-### Environment Variables
-
-```bash
-ARCH=x86_64          # Target architecture
-CONFIG=Release       # Build configuration
-```
-
-### Manual Build
-
-```bash
-# Using the OpenWRT project file directly
-dotnet publish src/AureTTY/AureTTY.OpenWRT.csproj \
-  -c Release \
-  -r linux-musl-x64 \
-  --self-contained true \
-  -p:PublishAot=true \
-  -p:IlcOptimizationPreference=Size \
-  -p:StripSymbols=true \
-  -o artifacts/openwrt/x86_64
-```
-
-## Size Optimization
-
-The build script applies these optimizations:
-
-1. **NativeAOT compilation** - Ahead-of-time compilation
-2. **Aggressive trimming** - Remove unused code
-3. **Size-optimized IL** - `IlcOptimizationPreference=Size`
-4. **Disabled features**:
-   - Stack traces (`IlcGenerateStackTraceData=false`)
-   - Event sources (`EventSourceSupport=false`)
-   - Debugger support (`DebuggerSupport=false`)
-   - HTTP activity propagation (`HttpActivityPropagationSupport=false`)
-5. **Symbol stripping** - Remove debug symbols
-6. **Invariant globalization** - No locale data
-
-### Optional: UPX Compression
-
-```bash
-# Install UPX
-sudo apt-get install upx-ucl
-
-# Compress binary (reduces size by ~40%)
-upx --best --lzma artifacts/openwrt/x86_64/auretty
-```
-
-**Warning**: UPX may cause issues on some OpenWRT devices. Test before deploying.
-
-## Testing the Binary
-
-### Local Testing (x86_64)
-
-```bash
-# Check binary info
-file artifacts/openwrt/x86_64/auretty
-# Output: ELF 64-bit LSB pie executable, x86-64, dynamically linked, interpreter /lib/ld-musl-x86_64.so.1
-
-# Test execution
-artifacts/openwrt/x86_64/auretty --version
-artifacts/openwrt/x86_64/auretty --help
-
-# Run service (requires musl runtime)
-artifacts/openwrt/x86_64/auretty \
-  --transport http \
-  --http-listen-url http://0.0.0.0:17850 \
-  --api-key test-key
-```
-
-### Local Testing (ARM64)
-
-```bash
-# Check binary info
-file artifacts/openwrt/aarch64/auretty
-# Output: ELF 64-bit LSB pie executable, ARM aarch64, dynamically linked, interpreter /lib/ld-linux-aarch64.so.1
-
-# Note: Cannot run ARM64 binary on x86_64 host without emulation
-# Use QEMU user-mode emulation or test on actual ARM64 device
-```
-
-### QEMU Testing
-
-See [docs/openwrt/QEMU_TESTING.md](QEMU_TESTING.md) for testing in QEMU VM.
-
-### On-Device Testing
-
-```bash
-# Copy to OpenWRT device
-scp artifacts/openwrt/x86_64/auretty root@192.168.1.1:/tmp/
-
-# SSH to device
-ssh root@192.168.1.1
-
-# Test
-/tmp/auretty --version
-/tmp/auretty --help
-```
-
-## Deployment
-
-### Manual Installation
-
-```bash
-# Copy binary
-scp artifacts/openwrt/x86_64/auretty root@router:/usr/bin/
-
-# SSH to router
-ssh root@router
-
-# Make executable
-chmod +x /usr/bin/auretty
-
-# Test
-auretty --version
-
-# Run
-auretty --transport http --http-listen-url http://0.0.0.0:17850 --api-key your-key
-```
-
-### OpenWRT Package
-
-See [docs/openwrt/PACKAGE.md](PACKAGE.md) for creating an OpenWRT package.
-
-## Troubleshooting
-
-### Build Errors
-
-**Error: `musl-gcc: command not found`**
 ```bash
 sudo apt-get install musl-tools musl-dev
 ```
 
-**Error: `aarch64-linux-gnu-gcc: command not found`**
+For ARM cross-builds, provide appropriate musl compilers in `PATH` (for example from OpenWRT SDK toolchains).
+
+## Quick Start
+
 ```bash
-sudo apt-get install gcc-aarch64-linux-gnu
+# x86_64
+ARCH=x86_64 ./build-openwrt.sh
+
+# ARM64 (requires musl cross-compiler)
+ARCH=aarch64 ./build-openwrt.sh
+
+# ARMv7 (experimental)
+ARCH=armv7 ./build-openwrt.sh
 ```
 
-**Error: `unrecognized command-line option '--target=x86_64-linux-musl'`**
-- The build script uses a wrapper (`musl-gcc-wrapper.sh`) to filter this flag
-- Ensure the wrapper is executable: `chmod +x musl-gcc-wrapper.sh`
+Output layout:
 
-**Error: `unrecognized command-line option '--target=aarch64-linux-musl'`**
-- The build script uses a wrapper (`aarch64-gcc-wrapper.sh`) to filter this flag
-- Ensure the wrapper is executable: `chmod +x aarch64-gcc-wrapper.sh`
+```text
+artifacts/openwrt/<arch>/auretty
+```
 
-**Error: Duplicate assembly attributes**
-- Clean build: `rm -rf src/AureTTY/obj src/AureTTY/bin`
-- Rebuild: `./build-openwrt.sh`
-
-### Runtime Errors
-
-**Error: `error while loading shared libraries: /lib/ld-musl-x86_64.so.1`**
-- The device doesn't have musl runtime
-- OpenWRT uses musl by default, this should work on real devices
-- For testing on glibc systems, use the regular linux-x64 build
-
-**Error: `Illegal instruction`**
-- Architecture mismatch
-- Rebuild for correct architecture (x86_64, aarch64, etc.)
-
-**Error: `Out of memory`**
-- Device has insufficient RAM
-- Reduce session limits: `--max-concurrent-sessions 4 --max-sessions-per-viewer 2`
-- Reduce buffer sizes: `--replay-buffer-capacity 1024 --sse-subscription-buffer-capacity 512`
-
-## Performance Tuning
-
-### Memory-Constrained Devices (64-128 MB RAM)
+## Environment Variables
 
 ```bash
-auretty \
+ARCH=x86_64
+CONFIG=Release
+
+# Optional compiler overrides
+X86_64_MUSL_CC=musl-gcc
+AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc
+ARMV7_MUSL_CC=/path/to/arm-openwrt-linux-muslgnueabi-gcc
+
+# Optional: disable interpreter validation (not recommended)
+SKIP_INTERPRETER_CHECK=1
+```
+
+## What the Script Validates
+
+`build-openwrt.sh` now fails early when configuration is invalid.
+
+1. Required musl compiler exists for the selected architecture.
+2. Output binary was produced.
+3. ELF interpreter matches OpenWRT musl expectations:
+- x86_64: `/lib/ld-musl-x86_64.so.1`
+- aarch64: `/lib/ld-musl-aarch64.so.1`
+- armv7: `/lib/ld-musl-armhf.so.1`
+
+This prevents accidental glibc builds being published as OpenWRT artifacts.
+
+## Binary Verification
+
+```bash
+file artifacts/openwrt/x86_64/auretty
+readelf -l artifacts/openwrt/x86_64/auretty | grep 'Requesting program interpreter'
+```
+
+Expected example (`x86_64`):
+
+```text
+Requesting program interpreter: /lib/ld-musl-x86_64.so.1
+```
+
+## Run Locally (x86_64)
+
+```bash
+artifacts/openwrt/x86_64/auretty --version
+artifacts/openwrt/x86_64/auretty \
   --transport http \
-  --http-listen-url http://0.0.0.0:17850 \
-  --api-key your-key \
-  --max-concurrent-sessions 4 \
-  --max-sessions-per-viewer 2 \
-  --replay-buffer-capacity 1024 \
-  --max-pending-input-chunks 2048 \
-  --sse-subscription-buffer-capacity 512
+  --http-listen-url http://127.0.0.1:17850 \
+  --api-key test-key
 ```
 
-### High-Performance Devices (256+ MB RAM)
+## Troubleshooting
+
+### `Error: unable to find <arch> musl compiler in PATH`
+
+Install or export a musl cross-compiler path via `*_MUSL_CC` env var.
+
+### `binary interpreter mismatch`
+
+A glibc compiler was used. Ensure your compiler is musl-based (`*-linux-musl-gcc`).
+
+### `Error: Unsupported architecture: mips`
+
+MIPS OpenWRT builds are currently blocked by unsupported musl RID in this pipeline.
+
+### `script: command not found` at runtime
+
+Install OpenWRT dependency:
 
 ```bash
-auretty \
-  --transport http \
-  --http-listen-url http://0.0.0.0:17850 \
-  --api-key your-key \
-  --max-concurrent-sessions 32 \
-  --max-sessions-per-viewer 8 \
-  --replay-buffer-capacity 4096 \
-  --max-pending-input-chunks 8192 \
-  --sse-subscription-buffer-capacity 2048
+opkg update
+opkg install util-linux-script
 ```
 
-## Size Comparison
+## Performance Notes
 
-| Build Type | Size | Notes |
-|------------|------|-------|
-| Regular linux-x64 | 17 MB | glibc, not stripped |
-| OpenWRT x86_64 (musl) | 15 MB | musl, stripped |
-| OpenWRT ARM64 (musl) | 16 MB | musl, stripped |
-| OpenWRT + UPX | 8-10 MB | compressed, may have issues |
-| OpenWRT + optimizations | 12-13 MB | future improvements |
+Typical size (stripped):
+- x86_64: ~15 MB
+- aarch64: ~16 MB
 
-## Next Steps
+Typical RAM (depends on limits):
+- ~20-30 MB normal usage
 
-- [Create OpenWRT Package](PACKAGE.md)
-- [Test in QEMU](QEMU_TESTING.md)
-- [Deploy to Device](DEPLOYMENT.md)
+## Related Docs
 
-## See Also
-
-- [OpenWRT Documentation](https://openwrt.org/docs/start)
-- [.NET NativeAOT](https://learn.microsoft.com/en-us/dotnet/core/deploying/native-aot/)
-- [musl libc](https://musl.libc.org/)
+- [OpenWRT Overview](README.md)
+- [Package Guide](PACKAGE.md)
+- [QEMU Testing](QEMU_TESTING.md)

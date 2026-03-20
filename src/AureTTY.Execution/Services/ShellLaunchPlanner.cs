@@ -25,6 +25,10 @@ public static class ShellLaunchPlanner
             {
                 FileName = "bash"
             },
+            Shell.Sh => new ProcessStartInfo
+            {
+                FileName = "sh"
+            },
             Shell.Cmd => throw new InvalidOperationException("CMD is available only on Windows hosts."),
             Shell.PowerShell => throw new InvalidOperationException("Windows PowerShell is available only on Windows hosts."),
             _ => throw new InvalidOperationException($"Unsupported shell '{shell}'.")

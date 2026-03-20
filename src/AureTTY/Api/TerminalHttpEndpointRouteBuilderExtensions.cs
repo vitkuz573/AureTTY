@@ -2,6 +2,7 @@ using System.Text.Json;
 using AureTTY.Api.Models;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
+using AureTTY.Contracts.Enums;
 using AureTTY.Serialization;
 using AureTTY.Services;
 using Microsoft.AspNetCore.Builder;
@@ -146,7 +147,8 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
                     var sessionId = string.IsNullOrWhiteSpace(request.SessionId)
                         ? Guid.NewGuid().ToString("N")
                         : request.SessionId.Trim();
-                    var startRequest = new TerminalSessionStartRequest(sessionId, request.Shell)
+                    var shell = request.Shell ?? ResolveDefaultShell();
+                    var startRequest = new TerminalSessionStartRequest(sessionId, shell)
                     {
                         RunContext = request.RunContext,
                         UserName = request.UserName,
@@ -281,5 +283,12 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
             (string viewerId, HttpContext context) => TerminalWebSocketHandler.HandleAsync(viewerId, context, multiplexing: true));
 
         return app;
+    }
+
+    private static Shell ResolveDefaultShell()
+    {
+        return OperatingSystem.IsWindows()
+            ? Shell.Pwsh
+            : Shell.Sh;
     }
 }

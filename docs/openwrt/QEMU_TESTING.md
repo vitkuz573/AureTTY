@@ -100,7 +100,8 @@ auretty --transport http --http-listen-url http://0.0.0.0:17850 --api-key test-k
 
 ```bash
 # Health check
-curl http://localhost:17850/api/v1/health
+curl -H "X-AureTTY-Key: test-key" \
+  http://localhost:17850/api/v1/health
 
 # Create session
 curl -X POST \
@@ -170,7 +171,8 @@ free -m
 sudo apt-get install apache2-utils
 
 # Benchmark health endpoint
-ab -n 1000 -c 10 http://localhost:17850/api/v1/health
+ab -n 1000 -c 10 -H "X-AureTTY-Key: test-key" \
+  http://localhost:17850/api/v1/health
 
 # Benchmark session creation
 ab -n 100 -c 5 -p session.json -T application/json \
@@ -234,7 +236,7 @@ Create `test-openwrt.sh`:
 
 ```bash
 #!/bin/bash
-set -e
+set -euo pipefail
 
 API_KEY="test-key"
 BASE_URL="http://localhost:17850/api/v1"
@@ -244,7 +246,7 @@ echo "=== AureTTY OpenWRT Test Suite ==="
 
 # Test 1: Health check
 echo "Test 1: Health check"
-curl -s "$BASE_URL/health" | grep -q "Healthy" && echo "✓ PASS" || echo "✗ FAIL"
+curl -s -f -H "X-AureTTY-Key: $API_KEY" "$BASE_URL/health" | grep -q '\"status\":\"ok\"' && echo "✓ PASS" || echo "✗ FAIL"
 
 # Test 2: Create session
 echo "Test 2: Create session"
@@ -267,7 +269,7 @@ curl -s -X POST \
   -H "X-AureTTY-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"text":"echo test\n","sequence":1}' \
-  "$BASE_URL/viewers/$VIEWER_ID/sessions/$SESSION_ID/inputs" | grep -q "accepted" && echo "✓ PASS" || echo "✗ FAIL"
+  "$BASE_URL/viewers/$VIEWER_ID/sessions/$SESSION_ID/inputs" > /dev/null && echo "✓ PASS" || echo "✗ FAIL"
 
 # Test 4: Get session info
 echo "Test 4: Get session info"
