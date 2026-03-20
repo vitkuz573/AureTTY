@@ -46,8 +46,8 @@ auretty --transport http --http-listen-url http://0.0.0.0:17850 --api-key your-k
 | Architecture | Status | Devices |
 |--------------|--------|---------|
 | x86_64 | ✅ Stable | x86 routers, QEMU |
-| ARM64 (aarch64) | 🚧 In Progress | ARM Cortex-A routers |
-| MIPS | 📋 Planned | MIPS routers |
+| ARM64 (aarch64) | ✅ Stable | ARM Cortex-A routers, RPi 3/4 |
+| MIPS | 📋 Planned | MIPS routers (experimental) |
 
 ## Documentation
 

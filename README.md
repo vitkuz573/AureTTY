@@ -26,7 +26,9 @@ All transports can run simultaneously and share the same session state.
 
 - **Linux**: PTY backend via `script` from `util-linux` (target: `net10.0`)
 - **Windows**: Native ConPTY backend (targets: `net10.0-windows`, `net10.0`)
-- **OpenWRT**: Optimized musl builds for routers and embedded devices (~15 MB binary)
+- **OpenWRT**: Optimized musl builds for routers and embedded devices
+  - x86_64: ~15 MB binary
+  - ARM64 (aarch64): ~16 MB binary
 - **NativeAOT**: Full support for ahead-of-time compilation on all platforms
 
 ### Advanced Capabilities

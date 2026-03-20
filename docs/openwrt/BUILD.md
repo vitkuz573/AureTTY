@@ -6,6 +6,7 @@ This guide explains how to build AureTTY for OpenWRT routers and embedded device
 
 - .NET 10 SDK
 - musl toolchain: `sudo apt-get install musl-tools musl-dev`
+- ARM64 cross-compiler (for ARM builds): `sudo apt-get install gcc-aarch64-linux-gnu`
 - Git
 
 ## Quick Start
@@ -25,12 +26,13 @@ ARCH=aarch64 ./build-openwrt.sh
 | Architecture | RID | OpenWRT Devices |
 |--------------|-----|-----------------|
 | x86_64 | linux-musl-x64 | x86 routers, QEMU |
-| aarch64/arm64 | linux-musl-arm64 | ARM Cortex-A routers |
+| aarch64/arm64 | linux-musl-arm64 | ARM Cortex-A routers, RPi 3/4 |
 | mips/mipsel | linux-musl-mips64 | MIPS routers (experimental) |
 
 ## Binary Size
 
-- **Optimized build**: ~15 MB (stripped)
+- **x86_64**: ~15 MB (stripped)
+- **ARM64**: ~16 MB (stripped)
 - **With UPX compression**: ~8-10 MB (optional)
 - **Memory usage**: ~20-30 MB RAM at runtime
 
@@ -104,6 +106,17 @@ artifacts/openwrt/x86_64/auretty \
   --api-key test-key
 ```
 
+### Local Testing (ARM64)
+
+```bash
+# Check binary info
+file artifacts/openwrt/aarch64/auretty
+# Output: ELF 64-bit LSB pie executable, ARM aarch64, dynamically linked, interpreter /lib/ld-linux-aarch64.so.1
+
+# Note: Cannot run ARM64 binary on x86_64 host without emulation
+# Use QEMU user-mode emulation or test on actual ARM64 device
+```
+
 ### QEMU Testing
 
 See [docs/openwrt/QEMU_TESTING.md](QEMU_TESTING.md) for testing in QEMU VM.
@@ -156,9 +169,18 @@ See [docs/openwrt/PACKAGE.md](PACKAGE.md) for creating an OpenWRT package.
 sudo apt-get install musl-tools musl-dev
 ```
 
+**Error: `aarch64-linux-gnu-gcc: command not found`**
+```bash
+sudo apt-get install gcc-aarch64-linux-gnu
+```
+
 **Error: `unrecognized command-line option '--target=x86_64-linux-musl'`**
 - The build script uses a wrapper (`musl-gcc-wrapper.sh`) to filter this flag
 - Ensure the wrapper is executable: `chmod +x musl-gcc-wrapper.sh`
+
+**Error: `unrecognized command-line option '--target=aarch64-linux-musl'`**
+- The build script uses a wrapper (`aarch64-gcc-wrapper.sh`) to filter this flag
+- Ensure the wrapper is executable: `chmod +x aarch64-gcc-wrapper.sh`
 
 **Error: Duplicate assembly attributes**
 - Clean build: `rm -rf src/AureTTY/obj src/AureTTY/bin`
@@ -215,7 +237,8 @@ auretty \
 | Build Type | Size | Notes |
 |------------|------|-------|
 | Regular linux-x64 | 17 MB | glibc, not stripped |
-| OpenWRT (musl) | 15 MB | musl, stripped |
+| OpenWRT x86_64 (musl) | 15 MB | musl, stripped |
+| OpenWRT ARM64 (musl) | 16 MB | musl, stripped |
 | OpenWRT + UPX | 8-10 MB | compressed, may have issues |
 | OpenWRT + optimizations | 12-13 MB | future improvements |
 
