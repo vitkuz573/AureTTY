@@ -29,6 +29,13 @@ Complete documentation for AureTTY - a high-performance terminal runtime with mu
 
 - **[Troubleshooting Guide](TROUBLESHOOTING.md)** - Common issues and solutions
 
+## Platform-Specific
+
+- **[OpenWRT Support](openwrt/README.md)** - Building and deploying on OpenWRT routers
+  - [Build Guide](openwrt/BUILD.md) - Cross-compilation for embedded devices
+  - [Package Guide](openwrt/PACKAGE.md) - Creating OpenWRT packages
+  - [QEMU Testing](openwrt/QEMU_TESTING.md) - Testing in virtual machines
+
 ## Quick Links
 
 ### For New Users
@@ -45,6 +52,11 @@ Complete documentation for AureTTY - a high-performance terminal runtime with mu
 1. [Architecture Overview](architecture/OVERVIEW.md#high-level-architecture)
 2. [Layered Design](architecture/OVERVIEW.md#layered-design)
 3. [Performance Considerations](architecture/OVERVIEW.md#performance-considerations)
+
+### For Embedded Systems
+1. [OpenWRT Overview](openwrt/README.md)
+2. [Build for OpenWRT](openwrt/BUILD.md)
+3. [Test in QEMU](openwrt/QEMU_TESTING.md)
 
 ## Features by Topic
 

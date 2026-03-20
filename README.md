@@ -26,7 +26,8 @@ All transports can run simultaneously and share the same session state.
 
 - **Linux**: PTY backend via `script` from `util-linux` (target: `net10.0`)
 - **Windows**: Native ConPTY backend (targets: `net10.0-windows`, `net10.0`)
-- **NativeAOT**: Full support for ahead-of-time compilation on both platforms
+- **OpenWRT**: Optimized musl builds for routers and embedded devices (~15 MB binary)
+- **NativeAOT**: Full support for ahead-of-time compilation on all platforms
 
 ### Advanced Capabilities
 
@@ -302,6 +303,13 @@ tests/
 demos/
 ├── linux/                  # Linux demo scripts
 └── windows/                # Windows demo scripts
+
+docs/
+├── api/                    # API documentation
+├── guides/                 # User guides
+├── examples/               # Client examples
+├── architecture/           # Architecture docs
+└── openwrt/                # OpenWRT support
 ```
 
 ### Design Principles
@@ -361,6 +369,29 @@ dotnet publish src/AureTTY/AureTTY.csproj `
 pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 `
   -AureTTYExecutable artifacts/publish/win-x64-aot/AureTTY.exe
 ```
+
+### OpenWRT
+
+**Requirements:**
+- musl toolchain: `sudo apt-get install musl-tools musl-dev`
+- OpenWRT 23.05+ device or QEMU VM
+
+**Build for OpenWRT:**
+```bash
+# Build optimized binary (~15 MB)
+ARCH=x86_64 ./build-openwrt.sh
+
+# Output: artifacts/openwrt/x86_64/auretty
+
+# Deploy to device
+scp artifacts/openwrt/x86_64/auretty root@router:/usr/bin/
+ssh root@router 'chmod +x /usr/bin/auretty && auretty --version'
+```
+
+**See also:**
+- [OpenWRT Build Guide](docs/openwrt/BUILD.md)
+- [OpenWRT Package Guide](docs/openwrt/PACKAGE.md)
+- [QEMU Testing Guide](docs/openwrt/QEMU_TESTING.md)
 
 ## Development
 
@@ -491,6 +522,11 @@ Current baseline (2026-03-20):
 **Windows: ConPTY errors**
 - Requires Windows 10 1809+ or Windows Server 2019+
 - Update Windows to latest version
+
+**OpenWRT: Binary won't run**
+- Ensure musl runtime is available: `ls -l /lib/ld-musl-x86_64.so.1`
+- Check architecture matches: `file /usr/bin/auretty`
+- See [OpenWRT Troubleshooting](docs/openwrt/BUILD.md#troubleshooting)
 
 ### Debug Logging
 
