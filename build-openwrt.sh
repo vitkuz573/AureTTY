@@ -20,11 +20,44 @@ compiler_exists() {
     fi
 
     if [[ "$candidate" == */* ]]; then
-        [[ -x "$candidate" ]]
+        local absolute_candidate="$candidate"
+        if [[ "$absolute_candidate" != /* ]]; then
+            absolute_candidate="$PWD/$absolute_candidate"
+        fi
+        [[ -x "$absolute_candidate" ]]
         return
     fi
 
     command -v "$candidate" >/dev/null 2>&1
+}
+
+normalize_compiler_path() {
+    local candidate="$1"
+    if [[ "$candidate" == */* && "$candidate" != /* ]]; then
+        echo "$PWD/$candidate"
+        return
+    fi
+    echo "$candidate"
+}
+
+append_path_once() {
+    local dir="$1"
+    [[ -d "$dir" ]] || return 0
+    dir="$(cd "$dir" && pwd)"
+    case ":$PATH:" in
+        *":$dir:"*) ;;
+        *) PATH="$PATH:$dir" ;;
+    esac
+}
+
+load_local_toolchain_paths() {
+    local toolchain_root
+    for toolchain_root in "$SCRIPT_DIR/.tools/openwrt-toolchains" "$SCRIPT_DIR/.tools/musl-cross"; do
+        [[ -d "$toolchain_root" ]] || continue
+        while IFS= read -r bin_dir; do
+            append_path_once "$bin_dir"
+        done < <(find "$toolchain_root" -type d -path '*/bin' | sort)
+    done
 }
 
 choose_compiler() {
@@ -34,7 +67,7 @@ choose_compiler() {
     local candidate
     for candidate in "$@"; do
         if compiler_exists "$candidate"; then
-            echo "$candidate"
+            normalize_compiler_path "$candidate"
             return 0
         fi
     done
@@ -46,6 +79,9 @@ choose_compiler() {
     done
     return 1
 }
+
+# Auto-discover local toolchains installed into repository-local .tools directory.
+load_local_toolchain_paths
 
 # Architecture to RID mapping and toolchain setup.
 EXPECTED_INTERPRETER=""

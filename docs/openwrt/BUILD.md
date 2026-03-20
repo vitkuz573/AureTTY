@@ -21,7 +21,30 @@ This guide covers cross-compiling AureTTY NativeAOT binaries for OpenWRT targets
 sudo apt-get install musl-tools musl-dev
 ```
 
-For ARM cross-builds, provide appropriate musl compilers in `PATH` (for example from OpenWRT SDK toolchains).
+For ARM cross-builds, provide appropriate musl compilers in `PATH`.
+`build-openwrt.sh` auto-discovers local toolchains from:
+- `.tools/openwrt-toolchains/**/bin`
+- `.tools/musl-cross/**/bin`
+
+Example local setup (repo-local, no global PATH edits needed):
+
+```bash
+# OpenWRT aarch64 toolchain
+mkdir -p .tools/openwrt-toolchains
+curl -fL -o .tools/openwrt-toolchains/openwrt-toolchain-24.10.6-armsr-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst \
+  https://downloads.openwrt.org/releases/24.10.6/targets/armsr/armv8/openwrt-toolchain-24.10.6-armsr-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst
+tar --zstd -xf .tools/openwrt-toolchains/openwrt-toolchain-24.10.6-armsr-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst -C .tools/openwrt-toolchains
+
+# OpenWRT armv7 toolchain
+curl -fL -o .tools/openwrt-toolchains/openwrt-toolchain-24.10.6-ipq40xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst \
+  https://downloads.openwrt.org/releases/24.10.6/targets/ipq40xx/generic/openwrt-toolchain-24.10.6-ipq40xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst
+tar --zstd -xf .tools/openwrt-toolchains/openwrt-toolchain-24.10.6-ipq40xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst -C .tools/openwrt-toolchains
+
+# Optional generic armhf musl cross-toolchain (for arm-linux-musleabihf-gcc fallback)
+mkdir -p .tools/musl-cross
+curl -fL -o .tools/musl-cross/arm-linux-musleabihf-cross.tgz https://musl.cc/arm-linux-musleabihf-cross.tgz
+tar -xzf .tools/musl-cross/arm-linux-musleabihf-cross.tgz -C .tools/musl-cross
+```
 
 ## Quick Start
 
@@ -55,6 +78,9 @@ ARMV7_MUSL_CC=/path/to/arm-openwrt-linux-muslgnueabi-gcc
 
 # Optional: disable interpreter validation (not recommended)
 SKIP_INTERPRETER_CHECK=1
+
+# ARMv7: disable linker ABI mismatch workaround (advanced/debug only)
+ARMV7_ALLOW_ABI_MISMATCH=0
 ```
 
 ## What the Script Validates
@@ -98,6 +124,11 @@ artifacts/openwrt/x86_64/auretty \
 ### `Error: unable to find <arch> musl compiler in PATH`
 
 Install or export a musl cross-compiler path via `*_MUSL_CC` env var.
+
+### `... STAGING_DIR not defined` from OpenWRT GCC wrappers
+
+This warning comes from OpenWRT wrapper scripts and is expected in standalone toolchain usage.
+It does not block the build.
 
 ### `binary interpreter mismatch`
 

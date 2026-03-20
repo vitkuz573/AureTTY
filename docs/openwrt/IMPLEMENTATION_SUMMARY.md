@@ -24,12 +24,14 @@ OpenWRT support is now split by architecture maturity:
 ### Safety Improvements
 
 - Strict musl compiler detection by architecture
+- Auto-discovery of repo-local toolchains from `.tools/openwrt-toolchains/**/bin` and `.tools/musl-cross/**/bin`
 - Fast fail when required cross-compiler is missing
 - ELF interpreter verification after build:
   - x86_64 -> `/lib/ld-musl-x86_64.so.1`
   - aarch64 -> `/lib/ld-musl-aarch64.so.1`
   - armv7 -> `/lib/ld-musl-armhf.so.1`
 - Removed false-positive "successful" ARM64 glibc outputs from normal flow
+- ARMv7 linker wrapper includes controlled ABI mismatch workaround for current .NET `linux-musl-arm` runtime static libs
 
 ### API/Runtime Compatibility Improvements
 
@@ -58,15 +60,17 @@ OpenWRT support is now split by architecture maturity:
 ## Verified Results in This Repository
 
 - x86_64 OpenWRT build completes successfully (`~15 MB` stripped)
+- aarch64 OpenWRT build completes successfully (`~16 MB` stripped)
+- armv7 OpenWRT build completes successfully (`~14 MB` stripped)
 - Built x86_64 binary starts and serves API
 - OpenWRT API smoke suite passes fully against built binary
-- ARM64 build now correctly fails early when no musl cross-compiler is available
+- Generated interpreters match expected OpenWRT musl loaders for all three supported targets
 
 ## Remaining Work
 
 1. Validate ARM64 on real OpenWRT hardware (or reproducible emulator path)
-2. Add CI job with musl cross toolchains for ARM targets
-3. Decide long-term strategy for ARMv7 (maintain or drop)
+2. Validate ARMv7 on real OpenWRT hardware (especially long-running stability)
+3. Add CI job with musl cross toolchains for ARM targets
 4. Add package release automation (`ipk` artifacts per target)
 
 ## Conclusion

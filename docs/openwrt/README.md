@@ -34,6 +34,10 @@ ARCH=x86_64 ./build-openwrt.sh
 # artifacts/openwrt/x86_64/auretty
 ```
 
+For ARM builds, `build-openwrt.sh` auto-discovers toolchains from:
+- `.tools/openwrt-toolchains/**/bin`
+- `.tools/musl-cross/**/bin`
+
 ### 2. Deploy to Device
 
 ```bash
@@ -66,6 +70,16 @@ You can override compiler path/name:
 
 ```bash
 AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./build-openwrt.sh
+```
+
+## ARMv7 Build Notes
+
+ARMv7 builds are supported with musl toolchains (`arm-linux-musleabihf-gcc` or OpenWRT equivalents).
+The wrapper enables a linker workaround for mixed ABI attributes in current .NET `linux-musl-arm` NativeAOT libs.
+To disable it explicitly:
+
+```bash
+ARMV7_ALLOW_ABI_MISMATCH=0 ARCH=armv7 ./build-openwrt.sh
 ```
 
 ## OpenWRT Package
@@ -117,6 +131,10 @@ Expected interpreters:
 - x86_64: `/lib/ld-musl-x86_64.so.1`
 - aarch64: `/lib/ld-musl-aarch64.so.1`
 - armv7: `/lib/ld-musl-armhf.so.1`
+
+### `... STAGING_DIR not defined` during ARM builds
+
+This warning is emitted by OpenWRT GCC wrapper scripts in standalone mode and is non-fatal.
 
 ### Binary does not start on device
 

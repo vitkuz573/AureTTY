@@ -7,6 +7,7 @@ ARM64 support is available in **preview** mode:
 - Build RID: `linux-musl-arm64`
 - Expected loader: `/lib/ld-musl-aarch64.so.1`
 - Requires musl cross-compiler in PATH (or via `AARCH64_MUSL_CC`)
+- Repo-local toolchains are auto-detected from `.tools/openwrt-toolchains/**/bin` and `.tools/musl-cross/**/bin`
 - Not yet validated on real ARM64 OpenWRT device in CI
 
 ## Required Compiler
