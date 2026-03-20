@@ -249,8 +249,8 @@ public sealed class ExecutionServicesTests
 
         return new ProcessStartInfo
         {
-            FileName = "/bin/sh",
-            Arguments = "-lc \"sleep 10\"",
+            FileName = "/bin/sleep",
+            Arguments = "60",
             UseShellExecute = false,
             RedirectStandardInput = true,
             RedirectStandardOutput = true,
