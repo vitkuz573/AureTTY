@@ -1,26 +1,38 @@
 using AureTTY.Contracts.DTOs;
 using AureTTY.Contracts.Enums;
+using MessagePack;
 
 namespace AureTTY.Protocol;
 
-public sealed record TerminalIpcHelloPayload(string Token, int ProtocolVersion = 1);
+[MessagePackObject]
+public sealed record TerminalIpcHelloPayload([property: Key(0)] string Token, [property: Key(1)] int ProtocolVersion = 1);
 
-public sealed record TerminalIpcStartRequest(string ViewerId, TerminalSessionStartRequest Request);
+[MessagePackObject]
+public sealed record TerminalIpcStartRequest([property: Key(0)] string ViewerId, [property: Key(1)] TerminalSessionStartRequest Request);
 
-public sealed record TerminalIpcResumeRequest(string ViewerId, TerminalSessionResumeRequest Request);
+[MessagePackObject]
+public sealed record TerminalIpcResumeRequest([property: Key(0)] string ViewerId, [property: Key(1)] TerminalSessionResumeRequest Request);
 
-public sealed record TerminalIpcInputRequest(string ViewerId, TerminalSessionInputRequest Request);
+[MessagePackObject]
+public sealed record TerminalIpcInputRequest([property: Key(0)] string ViewerId, [property: Key(1)] TerminalSessionInputRequest Request);
 
-public sealed record TerminalIpcInputDiagnosticsRequest(string ViewerId, string SessionId);
+[MessagePackObject]
+public sealed record TerminalIpcInputDiagnosticsRequest([property: Key(0)] string ViewerId, [property: Key(1)] string SessionId);
 
-public sealed record TerminalIpcResizeRequest(string ViewerId, TerminalSessionResizeRequest Request);
+[MessagePackObject]
+public sealed record TerminalIpcResizeRequest([property: Key(0)] string ViewerId, [property: Key(1)] TerminalSessionResizeRequest Request);
 
-public sealed record TerminalIpcSignalRequest(string ViewerId, string SessionId, TerminalSessionSignal Signal);
+[MessagePackObject]
+public sealed record TerminalIpcSignalRequest([property: Key(0)] string ViewerId, [property: Key(1)] string SessionId, [property: Key(2)] TerminalSessionSignal Signal);
 
-public sealed record TerminalIpcCloseRequest(string ViewerId, string SessionId);
+[MessagePackObject]
+public sealed record TerminalIpcCloseRequest([property: Key(0)] string ViewerId, [property: Key(1)] string SessionId);
 
-public sealed record TerminalIpcCloseViewerSessionsRequest(string ViewerId);
+[MessagePackObject]
+public sealed record TerminalIpcCloseViewerSessionsRequest([property: Key(0)] string ViewerId);
 
-public sealed record TerminalIpcSessionEvent(string ViewerId, TerminalSessionEvent Event);
+[MessagePackObject]
+public sealed record TerminalIpcSessionEvent([property: Key(0)] string ViewerId, [property: Key(1)] TerminalSessionEvent Event);
 
-public sealed record TerminalIpcAck(bool Success = true);
+[MessagePackObject]
+public sealed record TerminalIpcAck([property: Key(0)] bool Success = true);

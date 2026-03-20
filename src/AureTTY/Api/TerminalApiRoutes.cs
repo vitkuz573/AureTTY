@@ -8,4 +8,5 @@ public static class TerminalApiRoutes
     public const string ViewerSessions = ApiBase + "/viewers/{viewerId}/sessions";
     public const string ViewerEvents = ApiBase + "/viewers/{viewerId}/events";
     public const string ViewerWebSocket = ApiBase + "/viewers/{viewerId}/ws";
+    public const string ViewerSessionsWebSocket = ApiBase + "/viewers/{viewerId}/sessions/ws";
 }

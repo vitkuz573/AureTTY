@@ -11,6 +11,7 @@ public sealed class WebSocketTerminalSessionEventPublisher : ITerminalSessionEve
 {
     private const string SystemSessionId = "__auretty__";
     private readonly ConcurrentDictionary<string, EventSubscription> _subscriptions = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, string>> _sessionSubscriptions = new(StringComparer.Ordinal);
     private readonly int _subscriptionBufferCapacity;
     private readonly TerminalMetrics? _metrics;
 
@@ -26,10 +27,25 @@ public sealed class WebSocketTerminalSessionEventPublisher : ITerminalSessionEve
     {
         foreach (var subscription in _subscriptions.Values)
         {
-            if (!string.Equals(subscription.ViewerId, viewerId, StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(subscription.ViewerId, "*", StringComparison.Ordinal))
+            var isViewerMatch = string.Equals(subscription.ViewerId, viewerId, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(subscription.ViewerId, "*", StringComparison.Ordinal);
+
+            if (!isViewerMatch)
             {
                 continue;
+            }
+
+            if (subscription.IsMultiplexed)
+            {
+                if (!_sessionSubscriptions.TryGetValue(subscription.ConnectionId, out var sessionMap))
+                {
+                    continue;
+                }
+
+                if (!sessionMap.ContainsKey(terminalSessionEvent.SessionId))
+                {
+                    continue;
+                }
             }
 
             if (subscription.Events.Writer.TryWrite(terminalSessionEvent))
@@ -55,7 +71,7 @@ public sealed class WebSocketTerminalSessionEventPublisher : ITerminalSessionEve
             SingleWriter = false,
             FullMode = BoundedChannelFullMode.Wait
         });
-        var subscription = new EventSubscription(viewerId, channel);
+        var subscription = new EventSubscription(connectionId, viewerId, channel, IsMultiplexed: false);
 
         if (!_subscriptions.TryAdd(connectionId, subscription))
         {
@@ -65,12 +81,53 @@ public sealed class WebSocketTerminalSessionEventPublisher : ITerminalSessionEve
         return channel.Reader;
     }
 
+    public ChannelReader<TerminalSessionEvent> RegisterMultiplexedConnection(string connectionId, string viewerId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(connectionId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(viewerId);
+
+        var channel = Channel.CreateBounded<TerminalSessionEvent>(new BoundedChannelOptions(_subscriptionBufferCapacity)
+        {
+            SingleReader = true,
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.Wait
+        });
+        var subscription = new EventSubscription(connectionId, viewerId, channel, IsMultiplexed: true);
+
+        if (!_subscriptions.TryAdd(connectionId, subscription))
+        {
+            throw new InvalidOperationException($"WebSocket connection '{connectionId}' is already registered.");
+        }
+
+        _sessionSubscriptions.TryAdd(connectionId, new ConcurrentDictionary<string, string>(StringComparer.Ordinal));
+
+        return channel.Reader;
+    }
+
+    public void RegisterSessionSubscription(string connectionId, string sessionId, string viewerId)
+    {
+        if (_sessionSubscriptions.TryGetValue(connectionId, out var sessionMap))
+        {
+            sessionMap.TryAdd(sessionId, viewerId);
+        }
+    }
+
+    public void UnregisterSessionSubscription(string connectionId, string sessionId)
+    {
+        if (_sessionSubscriptions.TryGetValue(connectionId, out var sessionMap))
+        {
+            sessionMap.TryRemove(sessionId, out _);
+        }
+    }
+
     public void UnregisterConnection(string connectionId)
     {
         if (_subscriptions.TryRemove(connectionId, out var removed))
         {
             removed.Events.Writer.TryComplete();
         }
+
+        _sessionSubscriptions.TryRemove(connectionId, out _);
     }
 
     public long ConsumeDroppedEvents(string connectionId)
@@ -84,8 +141,10 @@ public sealed class WebSocketTerminalSessionEventPublisher : ITerminalSessionEve
     }
 
     private sealed record EventSubscription(
+        string ConnectionId,
         string ViewerId,
-        Channel<TerminalSessionEvent> Events)
+        Channel<TerminalSessionEvent> Events,
+        bool IsMultiplexed)
     {
         private long _droppedEvents;
 

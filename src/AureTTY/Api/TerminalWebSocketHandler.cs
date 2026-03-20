@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -9,6 +10,7 @@ using AureTTY.Contracts.Enums;
 using AureTTY.Protocol;
 using AureTTY.Serialization;
 using AureTTY.Services;
+using MessagePack;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,7 +22,7 @@ public static class TerminalWebSocketHandler
     private const int MaxMessageSize = 64 * 1024;
     private const string SystemSessionId = "__auretty__";
 
-    public static async Task HandleAsync(string viewerId, HttpContext context)
+    public static async Task HandleAsync(string viewerId, HttpContext context, bool multiplexing = false)
     {
         var options = context.RequestServices.GetRequiredService<TerminalServiceOptions>();
         var loggerFactory = context.RequestServices.GetRequiredService<ILoggerFactory>();
@@ -44,13 +46,17 @@ public static class TerminalWebSocketHandler
             return;
         }
 
+        var protocol = ParseProtocol(context);
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         var connectionId = Guid.NewGuid().ToString("N");
 
         var eventPublisher = context.RequestServices.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
         var sessionService = context.RequestServices.GetRequiredService<ITerminalSessionService>();
 
-        var eventChannel = eventPublisher.RegisterConnection(connectionId, viewerId);
+        var sessionTracking = multiplexing ? new ConcurrentDictionary<string, string>(StringComparer.Ordinal) : null;
+        var eventChannel = multiplexing
+            ? eventPublisher.RegisterMultiplexedConnection(connectionId, viewerId)
+            : eventPublisher.RegisterConnection(connectionId, viewerId);
         var writeLock = new SemaphoreSlim(1, 1);
 
         try
@@ -58,8 +64,8 @@ public static class TerminalWebSocketHandler
             using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             var cancellationToken = connectionCts.Token;
 
-            var inboundTask = ProcessInboundAsync(webSocket, sessionService, eventPublisher, connectionId, viewerId, writeLock, logger, cancellationToken);
-            var outboundTask = ProcessOutboundAsync(webSocket, eventChannel, eventPublisher, connectionId, writeLock, cancellationToken);
+            var inboundTask = ProcessInboundAsync(webSocket, sessionService, eventPublisher, connectionId, viewerId, protocol, sessionTracking, writeLock, logger, cancellationToken);
+            var outboundTask = ProcessOutboundAsync(webSocket, eventChannel, eventPublisher, connectionId, protocol, writeLock, cancellationToken);
 
             await Task.WhenAny(inboundTask, outboundTask);
             await connectionCts.CancelAsync();
@@ -70,6 +76,14 @@ public static class TerminalWebSocketHandler
         }
         finally
         {
+            if (sessionTracking is not null)
+            {
+                foreach (var sessionId in sessionTracking.Keys)
+                {
+                    eventPublisher.UnregisterSessionSubscription(connectionId, sessionId);
+                }
+            }
+
             eventPublisher.UnregisterConnection(connectionId);
             writeLock.Dispose();
 
@@ -96,6 +110,8 @@ public static class TerminalWebSocketHandler
         WebSocketTerminalSessionEventPublisher eventPublisher,
         string connectionId,
         string viewerId,
+        IpcProtocol protocol,
+        ConcurrentDictionary<string, string>? sessionTracking,
         SemaphoreSlim writeLock,
         ILogger logger,
         CancellationToken cancellationToken)
@@ -111,7 +127,7 @@ public static class TerminalWebSocketHandler
             {
                 if (totalBytes >= buffer.Length)
                 {
-                    await SendErrorAsync(webSocket, writeLock, null, "Message too large.", cancellationToken);
+                    await SendErrorAsync(webSocket, writeLock, protocol, null, "Message too large.", cancellationToken);
                     return;
                 }
 
@@ -127,7 +143,11 @@ public static class TerminalWebSocketHandler
                 return;
             }
 
-            if (result.MessageType != WebSocketMessageType.Text)
+            var expectedMessageType = protocol == IpcProtocol.MessagePack
+                ? WebSocketMessageType.Binary
+                : WebSocketMessageType.Text;
+
+            if (result.MessageType != expectedMessageType)
             {
                 continue;
             }
@@ -135,13 +155,11 @@ public static class TerminalWebSocketHandler
             TerminalIpcMessage? message;
             try
             {
-                message = JsonSerializer.Deserialize(
-                    buffer.AsSpan(0, totalBytes),
-                    AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
+                message = IpcMessageSerializer.Deserialize(buffer.AsSpan(0, totalBytes), protocol);
             }
-            catch (JsonException)
+            catch (Exception)
             {
-                await SendErrorAsync(webSocket, writeLock, null, "Invalid JSON.", cancellationToken);
+                await SendErrorAsync(webSocket, writeLock, protocol, null, "Invalid message format.", cancellationToken);
                 continue;
             }
 
@@ -150,8 +168,8 @@ public static class TerminalWebSocketHandler
                 continue;
             }
 
-            var response = await HandleRequestAsync(message, viewerId, sessionService, logger);
-            await WriteMessageAsync(webSocket, writeLock, response, cancellationToken);
+            var response = await HandleRequestAsync(message, viewerId, sessionService, eventPublisher, connectionId, sessionTracking, logger);
+            await WriteMessageAsync(webSocket, writeLock, protocol, response, cancellationToken);
         }
     }
 
@@ -160,6 +178,7 @@ public static class TerminalWebSocketHandler
         System.Threading.Channels.ChannelReader<TerminalSessionEvent> eventChannel,
         WebSocketTerminalSessionEventPublisher eventPublisher,
         string connectionId,
+        IpcProtocol protocol,
         SemaphoreSlim writeLock,
         CancellationToken cancellationToken)
     {
@@ -173,10 +192,10 @@ public static class TerminalWebSocketHandler
                     State = TerminalSessionState.Running,
                     Error = $"Dropped {droppedEvents} WebSocket event(s) because subscriber is slow."
                 };
-                await WriteEventAsync(webSocket, writeLock, "__dropped__", droppedNotification, cancellationToken);
+                await WriteEventAsync(webSocket, writeLock, protocol, "__dropped__", droppedNotification, cancellationToken);
             }
 
-            await WriteEventAsync(webSocket, writeLock, terminalEvent.SessionId, terminalEvent, cancellationToken);
+            await WriteEventAsync(webSocket, writeLock, protocol, terminalEvent.SessionId, terminalEvent, cancellationToken);
         }
     }
 
@@ -184,6 +203,9 @@ public static class TerminalWebSocketHandler
         TerminalIpcMessage message,
         string viewerId,
         ITerminalSessionService sessionService,
+        WebSocketTerminalSessionEventPublisher eventPublisher,
+        string connectionId,
+        ConcurrentDictionary<string, string>? sessionTracking,
         ILogger logger)
     {
         var method = message.Method;
@@ -197,68 +219,114 @@ public static class TerminalWebSocketHandler
             switch (method)
             {
                 case TerminalIpcMethods.Ping:
-                    return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+                    return CreateResponse(message, new TerminalIpcAck());
 
                 case TerminalIpcMethods.Start:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcStartRequest);
+                        var payload = RequirePayload<TerminalIpcStartRequest>(message);
                         var handle = await sessionService.StartAsync(payload.ViewerId, payload.Request);
-                        return CreateResponse(message, handle, AureTTYJsonSerializerContext.Default.TerminalSessionHandle);
+
+                        if (sessionTracking is not null)
+                        {
+                            sessionTracking.TryAdd(handle.SessionId, viewerId);
+                            eventPublisher.RegisterSessionSubscription(connectionId, handle.SessionId, viewerId);
+                        }
+
+                        return CreateResponse(message, handle);
                     }
 
                 case TerminalIpcMethods.Resume:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcResumeRequest);
+                        var payload = RequirePayload<TerminalIpcResumeRequest>(message);
                         var handle = await sessionService.ResumeAsync(payload.ViewerId, payload.Request);
-                        return CreateResponse(message, handle, AureTTYJsonSerializerContext.Default.TerminalSessionHandle);
+
+                        if (sessionTracking is not null)
+                        {
+                            sessionTracking.TryAdd(handle.SessionId, viewerId);
+                            eventPublisher.RegisterSessionSubscription(connectionId, handle.SessionId, viewerId);
+                        }
+
+                        return CreateResponse(message, handle);
                     }
 
                 case TerminalIpcMethods.SendInput:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcInputRequest);
+                        var payload = RequirePayload<TerminalIpcInputRequest>(message);
                         await sessionService.SendInputAsync(payload.ViewerId, payload.Request);
-                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+                        return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.GetInputDiagnostics:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcInputDiagnosticsRequest);
+                        var payload = RequirePayload<TerminalIpcInputDiagnosticsRequest>(message);
                         var diagnostics = await sessionService.GetInputDiagnosticsAsync(payload.ViewerId, payload.SessionId);
-                        return CreateResponse(message, diagnostics, AureTTYJsonSerializerContext.Default.TerminalSessionInputDiagnostics);
+                        return CreateResponse(message, diagnostics);
                     }
 
                 case TerminalIpcMethods.Resize:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcResizeRequest);
+                        var payload = RequirePayload<TerminalIpcResizeRequest>(message);
                         await sessionService.ResizeAsync(payload.ViewerId, payload.Request);
-                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+                        return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.Signal:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcSignalRequest);
+                        var payload = RequirePayload<TerminalIpcSignalRequest>(message);
                         await sessionService.SignalAsync(payload.ViewerId, payload.SessionId, payload.Signal);
-                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+                        return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.Close:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcCloseRequest);
+                        var payload = RequirePayload<TerminalIpcCloseRequest>(message);
                         await sessionService.CloseAsync(payload.ViewerId, payload.SessionId);
-                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+
+                        if (sessionTracking is not null)
+                        {
+                            sessionTracking.TryRemove(payload.SessionId, out _);
+                            eventPublisher.UnregisterSessionSubscription(connectionId, payload.SessionId);
+                        }
+
+                        return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.CloseViewerSessions:
                     {
-                        var payload = RequirePayload(message, AureTTYJsonSerializerContext.Default.TerminalIpcCloseViewerSessionsRequest);
+                        var payload = RequirePayload<TerminalIpcCloseViewerSessionsRequest>(message);
                         await sessionService.CloseViewerSessionsAsync(payload.ViewerId);
-                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+
+                        if (sessionTracking is not null)
+                        {
+                            var sessionsToRemove = sessionTracking
+                                .Where(kvp => string.Equals(kvp.Value, payload.ViewerId, StringComparison.Ordinal))
+                                .Select(kvp => kvp.Key)
+                                .ToArray();
+
+                            foreach (var sessionId in sessionsToRemove)
+                            {
+                                sessionTracking.TryRemove(sessionId, out _);
+                                eventPublisher.UnregisterSessionSubscription(connectionId, sessionId);
+                            }
+                        }
+
+                        return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.CloseAllSessions:
                     {
                         await sessionService.CloseAllSessionsAsync();
-                        return CreateResponse(message, new TerminalIpcAck(), AureTTYJsonSerializerContext.Default.TerminalIpcAck);
+
+                        if (sessionTracking is not null)
+                        {
+                            foreach (var sessionId in sessionTracking.Keys)
+                            {
+                                eventPublisher.UnregisterSessionSubscription(connectionId, sessionId);
+                            }
+                            sessionTracking.Clear();
+                        }
+
+                        return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 default:
@@ -270,6 +338,21 @@ public static class TerminalWebSocketHandler
             logger.LogWarning(ex, "WebSocket request failed. Method={Method}.", method);
             return CreateError(message, ex.GetBaseException().Message);
         }
+    }
+
+    private static IpcProtocol ParseProtocol(HttpContext context)
+    {
+        if (context.Request.Query.TryGetValue("protocol", out var protocolValues))
+        {
+            var protocolValue = protocolValues.FirstOrDefault();
+            if (string.Equals(protocolValue, "msgpack", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(protocolValue, "messagepack", StringComparison.OrdinalIgnoreCase))
+            {
+                return IpcProtocol.MessagePack;
+            }
+        }
+
+        return IpcProtocol.Json;
     }
 
     private static bool IsAuthorized(HttpContext context, TerminalServiceOptions options)
@@ -323,25 +406,55 @@ public static class TerminalWebSocketHandler
         return CryptographicOperations.FixedTimeEquals(candidateBytes, expectedBytes);
     }
 
-    private static T RequirePayload<T>(TerminalIpcMessage message, JsonTypeInfo<T> jsonTypeInfo)
+    private static T RequirePayload<T>(TerminalIpcMessage message)
     {
-        if (message.Payload is not JsonElement payload)
+        if (message.Payload is null)
         {
             throw new InvalidOperationException($"Request payload for '{message.Method}' is missing or invalid.");
         }
 
-        return payload.Deserialize(jsonTypeInfo)
-               ?? throw new InvalidOperationException($"Request payload for '{message.Method}' is missing or invalid.");
+        if (message.Payload is T typedPayload)
+        {
+            return typedPayload;
+        }
+
+        if (message.Payload is JsonElement jsonElement)
+        {
+            var jsonTypeInfo = typeof(T).Name switch
+            {
+                nameof(TerminalIpcStartRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcStartRequest,
+                nameof(TerminalIpcResumeRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcResumeRequest,
+                nameof(TerminalIpcInputRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcInputRequest,
+                nameof(TerminalIpcInputDiagnosticsRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcInputDiagnosticsRequest,
+                nameof(TerminalIpcResizeRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcResizeRequest,
+                nameof(TerminalIpcSignalRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcSignalRequest,
+                nameof(TerminalIpcCloseRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcCloseRequest,
+                nameof(TerminalIpcCloseViewerSessionsRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcCloseViewerSessionsRequest,
+                _ => throw new InvalidOperationException($"Unknown payload type '{typeof(T).Name}'.")
+            };
+
+            return jsonElement.Deserialize(jsonTypeInfo)
+                   ?? throw new InvalidOperationException($"Request payload for '{message.Method}' is missing or invalid.");
+        }
+
+        if (message.Payload is object[] or byte[])
+        {
+            var bytes = message.Payload is byte[] b ? b : MessagePackSerializer.Serialize(message.Payload, MessagePackSerializerOptions.Standard);
+            return MessagePackSerializer.Deserialize<T>(bytes, MessagePackSerializerOptions.Standard)
+                   ?? throw new InvalidOperationException($"Request payload for '{message.Method}' is missing or invalid.");
+        }
+
+        throw new InvalidOperationException($"Request payload for '{message.Method}' has unexpected type '{message.Payload.GetType().Name}'.");
     }
 
-    private static TerminalIpcMessage CreateResponse<T>(TerminalIpcMessage request, T payload, JsonTypeInfo<T> jsonTypeInfo)
+    private static TerminalIpcMessage CreateResponse<T>(TerminalIpcMessage request, T payload)
     {
         return new TerminalIpcMessage
         {
             Type = TerminalIpcMessageTypes.Response,
             Id = request.Id,
             Method = request.Method,
-            Payload = JsonSerializer.SerializeToElement(payload, jsonTypeInfo)
+            Payload = payload
         };
     }
 
@@ -359,6 +472,7 @@ public static class TerminalWebSocketHandler
     private static async Task WriteEventAsync(
         WebSocket webSocket,
         SemaphoreSlim writeLock,
+        IpcProtocol protocol,
         string viewerId,
         TerminalSessionEvent terminalEvent,
         CancellationToken cancellationToken)
@@ -368,26 +482,30 @@ public static class TerminalWebSocketHandler
         {
             Type = TerminalIpcMessageTypes.Event,
             Method = TerminalIpcMethods.SessionEvent,
-            Payload = JsonSerializer.SerializeToElement(eventPayload, AureTTYJsonSerializerContext.Default.TerminalIpcSessionEvent)
+            Payload = eventPayload
         };
 
-        await WriteMessageAsync(webSocket, writeLock, message, cancellationToken);
+        await WriteMessageAsync(webSocket, writeLock, protocol, message, cancellationToken);
     }
 
     private static async Task WriteMessageAsync(
         WebSocket webSocket,
         SemaphoreSlim writeLock,
+        IpcProtocol protocol,
         TerminalIpcMessage message,
         CancellationToken cancellationToken)
     {
-        var json = JsonSerializer.SerializeToUtf8Bytes(message, AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
+        var data = IpcMessageSerializer.Serialize(message, protocol);
+        var messageType = protocol == IpcProtocol.MessagePack
+            ? WebSocketMessageType.Binary
+            : WebSocketMessageType.Text;
 
         await writeLock.WaitAsync(cancellationToken);
         try
         {
             await webSocket.SendAsync(
-                new ArraySegment<byte>(json),
-                WebSocketMessageType.Text,
+                new ArraySegment<byte>(data),
+                messageType,
                 endOfMessage: true,
                 cancellationToken);
         }
@@ -400,6 +518,7 @@ public static class TerminalWebSocketHandler
     private static async Task SendErrorAsync(
         WebSocket webSocket,
         SemaphoreSlim writeLock,
+        IpcProtocol protocol,
         string? id,
         string error,
         CancellationToken cancellationToken)
@@ -411,7 +530,7 @@ public static class TerminalWebSocketHandler
             Error = error
         };
 
-        await WriteMessageAsync(webSocket, writeLock, message, cancellationToken);
+        await WriteMessageAsync(webSocket, writeLock, protocol, message, cancellationToken);
     }
 
     private static async Task SafeAwait(Task task)

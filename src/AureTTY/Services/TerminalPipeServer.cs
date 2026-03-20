@@ -257,12 +257,22 @@ public sealed class TerminalPipeServer(
 
     private static T? DeserializePayload<T>(TerminalIpcMessage message, JsonTypeInfo<T> jsonTypeInfo)
     {
-        if (message.Payload is not JsonElement payload)
+        if (message.Payload is null)
         {
             return default;
         }
 
-        return payload.Deserialize(jsonTypeInfo);
+        if (message.Payload is T typedPayload)
+        {
+            return typedPayload;
+        }
+
+        if (message.Payload is JsonElement jsonElement)
+        {
+            return jsonElement.Deserialize(jsonTypeInfo);
+        }
+
+        return default;
     }
 
     private static TerminalIpcMessage CreateResponse<T>(TerminalIpcMessage request, T payload, JsonTypeInfo<T> jsonTypeInfo)

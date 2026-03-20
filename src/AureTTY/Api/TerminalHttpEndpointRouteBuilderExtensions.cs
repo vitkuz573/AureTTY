@@ -277,6 +277,9 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
         app.MapGet($"/{TerminalApiRoutes.ViewerWebSocket}",
             (string viewerId, HttpContext context) => TerminalWebSocketHandler.HandleAsync(viewerId, context));
 
+        app.MapGet($"/{TerminalApiRoutes.ViewerSessionsWebSocket}",
+            (string viewerId, HttpContext context) => TerminalWebSocketHandler.HandleAsync(viewerId, context, multiplexing: true));
+
         return app;
     }
 }

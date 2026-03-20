@@ -56,7 +56,9 @@ public sealed class TerminalPipeServerTests
         Assert.Equal(requestId, response.Id);
         Assert.Equal(TerminalIpcMethods.Ping, response.Method);
 
-        var ack = response.Payload?.Deserialize<TerminalIpcAck>(JsonOptions);
+        var ack = response.Payload is JsonElement jsonElement
+            ? jsonElement.Deserialize<TerminalIpcAck>(JsonOptions)
+            : response.Payload as TerminalIpcAck;
         Assert.NotNull(ack);
         Assert.True(ack.Success);
 
@@ -115,7 +117,9 @@ public sealed class TerminalPipeServerTests
         }, timeout.Token);
 
         var response = await ReadMessageAsync(reader, timeout.Token);
-        var responseHandle = response.Payload?.Deserialize<TerminalSessionHandle>(JsonOptions);
+        var responseHandle = response.Payload is JsonElement jsonElement
+            ? jsonElement.Deserialize<TerminalSessionHandle>(JsonOptions)
+            : response.Payload as TerminalSessionHandle;
 
         Assert.Equal(TerminalIpcMessageTypes.Response, response.Type);
         Assert.Equal(requestId, response.Id);
@@ -173,7 +177,9 @@ public sealed class TerminalPipeServerTests
         var readEventTask = ReadMessageAsync(reader, timeout.Token);
         await eventPublisher.SendTerminalSessionEventAsync("viewer-event", terminalEvent);
         var message = await readEventTask;
-        var payload = message.Payload?.Deserialize<TerminalIpcSessionEvent>(JsonOptions);
+        var payload = message.Payload is JsonElement jsonElement
+            ? jsonElement.Deserialize<TerminalIpcSessionEvent>(JsonOptions)
+            : message.Payload as TerminalIpcSessionEvent;
 
         Assert.Equal(TerminalIpcMessageTypes.Event, message.Type);
         Assert.Equal(TerminalIpcMethods.SessionEvent, message.Method);
@@ -349,7 +355,9 @@ public sealed class TerminalPipeServerTests
         Assert.Equal(TerminalIpcMessageTypes.Hello, serviceHello.Type);
         Assert.Equal(TerminalIpcMethods.Hello, serviceHello.Method);
 
-        var payload = serviceHello.Payload?.Deserialize<TerminalIpcHelloPayload>(JsonOptions);
+        var payload = serviceHello.Payload is JsonElement jsonElement
+            ? jsonElement.Deserialize<TerminalIpcHelloPayload>(JsonOptions)
+            : serviceHello.Payload as TerminalIpcHelloPayload;
         Assert.NotNull(payload);
         Assert.Equal(token, payload.Token);
     }

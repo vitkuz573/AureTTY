@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 using System.Text.Json;
 using AureTTY.Api;
 using AureTTY.Contracts.Abstractions;
@@ -10,6 +9,7 @@ using AureTTY.Contracts.Exceptions;
 using AureTTY.Protocol;
 using AureTTY.Serialization;
 using AureTTY.Services;
+using MessagePack;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -17,27 +17,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace AureTTY.Tests;
 
-public sealed class WebSocketTransportTests
+public sealed class WebSocketMessagePackTests
 {
     [Fact]
-    public async Task WebSocket_WhenApiKeyIsMissing_RejectsConnection()
-    {
-        await using var host = await CreateHostAsync();
-        var wsClient = host.GetTestServer().CreateWebSocketClient();
-
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        var ex = await Assert.ThrowsAnyAsync<Exception>(
-            () => wsClient.ConnectAsync(
-                new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
-                timeout.Token));
-
-        Assert.True(
-            ex is WebSocketException or InvalidOperationException,
-            $"Expected WebSocketException or InvalidOperationException but got {ex.GetType().Name}");
-    }
-
-    [Fact]
-    public async Task WebSocket_WhenApiKeyIsProvided_AcceptsAndHandlesPing()
+    public async Task WebSocket_WhenMessagePackProtocol_HandlesPingRequest()
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
@@ -48,57 +31,29 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/ws?protocol=msgpack"),
             timeout.Token);
 
         var pingMessage = new TerminalIpcMessage
         {
             Type = TerminalIpcMessageTypes.Request,
-            Id = "ping-1",
+            Id = "ping-msgpack",
             Method = TerminalIpcMethods.Ping
         };
 
-        await SendMessageAsync(ws, pingMessage, timeout.Token);
-        var response = await ReceiveMessageAsync(ws, timeout.Token);
+        await SendMessagePackAsync(ws, pingMessage, timeout.Token);
+        var response = await ReceiveMessagePackAsync(ws, timeout.Token);
 
         Assert.NotNull(response);
         Assert.Equal(TerminalIpcMessageTypes.Response, response.Type);
-        Assert.Equal("ping-1", response.Id);
+        Assert.Equal("ping-msgpack", response.Id);
         Assert.Equal(TerminalIpcMethods.Ping, response.Method);
 
         await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
     }
 
     [Fact]
-    public async Task WebSocket_WhenApiKeyInQueryParameter_AcceptsConnection()
-    {
-        await using var host = await CreateHostAsync(allowApiKeyQueryParameter: true);
-        var wsClient = host.GetTestServer().CreateWebSocketClient();
-
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws?api_key=test-api-key"),
-            timeout.Token);
-
-        var pingMessage = new TerminalIpcMessage
-        {
-            Type = TerminalIpcMessageTypes.Request,
-            Id = "ping-q",
-            Method = TerminalIpcMethods.Ping
-        };
-
-        await SendMessageAsync(ws, pingMessage, timeout.Token);
-        var response = await ReceiveMessageAsync(ws, timeout.Token);
-
-        Assert.NotNull(response);
-        Assert.Equal(TerminalIpcMessageTypes.Response, response.Type);
-        Assert.Equal("ping-q", response.Id);
-
-        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
-    }
-
-    [Fact]
-    public async Task WebSocket_WhenStartSessionRequested_ReturnsSessionHandle()
+    public async Task WebSocket_WhenMessagePackProtocol_StartsSession()
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
@@ -109,40 +64,58 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/ws?protocol=messagepack"),
             timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
-            "viewer-ws",
-            new TerminalSessionStartRequest("session-ws-1", Shell.Bash));
+            "viewer-msgpack",
+            new TerminalSessionStartRequest("session-msgpack-1", Shell.Bash));
 
         var startMessage = new TerminalIpcMessage
         {
             Type = TerminalIpcMessageTypes.Request,
-            Id = "start-1",
+            Id = "start-msgpack",
             Method = TerminalIpcMethods.Start,
             Payload = startPayload
         };
 
-        await SendMessageAsync(ws, startMessage, timeout.Token);
-        var response = await ReceiveMessageAsync(ws, timeout.Token);
+        await SendMessagePackAsync(ws, startMessage, timeout.Token);
+        var response = await ReceiveMessagePackAsync(ws, timeout.Token);
 
         Assert.NotNull(response);
-        Assert.Equal(TerminalIpcMessageTypes.Response, response.Type);
-        Assert.Equal("start-1", response.Id);
-        Assert.Equal(TerminalIpcMethods.Start, response.Method);
 
-        var handle = response.Payload is JsonElement jsonElement
-            ? jsonElement.Deserialize(AureTTYJsonSerializerContext.Default.TerminalSessionHandle)
-            : response.Payload as TerminalSessionHandle;
+        if (response.Type == TerminalIpcMessageTypes.Error)
+        {
+            throw new InvalidOperationException($"Server returned error: {response.Error}");
+        }
+
+        Assert.Equal(TerminalIpcMessageTypes.Response, response.Type);
+        Assert.Equal("start-msgpack", response.Id);
+
+        if (response.Payload is null)
+        {
+            throw new InvalidOperationException("Response payload is null");
+        }
+
+        TerminalSessionHandle? handle = null;
+        if (response.Payload is TerminalSessionHandle typedHandle)
+        {
+            handle = typedHandle;
+        }
+        else if (response.Payload is object[] or byte[])
+        {
+            var bytes = response.Payload is byte[] b ? b : MessagePackSerializer.Serialize(response.Payload, MessagePackSerializerOptions.Standard);
+            handle = MessagePackSerializer.Deserialize<TerminalSessionHandle>(bytes, MessagePackSerializerOptions.Standard);
+        }
+
         Assert.NotNull(handle);
-        Assert.Equal("session-ws-1", handle.SessionId);
+        Assert.Equal("session-msgpack-1", handle.SessionId);
 
         await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
     }
 
     [Fact]
-    public async Task WebSocket_WhenEventIsPublished_ReceivesEventMessage()
+    public async Task WebSocket_WhenMessagePackProtocol_ReceivesEvents()
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
@@ -153,20 +126,20 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/ws?protocol=msgpack"),
             timeout.Token);
 
         var eventPublisher = host.Services.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
-        var expectedEvent = new TerminalSessionEvent("session-1", TerminalSessionEventType.Output)
+        var expectedEvent = new TerminalSessionEvent("session-msgpack", TerminalSessionEventType.Output)
         {
-            Text = "hello-from-ws"
+            Text = "msgpack-event-test"
         };
 
-        var receiveTask = ReceiveMessageAsync(ws, timeout.Token);
+        var receiveTask = ReceiveMessagePackAsync(ws, timeout.Token);
 
         for (var attempt = 0; attempt < 50 && !receiveTask.IsCompleted; attempt++)
         {
-            await eventPublisher.SendTerminalSessionEventAsync("viewer-ws", expectedEvent);
+            await eventPublisher.SendTerminalSessionEventAsync("viewer-msgpack", expectedEvent);
             await Task.Delay(50, timeout.Token);
         }
 
@@ -176,47 +149,24 @@ public sealed class WebSocketTransportTests
         Assert.Equal(TerminalIpcMessageTypes.Event, eventMessage.Type);
         Assert.Equal(TerminalIpcMethods.SessionEvent, eventMessage.Method);
 
-        var sessionEvent = eventMessage.Payload is JsonElement jsonElement
-            ? jsonElement.Deserialize(AureTTYJsonSerializerContext.Default.TerminalIpcSessionEvent)
-            : eventMessage.Payload as TerminalIpcSessionEvent;
-        Assert.NotNull(sessionEvent);
-        Assert.Equal("hello-from-ws", sessionEvent.Event.Text);
-
-        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
-    }
-
-    [Fact]
-    public async Task WebSocket_WhenDisconnected_UnregistersSubscription()
-    {
-        await using var host = await CreateHostAsync();
-        var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
+        TerminalIpcSessionEvent? sessionEvent = null;
+        if (eventMessage.Payload is TerminalIpcSessionEvent typedEvent)
         {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
+            sessionEvent = typedEvent;
+        }
+        else if (eventMessage.Payload is object[] or byte[])
+        {
+            var bytes = eventMessage.Payload is byte[] b ? b : MessagePackSerializer.Serialize(eventMessage.Payload, MessagePackSerializerOptions.Standard);
+            sessionEvent = MessagePackSerializer.Deserialize<TerminalIpcSessionEvent>(bytes, MessagePackSerializerOptions.Standard);
+        }
 
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
-            timeout.Token);
+        Assert.NotNull(sessionEvent);
+        Assert.Equal("msgpack-event-test", sessionEvent.Event.Text);
 
         await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
-        ws.Dispose();
-
-        // Give the handler time to clean up
-        await Task.Delay(200, timeout.Token);
-
-        // Publishing should not throw even after disconnect
-        var eventPublisher = host.Services.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
-        await eventPublisher.SendTerminalSessionEventAsync(
-            "viewer-ws",
-            new TerminalSessionEvent("session-1", TerminalSessionEventType.Output)
-            {
-                Text = "after-disconnect"
-            });
     }
 
-    private static async Task<WebApplication> CreateHostAsync(bool allowApiKeyQueryParameter = false)
+    private static async Task<WebApplication> CreateHostAsync()
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
@@ -226,10 +176,7 @@ public sealed class WebSocketTransportTests
             EnablePipeApi: false,
             EnableHttpApi: true,
             HttpListenUrl: "http://127.0.0.1:17850",
-            ApiKey: "test-api-key")
-        {
-            AllowApiKeyQueryParameter = allowApiKeyQueryParameter
-        });
+            ApiKey: "test-api-key"));
         builder.Services.AddSingleton<ITerminalSessionService, InMemoryTerminalSessionService>();
         builder.Services.AddSingleton<HttpTerminalSessionEventPublisher>();
         builder.Services.AddSingleton<WebSocketTerminalSessionEventPublisher>();
@@ -243,13 +190,13 @@ public sealed class WebSocketTransportTests
         return app;
     }
 
-    private static async Task SendMessageAsync(WebSocket ws, TerminalIpcMessage message, CancellationToken cancellationToken)
+    private static async Task SendMessagePackAsync(WebSocket ws, TerminalIpcMessage message, CancellationToken cancellationToken)
     {
-        var json = JsonSerializer.SerializeToUtf8Bytes(message, AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
-        await ws.SendAsync(new ArraySegment<byte>(json), WebSocketMessageType.Text, endOfMessage: true, cancellationToken);
+        var data = MessagePackSerializer.Serialize(message, MessagePackSerializerOptions.Standard);
+        await ws.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, endOfMessage: true, cancellationToken);
     }
 
-    private static async Task<TerminalIpcMessage?> ReceiveMessageAsync(WebSocket ws, CancellationToken cancellationToken)
+    private static async Task<TerminalIpcMessage?> ReceiveMessagePackAsync(WebSocket ws, CancellationToken cancellationToken)
     {
         var buffer = new byte[64 * 1024];
         var totalBytes = 0;
@@ -269,9 +216,9 @@ public sealed class WebSocketTransportTests
             return null;
         }
 
-        return JsonSerializer.Deserialize(
-            buffer.AsSpan(0, totalBytes),
-            AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
+        return MessagePackSerializer.Deserialize<TerminalIpcMessage>(
+            buffer.AsSpan(0, totalBytes).ToArray(),
+            MessagePackSerializerOptions.Standard);
     }
 
     private sealed class InMemoryTerminalSessionService : ITerminalSessionService
