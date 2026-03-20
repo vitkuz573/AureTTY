@@ -22,7 +22,7 @@ sudo apt-get install musl-tools musl-dev
 ```
 
 For ARM cross-builds, provide appropriate musl compilers in `PATH`.
-`build-openwrt.sh` auto-discovers local toolchains from:
+`scripts/openwrt/build.sh` auto-discovers local toolchains from:
 - `.tools/openwrt-toolchains/**/bin`
 - `.tools/musl-cross/**/bin`
 
@@ -50,13 +50,13 @@ tar -xzf .tools/musl-cross/arm-linux-musleabihf-cross.tgz -C .tools/musl-cross
 
 ```bash
 # x86_64
-ARCH=x86_64 ./build-openwrt.sh
+ARCH=x86_64 ./scripts/openwrt/build.sh
 
 # ARM64 (requires musl cross-compiler)
-ARCH=aarch64 ./build-openwrt.sh
+ARCH=aarch64 ./scripts/openwrt/build.sh
 
 # ARMv7 (experimental)
-ARCH=armv7 ./build-openwrt.sh
+ARCH=armv7 ./scripts/openwrt/build.sh
 ```
 
 Output layout:
@@ -85,7 +85,7 @@ ARMV7_ALLOW_ABI_MISMATCH=0
 
 ## What the Script Validates
 
-`build-openwrt.sh` now fails early when configuration is invalid.
+`scripts/openwrt/build.sh` now fails early when configuration is invalid.
 
 1. Required musl compiler exists for the selected architecture.
 2. Output binary was produced.

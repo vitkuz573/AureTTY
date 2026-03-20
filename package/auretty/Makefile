@@ -36,7 +36,7 @@ define Package/auretty/conffiles
 endef
 
 define Build/Compile
-	# Binary is pre-built using build-openwrt.sh
+	# Binary is pre-built using scripts/openwrt/build.sh
 	# Copy from artifacts/openwrt/$(AURETTY_ARCH_DIR)/auretty
 endef
 

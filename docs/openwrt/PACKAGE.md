@@ -58,7 +58,7 @@ define Package/auretty/conffiles
 endef
 
 define Build/Compile
-	# Binary is pre-built using build-openwrt.sh
+	# Binary is pre-built using scripts/openwrt/build.sh
 	# Copy from artifacts/openwrt/$(AURETTY_ARCH_DIR)/auretty
 endef
 
@@ -174,7 +174,7 @@ cp -r /path/to/auretty_repo/package/auretty package/
 
 # Pre-build binary
 cd /path/to/auretty_repo
-ARCH=x86_64 ./build-openwrt.sh
+ARCH=x86_64 ./scripts/openwrt/build.sh
 
 # Copy binary to SDK
 mkdir -p openwrt-sdk-*/package/auretty/artifacts/openwrt/x86_64

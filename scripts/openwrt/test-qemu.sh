@@ -5,12 +5,13 @@ set -e
 # Downloads OpenWRT image and tests AureTTY in QEMU VM
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 OPENWRT_VERSION="23.05.0"
 OPENWRT_TARGET="x86/64"
 OPENWRT_IMAGE="openwrt-${OPENWRT_VERSION}-x86-64-generic-ext4-combined.img"
 OPENWRT_URL="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/${OPENWRT_IMAGE}.gz"
-QEMU_DIR="$SCRIPT_DIR/qemu-test"
-BINARY_PATH="$SCRIPT_DIR/artifacts/openwrt/x86_64/auretty"
+QEMU_DIR="$REPO_ROOT/artifacts/openwrt/qemu-test"
+BINARY_PATH="$REPO_ROOT/artifacts/openwrt/x86_64/auretty"
 
 echo "=========================================="
 echo "AureTTY OpenWRT QEMU Test"
@@ -25,7 +26,7 @@ fi
 
 if [ ! -f "$BINARY_PATH" ]; then
     echo "Error: AureTTY binary not found at $BINARY_PATH"
-    echo "Build first: ARCH=x86_64 ./build-openwrt.sh"
+    echo "Build first: ARCH=x86_64 ./scripts/openwrt/build.sh"
     exit 1
 fi
 

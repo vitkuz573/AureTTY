@@ -5,7 +5,7 @@ This guide explains how to test AureTTY in a QEMU virtual machine running OpenWR
 ## Prerequisites
 
 - QEMU installed: `sudo apt-get install qemu-system-x86`
-- Built AureTTY binary for x86_64: `ARCH=x86_64 ./build-openwrt.sh`
+- Built AureTTY binary for x86_64: `ARCH=x86_64 ./scripts/openwrt/build.sh`
 
 ## Quick Start
 

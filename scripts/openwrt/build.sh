@@ -5,8 +5,9 @@ set -euo pipefail
 # Builds optimized NativeAOT binary for OpenWRT targets.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_FILE="$SCRIPT_DIR/src/AureTTY/AureTTY.OpenWRT.csproj"
-OUTPUT_DIR="$SCRIPT_DIR/artifacts/openwrt"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_FILE="$REPO_ROOT/src/AureTTY/AureTTY.OpenWRT.csproj"
+OUTPUT_DIR="$REPO_ROOT/artifacts/openwrt"
 
 # Default values
 ARCH="${ARCH:-x86_64}"
@@ -52,7 +53,7 @@ append_path_once() {
 
 load_local_toolchain_paths() {
     local toolchain_root
-    for toolchain_root in "$SCRIPT_DIR/.tools/openwrt-toolchains" "$SCRIPT_DIR/.tools/musl-cross"; do
+    for toolchain_root in "$REPO_ROOT/.tools/openwrt-toolchains" "$REPO_ROOT/.tools/musl-cross"; do
         [[ -d "$toolchain_root" ]] || continue
         while IFS= read -r bin_dir; do
             append_path_once "$bin_dir"

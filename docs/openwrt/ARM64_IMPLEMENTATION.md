@@ -12,7 +12,7 @@ ARM64 support is available in **preview** mode:
 
 ## Required Compiler
 
-`build-openwrt.sh` auto-detects one of:
+`scripts/openwrt/build.sh` auto-detects one of:
 
 - `aarch64-linux-musl-gcc`
 - `aarch64-openwrt-linux-musl-gcc`
@@ -20,7 +20,7 @@ ARM64 support is available in **preview** mode:
 Or explicitly:
 
 ```bash
-AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./build-openwrt.sh
+AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./scripts/openwrt/build.sh
 ```
 
 ## Important Change

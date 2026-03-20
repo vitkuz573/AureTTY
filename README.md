@@ -377,13 +377,13 @@ pwsh -NoLogo -NoProfile -File demos/windows/run-windows-aot-smoke.ps1 `
 **Requirements:**
 - musl toolchain: `sudo apt-get install musl-tools musl-dev`
 - for ARM cross-builds: musl cross-compilers (`aarch64-linux-musl-gcc`, `arm-linux-musleabihf-gcc`, or OpenWRT SDK equivalents)
-- `build-openwrt.sh` auto-detects local toolchains in `.tools/openwrt-toolchains/**/bin` and `.tools/musl-cross/**/bin`
+- `scripts/openwrt/build.sh` auto-detects local toolchains in `.tools/openwrt-toolchains/**/bin` and `.tools/musl-cross/**/bin`
 - OpenWRT 23.05+ device or QEMU VM
 
 **Build for OpenWRT:**
 ```bash
 # Build optimized binary (~15 MB)
-ARCH=x86_64 ./build-openwrt.sh
+ARCH=x86_64 ./scripts/openwrt/build.sh
 
 # Output: artifacts/openwrt/x86_64/auretty
 

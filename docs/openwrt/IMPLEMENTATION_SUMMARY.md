@@ -15,11 +15,11 @@ OpenWRT support is now split by architecture maturity:
 
 - Dedicated OpenWRT project: `src/AureTTY/AureTTY.OpenWRT.csproj`
 - NativeAOT and size optimization flags enabled
-- Architecture-aware build script: `build-openwrt.sh`
+- Architecture-aware build script: `scripts/openwrt/build.sh`
 - Toolchain wrappers:
-  - `musl-gcc-wrapper.sh` (x86_64)
-  - `aarch64-gcc-wrapper.sh`
-  - `armv7-gcc-wrapper.sh`
+  - `scripts/openwrt/musl-gcc-wrapper.sh` (x86_64)
+  - `scripts/openwrt/aarch64-gcc-wrapper.sh`
+  - `scripts/openwrt/armv7-gcc-wrapper.sh`
 
 ### Safety Improvements
 
@@ -50,7 +50,7 @@ OpenWRT support is now split by architecture maturity:
 
 ### Testing and CI
 
-- `test-openwrt-api.sh` fixed and now passes end-to-end (9/9)
+- `scripts/openwrt/test-api.sh` fixed and now passes end-to-end (9/9)
 - Full unit/integration test suites pass:
   - `AureTTY.Tests`
   - `AureTTY.Core.Tests`

@@ -16,7 +16,7 @@ AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native serv
 - NativeAOT binary optimized for size (`~15 MB` on x86_64, stripped)
 - Low runtime footprint for embedded devices
 - OpenWRT package layout (`ipk`), UCI config, and procd init script
-- Automated HTTP API smoke tests (`test-openwrt-api.sh`)
+- Automated HTTP API smoke tests (`scripts/openwrt/test-api.sh`)
 - QEMU test workflow for x86_64
 
 ## Quick Start
@@ -28,13 +28,13 @@ AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native serv
 sudo apt-get install musl-tools musl-dev
 
 # Build
-ARCH=x86_64 ./build-openwrt.sh
+ARCH=x86_64 ./scripts/openwrt/build.sh
 
 # Output
 # artifacts/openwrt/x86_64/auretty
 ```
 
-For ARM builds, `build-openwrt.sh` auto-discovers toolchains from:
+For ARM builds, `scripts/openwrt/build.sh` auto-discovers toolchains from:
 - `.tools/openwrt-toolchains/**/bin`
 - `.tools/musl-cross/**/bin`
 
@@ -69,7 +69,7 @@ Supported ARM64 compiler names (auto-detected):
 You can override compiler path/name:
 
 ```bash
-AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./build-openwrt.sh
+AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./scripts/openwrt/build.sh
 ```
 
 ## ARMv7 Build Notes
@@ -79,7 +79,7 @@ The wrapper enables a linker workaround for mixed ABI attributes in current .NET
 To disable it explicitly:
 
 ```bash
-ARMV7_ALLOW_ABI_MISMATCH=0 ARCH=armv7 ./build-openwrt.sh
+ARMV7_ALLOW_ABI_MISMATCH=0 ARCH=armv7 ./scripts/openwrt/build.sh
 ```
 
 ## OpenWRT Package
@@ -106,7 +106,7 @@ uci commit auretty
 
 ```bash
 # Start service first, then:
-./test-openwrt-api.sh
+./scripts/openwrt/test-api.sh
 ```
 
 ### QEMU (x86_64)
@@ -120,12 +120,12 @@ See [QEMU Testing](QEMU_TESTING.md).
 Install/provide a musl cross-compiler and retry:
 
 ```bash
-AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./build-openwrt.sh
+AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./scripts/openwrt/build.sh
 ```
 
 ### `binary interpreter mismatch`
 
-`build-openwrt.sh` verifies the ELF interpreter. This error means a glibc compiler was used by mistake.
+`scripts/openwrt/build.sh` verifies the ELF interpreter. This error means a glibc compiler was used by mistake.
 
 Expected interpreters:
 - x86_64: `/lib/ld-musl-x86_64.so.1`

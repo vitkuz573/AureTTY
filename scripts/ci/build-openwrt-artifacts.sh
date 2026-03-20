@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BUILD_SCRIPT="$REPO_ROOT/scripts/openwrt/build.sh"
+
+cd "$REPO_ROOT"
+
 sudo apt-get update
 sudo apt-get install -y musl-tools musl-dev zstd xz-utils curl binutils file ruby-full
 
@@ -24,6 +30,6 @@ if [ ! -d "$ARMV7_DIR" ]; then
   tar --zstd -xf "$ARMV7_TARBALL" -C .tools/openwrt-toolchains
 fi
 
-ARCH=x86_64 ./build-openwrt.sh
-ARCH=aarch64 ./build-openwrt.sh
-ARCH=armv7 ./build-openwrt.sh
+ARCH=x86_64 "$BUILD_SCRIPT"
+ARCH=aarch64 "$BUILD_SCRIPT"
+ARCH=armv7 "$BUILD_SCRIPT"
