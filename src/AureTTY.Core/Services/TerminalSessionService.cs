@@ -20,7 +20,9 @@ public sealed class TerminalSessionService(
     TerminalMetrics metrics,
     ILogger<TerminalSessionService> logger) : ITerminalSessionService
 {
-    private const int OutputReadBufferSize = 1024;
+    private const int OutputReadBufferSize = 8192;
+    private const int OutputPublishBatchCharLimit = 32768;
+    private static readonly TimeSpan OutputPublishBatchMaxLatency = TimeSpan.FromMilliseconds(6);
     private const int ActiveSessionSnapshotLimit = 8;
     private static readonly TimeSpan OutputPumpDrainTimeout = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan OutputPumpDrainTimeoutOnClose = TimeSpan.FromMilliseconds(300);
@@ -511,6 +513,28 @@ public sealed class TerminalSessionService(
         CancellationToken cancellationToken)
     {
         var buffer = new char[OutputReadBufferSize];
+        var batchBuilder = new StringBuilder(OutputReadBufferSize * 2);
+        var batchStopwatch = Stopwatch.StartNew();
+
+        async Task FlushBatchAsync()
+        {
+            if (batchBuilder.Length == 0)
+            {
+                return;
+            }
+
+            var payload = batchBuilder.ToString();
+            batchBuilder.Clear();
+            batchStopwatch.Restart();
+
+            await PublishEventAsync(
+                session,
+                TerminalSessionEventType.Output,
+                TerminalSessionState.Running,
+                text: payload,
+                isStdErr: isStdErr,
+                processId: session.ProcessId);
+        }
 
         while (!session.CloseRequested)
         {
@@ -541,20 +565,19 @@ public sealed class TerminalSessionService(
                 break;
             }
 
-            var text = new string(buffer, 0, read);
-            if (text.Length == 0)
-            {
-                continue;
-            }
+            batchBuilder.Append(buffer, 0, read);
 
-            await PublishEventAsync(
-                session,
-                TerminalSessionEventType.Output,
-                TerminalSessionState.Running,
-                text: text,
-                isStdErr: isStdErr,
-                processId: session.ProcessId);
+            var shouldFlushBySize = batchBuilder.Length >= OutputPublishBatchCharLimit;
+            var shouldFlushByLatency = batchStopwatch.Elapsed >= OutputPublishBatchMaxLatency;
+            var shouldFlushByPartialRead = read < buffer.Length;
+
+            if (shouldFlushBySize || shouldFlushByLatency || shouldFlushByPartialRead)
+            {
+                await FlushBatchAsync();
+            }
         }
+
+        await FlushBatchAsync();
     }
 
     private async Task DrainOutputPumpsAsync(
