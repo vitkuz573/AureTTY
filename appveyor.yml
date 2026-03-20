@@ -44,7 +44,7 @@ build_script:
 
           $dotnet = "$dotnetInstallDir/dotnet"
           $env:DOTNET_ROOT = $dotnetInstallDir
-          $env:PATH = "$dotnetInstallDir:$env:PATH"
+          $env:PATH = "${dotnetInstallDir}:$env:PATH"
       }
 
       & $dotnet --version 2>&1
