@@ -80,18 +80,46 @@ choose_compiler() {
     return 1
 }
 
+choose_tool() {
+    local description="$1"
+    shift
+
+    local candidate
+    for candidate in "$@"; do
+        if compiler_exists "$candidate"; then
+            normalize_compiler_path "$candidate"
+            return 0
+        fi
+    done
+
+    echo "Error: unable to find $description tool in PATH." >&2
+    echo "Checked candidates:" >&2
+    for candidate in "$@"; do
+        [[ -n "$candidate" ]] && echo "  - $candidate" >&2
+    done
+    return 1
+}
+
 # Auto-discover local toolchains installed into repository-local .tools directory.
 load_local_toolchain_paths
 
 # Architecture to RID mapping and toolchain setup.
 EXPECTED_INTERPRETER=""
+OBJCOPY_TOOL=""
+STRIP_TOOL=""
 case "$ARCH" in
     x86_64)
         RID="linux-musl-x64"
         EXPECTED_INTERPRETER="/lib/ld-musl-x86_64.so.1"
         X86_64_CC="${X86_64_MUSL_CC:-}"
         X86_64_CC="$(choose_compiler "x86_64 musl" "$X86_64_CC" musl-gcc x86_64-linux-musl-gcc x86_64-openwrt-linux-musl-gcc)"
+        X86_64_OBJCOPY="${X86_64_MUSL_OBJCOPY:-}"
+        X86_64_OBJCOPY="$(choose_tool "x86_64 objcopy" "$X86_64_OBJCOPY" x86_64-openwrt-linux-musl-objcopy x86_64-linux-musl-objcopy objcopy)"
+        X86_64_STRIP="${X86_64_MUSL_STRIP:-}"
+        X86_64_STRIP="$(choose_tool "x86_64 strip" "$X86_64_STRIP" x86_64-openwrt-linux-musl-strip x86_64-linux-musl-strip strip)"
         export X86_64_CC
+        OBJCOPY_TOOL="$X86_64_OBJCOPY"
+        STRIP_TOOL="$X86_64_STRIP"
         export CppCompilerAndLinker="$SCRIPT_DIR/musl-gcc-wrapper.sh"
         ;;
     aarch64|arm64)
@@ -100,7 +128,13 @@ case "$ARCH" in
         EXPECTED_INTERPRETER="/lib/ld-musl-aarch64.so.1"
         AARCH64_CC="${AARCH64_MUSL_CC:-}"
         AARCH64_CC="$(choose_compiler "aarch64 musl" "$AARCH64_CC" aarch64-linux-musl-gcc aarch64-openwrt-linux-musl-gcc)"
+        AARCH64_OBJCOPY="${AARCH64_MUSL_OBJCOPY:-}"
+        AARCH64_OBJCOPY="$(choose_tool "aarch64 objcopy" "$AARCH64_OBJCOPY" aarch64-openwrt-linux-musl-objcopy aarch64-linux-musl-objcopy)"
+        AARCH64_STRIP="${AARCH64_MUSL_STRIP:-}"
+        AARCH64_STRIP="$(choose_tool "aarch64 strip" "$AARCH64_STRIP" aarch64-openwrt-linux-musl-strip aarch64-linux-musl-strip)"
         export AARCH64_CC
+        OBJCOPY_TOOL="$AARCH64_OBJCOPY"
+        STRIP_TOOL="$AARCH64_STRIP"
         export CppCompilerAndLinker="$SCRIPT_DIR/aarch64-gcc-wrapper.sh"
         ;;
     armv7|armhf)
@@ -109,7 +143,13 @@ case "$ARCH" in
         EXPECTED_INTERPRETER="/lib/ld-musl-armhf.so.1"
         ARMV7_CC="${ARMV7_MUSL_CC:-}"
         ARMV7_CC="$(choose_compiler "armv7 musl" "$ARMV7_CC" arm-linux-musleabihf-gcc arm-openwrt-linux-musleabihf-gcc arm-openwrt-linux-muslgnueabi-gcc)"
+        ARMV7_OBJCOPY="${ARMV7_MUSL_OBJCOPY:-}"
+        ARMV7_OBJCOPY="$(choose_tool "armv7 objcopy" "$ARMV7_OBJCOPY" arm-openwrt-linux-muslgnueabi-objcopy arm-openwrt-linux-musleabihf-objcopy arm-linux-musleabihf-objcopy)"
+        ARMV7_STRIP="${ARMV7_MUSL_STRIP:-}"
+        ARMV7_STRIP="$(choose_tool "armv7 strip" "$ARMV7_STRIP" arm-openwrt-linux-muslgnueabi-strip arm-openwrt-linux-musleabihf-strip arm-linux-musleabihf-strip)"
         export ARMV7_CC
+        OBJCOPY_TOOL="$ARMV7_OBJCOPY"
+        STRIP_TOOL="$ARMV7_STRIP"
         export CppCompilerAndLinker="$SCRIPT_DIR/armv7-gcc-wrapper.sh"
         ;;
     mips|mipsel)
@@ -132,6 +172,8 @@ echo "Architecture: $ARCH"
 echo "RID: $RID"
 echo "Configuration: $CONFIG"
 echo "Compiler wrapper: $CppCompilerAndLinker"
+echo "Objcopy tool: $OBJCOPY_TOOL"
+echo "Strip tool: $STRIP_TOOL"
 echo "Output: $OUTPUT_DIR/$ARCH"
 echo "=========================================="
 
@@ -162,6 +204,7 @@ dotnet publish "$PROJECT_FILE" \
     -p:MetadataUpdaterSupport=false \
     -p:UseNativeHttpHandler=true \
     -p:StripSymbols=true \
+    -p:ObjCopyName="$OBJCOPY_TOOL" \
     -p:OpenApiGenerateDocuments=false \
     -p:OpenApiGenerateDocumentsOnBuild=false \
     -o "$OUTPUT_DIR/$ARCH"
@@ -173,9 +216,9 @@ if [[ ! -f "$BINARY_PATH" ]]; then
 fi
 
 # Strip binary (additional size reduction).
-if command -v strip >/dev/null 2>&1; then
+if [[ -n "$STRIP_TOOL" ]] && command -v "$STRIP_TOOL" >/dev/null 2>&1; then
     echo "Stripping debug symbols..."
-    strip "$BINARY_PATH"
+    "$STRIP_TOOL" "$BINARY_PATH" || echo "Warning: strip failed for $BINARY_PATH"
 fi
 
 # Compress with UPX if available (optional).
