@@ -113,6 +113,33 @@ build_script:
       $openwrtArmv7IpkArchive = "artifacts/AureTTY-$tag-openwrt-armv7-ipk.zip"
       $openwrtManifest = "artifacts/AureTTY-$tag-openwrt-manifest.txt"
 
+      function Write-ArtifactSha256 {
+          param(
+              [Parameter(Mandatory = $true)]
+              [string]$ArtifactPath,
+              [Parameter(Mandatory = $true)]
+              [string]$ChecksumPath
+          )
+
+          Get-FileHash $ArtifactPath -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $ArtifactPath)"
+          } | Out-File -Encoding ascii $ChecksumPath
+      }
+
+      function Compress-ArtifactAndWriteSha256 {
+          param(
+              [Parameter(Mandatory = $true)]
+              [string]$SourcePath,
+              [Parameter(Mandatory = $true)]
+              [string]$ArchivePath,
+              [Parameter(Mandatory = $true)]
+              [string]$ChecksumPath
+          )
+
+          Compress-Archive -Path $SourcePath -DestinationPath $ArchivePath -Force
+          Write-ArtifactSha256 -ArtifactPath $ArchivePath -ChecksumPath $ChecksumPath
+      }
+
       if ($IsWindows) {
           & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64 2>&1
           if ($LASTEXITCODE -ne 0) {
@@ -129,21 +156,9 @@ build_script:
               throw "dotnet publish win-x64-aot failed with exit code $LASTEXITCODE."
           }
 
-          Compress-Archive -Path "artifacts/publish/win-x64/*" -DestinationPath $winArchive -Force
-          Compress-Archive -Path "artifacts/publish/linux-x64/*" -DestinationPath $linuxArchive -Force
-          Compress-Archive -Path "artifacts/publish/win-x64-aot/*" -DestinationPath $winAotArchive -Force
-
-          Get-FileHash $winArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $winArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64.sha256"
-
-          Get-FileHash $linuxArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $linuxArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64.sha256"
-
-          Get-FileHash $winAotArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $winAotArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64-aot.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/win-x64/*" -ArchivePath $winArchive -ChecksumPath "artifacts/AureTTY-$tag-win-x64.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-x64/*" -ArchivePath $linuxArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-x64.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/win-x64-aot/*" -ArchivePath $winAotArchive -ChecksumPath "artifacts/AureTTY-$tag-win-x64-aot.sha256"
       }
       else {
           bash ./scripts/ci/build-linux-x64-aot.sh
@@ -151,89 +166,48 @@ build_script:
               throw "Linux x64 AOT build+smoke failed with exit code $LASTEXITCODE."
           }
 
-          Compress-Archive -Path "artifacts/publish/linux-x64-aot/*" -DestinationPath $linuxAotArchive -Force
-          Get-FileHash $linuxAotArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $linuxAotArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-aot.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-x64-aot/*" -ArchivePath $linuxAotArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-x64-aot.sha256"
 
           bash ./scripts/ci/build-linux-arm-emulated.sh
           if ($LASTEXITCODE -ne 0) {
               throw "Linux ARM emulated builds failed with exit code $LASTEXITCODE."
           }
 
-          Compress-Archive -Path "artifacts/publish/linux-arm64-aot/*" -DestinationPath $linuxArm64AotArchive -Force
-          Compress-Archive -Path "artifacts/publish/linux-arm-aot/*" -DestinationPath $linuxArmAotArchive -Force
-
-          Get-FileHash $linuxArm64AotArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $linuxArm64AotArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm64-aot.sha256"
-
-          Get-FileHash $linuxArmAotArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $linuxArmAotArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm-aot.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-arm64-aot/*" -ArchivePath $linuxArm64AotArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-arm64-aot.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-arm-aot/*" -ArchivePath $linuxArmAotArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-arm-aot.sha256"
 
           $linuxX64ManifestSource = "artifacts/publish/linux-x64-manifest.txt"
           if (-not (Test-Path $linuxX64ManifestSource)) {
               throw "Missing Linux x64 manifest: $linuxX64ManifestSource"
           }
           Copy-Item -Path $linuxX64ManifestSource -Destination $linuxX64Manifest -Force
-          Get-FileHash $linuxX64Manifest -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $linuxX64Manifest)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-manifest.sha256"
+          Write-ArtifactSha256 -ArtifactPath $linuxX64Manifest -ChecksumPath "artifacts/AureTTY-$tag-linux-x64-manifest.sha256"
 
           bash ./scripts/ci/build-openwrt-artifacts.sh
           if ($LASTEXITCODE -ne 0) {
               throw "OpenWRT builds failed with exit code $LASTEXITCODE."
           }
 
-          Compress-Archive -Path "artifacts/openwrt/x86_64/*" -DestinationPath $openwrtX64Archive -Force
-          Compress-Archive -Path "artifacts/openwrt/aarch64/*" -DestinationPath $openwrtAarch64Archive -Force
-          Compress-Archive -Path "artifacts/openwrt/armv7/*" -DestinationPath $openwrtArmv7Archive -Force
-          Compress-Archive -Path "artifacts/openwrt/ipk/x86_64/*" -DestinationPath $openwrtX64IpkArchive -Force
-          Compress-Archive -Path "artifacts/openwrt/ipk/aarch64/*" -DestinationPath $openwrtAarch64IpkArchive -Force
-          Compress-Archive -Path "artifacts/openwrt/ipk/armv7/*" -DestinationPath $openwrtArmv7IpkArchive -Force
-
-          Get-FileHash $openwrtX64Archive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtX64Archive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-x86_64.sha256"
-
-          Get-FileHash $openwrtAarch64Archive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtAarch64Archive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-aarch64.sha256"
-
-          Get-FileHash $openwrtArmv7Archive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtArmv7Archive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-armv7.sha256"
-
-          Get-FileHash $openwrtX64IpkArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtX64IpkArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-x86_64-ipk.sha256"
-
-          Get-FileHash $openwrtAarch64IpkArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtAarch64IpkArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-aarch64-ipk.sha256"
-
-          Get-FileHash $openwrtArmv7IpkArchive -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtArmv7IpkArchive)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-armv7-ipk.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/openwrt/x86_64/*" -ArchivePath $openwrtX64Archive -ChecksumPath "artifacts/AureTTY-$tag-openwrt-x86_64.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/openwrt/aarch64/*" -ArchivePath $openwrtAarch64Archive -ChecksumPath "artifacts/AureTTY-$tag-openwrt-aarch64.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/openwrt/armv7/*" -ArchivePath $openwrtArmv7Archive -ChecksumPath "artifacts/AureTTY-$tag-openwrt-armv7.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/openwrt/ipk/x86_64/*" -ArchivePath $openwrtX64IpkArchive -ChecksumPath "artifacts/AureTTY-$tag-openwrt-x86_64-ipk.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/openwrt/ipk/aarch64/*" -ArchivePath $openwrtAarch64IpkArchive -ChecksumPath "artifacts/AureTTY-$tag-openwrt-aarch64-ipk.sha256"
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/openwrt/ipk/armv7/*" -ArchivePath $openwrtArmv7IpkArchive -ChecksumPath "artifacts/AureTTY-$tag-openwrt-armv7-ipk.sha256"
 
           $linuxArmManifestSource = "artifacts/publish/linux-arm-manifest.txt"
           if (-not (Test-Path $linuxArmManifestSource)) {
               throw "Missing Linux ARM manifest: $linuxArmManifestSource"
           }
           Copy-Item -Path $linuxArmManifestSource -Destination $linuxArmManifest -Force
-          Get-FileHash $linuxArmManifest -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $linuxArmManifest)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm-manifest.sha256"
+          Write-ArtifactSha256 -ArtifactPath $linuxArmManifest -ChecksumPath "artifacts/AureTTY-$tag-linux-arm-manifest.sha256"
 
           $openwrtManifestSource = "artifacts/openwrt/manifest.txt"
           if (-not (Test-Path $openwrtManifestSource)) {
               throw "Missing OpenWRT manifest: $openwrtManifestSource"
           }
           Copy-Item -Path $openwrtManifestSource -Destination $openwrtManifest -Force
-          Get-FileHash $openwrtManifest -Algorithm SHA256 | ForEach-Object {
-              "$($_.Hash)  $(Split-Path -Leaf $openwrtManifest)"
-          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-manifest.sha256"
+          Write-ArtifactSha256 -ArtifactPath $openwrtManifest -ChecksumPath "artifacts/AureTTY-$tag-openwrt-manifest.sha256"
 
           bash ./scripts/ci/validate-sha256-files.sh `
             "artifacts/AureTTY-$tag-linux-x64-aot.sha256" `
