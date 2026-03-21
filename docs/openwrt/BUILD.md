@@ -207,6 +207,12 @@ AppVeyor Linux release builds validate generated archives with:
 bash ./scripts/ci/validate-release-archives.sh <archive.zip> [...]
 ```
 
+and verify all generated `.sha256` files against payloads with:
+
+```bash
+bash ./scripts/ci/validate-sha256-files.sh artifacts/AureTTY-<tag>-*.sha256
+```
+
 Validation checks include:
 - expected payload presence (binary or `.ipk` depending on archive type),
 - rejection of leaked smoke/log artifacts (for example `auretty-emulated-server.log`).

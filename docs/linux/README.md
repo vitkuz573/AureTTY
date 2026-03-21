@@ -109,3 +109,9 @@ artifacts/AureTTY-<tag>-linux-x64-manifest.sha256
 artifacts/AureTTY-<tag>-linux-arm-manifest.txt
 artifacts/AureTTY-<tag>-linux-arm-manifest.sha256
 ```
+
+AppVeyor Linux release builds also validate generated checksum files before upload:
+
+```bash
+bash ./scripts/ci/validate-sha256-files.sh artifacts/AureTTY-<tag>-*.sha256
+```

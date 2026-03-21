@@ -235,6 +235,23 @@ build_script:
               "$($_.Hash)  $(Split-Path -Leaf $openwrtManifest)"
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-manifest.sha256"
 
+          bash ./scripts/ci/validate-sha256-files.sh `
+            "artifacts/AureTTY-$tag-linux-x64-aot.sha256" `
+            "artifacts/AureTTY-$tag-linux-arm64-aot.sha256" `
+            "artifacts/AureTTY-$tag-linux-arm-aot.sha256" `
+            "artifacts/AureTTY-$tag-linux-x64-manifest.sha256" `
+            "artifacts/AureTTY-$tag-linux-arm-manifest.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-x86_64.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-aarch64.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-armv7.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-x86_64-ipk.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-aarch64-ipk.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-armv7-ipk.sha256" `
+            "artifacts/AureTTY-$tag-openwrt-manifest.sha256"
+          if ($LASTEXITCODE -ne 0) {
+              throw "Release checksum validation failed with exit code $LASTEXITCODE."
+          }
+
           bash ./scripts/ci/validate-release-archives.sh `
             "$linuxAotArchive" `
             "$linuxArm64AotArchive" `
