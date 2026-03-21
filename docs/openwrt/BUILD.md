@@ -26,6 +26,12 @@ For ARM cross-builds, provide appropriate musl compilers in `PATH`.
 - `.tools/openwrt-toolchains/**/bin`
 - `.tools/musl-cross/**/bin`
 
+For host-side ARM runtime emulation tests:
+
+```bash
+sudo apt-get install qemu-user
+```
+
 Example local setup (repo-local, no global PATH edits needed):
 
 ```bash
@@ -63,6 +69,20 @@ Output layout:
 
 ```text
 artifacts/openwrt/<arch>/auretty
+```
+
+Optional runtime smoke tests after build:
+
+```bash
+# Native host (x86_64)
+./scripts/openwrt/test-api.sh
+
+# Emulated ARM binaries on x86_64 host
+ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh
+ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
+
+# Run both emulated ARM tests
+./scripts/openwrt/test-emulated-all.sh
 ```
 
 ## Environment Variables

@@ -7,8 +7,8 @@ AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native serv
 | Architecture | Status | Notes |
 |--------------|--------|-------|
 | x86_64 | ✅ Stable | Fully validated in local build + API smoke tests |
-| ARM64 (aarch64) | ⚠️ Preview | Requires musl cross-compiler and on-device validation |
-| ARMv7 (armhf) | 🧪 Experimental | Build pipeline available, requires external musl toolchain |
+| ARM64 (aarch64) | ⚠️ Preview | Build + emulated API smoke validated; on-device validation still recommended |
+| ARMv7 (armhf) | 🧪 Experimental | Build + emulated API smoke validated; on-device validation still recommended |
 | MIPS | ❌ Not supported | No supported musl RID in current .NET pipeline |
 
 ## Features
@@ -17,6 +17,7 @@ AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native serv
 - Low runtime footprint for embedded devices
 - OpenWRT package layout (`ipk`), UCI config, and procd init script
 - Automated HTTP API smoke tests (`scripts/openwrt/test-api.sh`)
+- Emulated ARM API smoke tests via `qemu-user` (`scripts/openwrt/test-emulated-api.sh`)
 - QEMU test workflow for x86_64
 
 ## Quick Start
@@ -107,6 +108,20 @@ uci commit auretty
 ```bash
 # Start service first, then:
 ./scripts/openwrt/test-api.sh
+```
+
+### Emulated ARM API Smoke (Host-side)
+
+```bash
+# Debian/Ubuntu prerequisite
+sudo apt-get install qemu-user
+
+# Run one architecture
+ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh
+ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
+
+# Run both
+./scripts/openwrt/test-emulated-all.sh
 ```
 
 ### QEMU (x86_64)

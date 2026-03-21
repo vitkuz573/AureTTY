@@ -8,7 +8,7 @@ BUILD_SCRIPT="$REPO_ROOT/scripts/openwrt/build.sh"
 cd "$REPO_ROOT"
 
 sudo apt-get update
-sudo apt-get install -y musl-tools musl-dev zstd xz-utils curl binutils file ruby-full
+sudo apt-get install -y musl-tools musl-dev zstd xz-utils curl binutils file ruby-full qemu-user
 
 mkdir -p .tools/openwrt-toolchains
 
@@ -33,3 +33,34 @@ fi
 ARCH=x86_64 "$BUILD_SCRIPT"
 ARCH=aarch64 "$BUILD_SCRIPT"
 ARCH=armv7 "$BUILD_SCRIPT"
+
+run_native_api_smoke() {
+  local binary="$REPO_ROOT/artifacts/openwrt/x86_64/auretty"
+  local log_file="$REPO_ROOT/artifacts/openwrt/x86_64/auretty-api-smoke-server.log"
+  local pid
+
+  "$binary" --transport http --http-listen-url "http://127.0.0.1:17850" --api-key "test-key" >"$log_file" 2>&1 &
+  pid=$!
+
+  cleanup() {
+    if kill -0 "$pid" >/dev/null 2>&1; then
+      kill "$pid" >/dev/null 2>&1 || true
+      wait "$pid" >/dev/null 2>&1 || true
+    fi
+  }
+  trap cleanup EXIT
+
+  for _ in $(seq 1 60); do
+    if curl -s -f -H "X-AureTTY-Key: test-key" "http://127.0.0.1:17850/api/v1/health" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 1
+  done
+
+  API_KEY="test-key" BASE_URL="http://127.0.0.1:17850/api/v1" "$REPO_ROOT/scripts/openwrt/test-api.sh"
+  trap - EXIT
+  cleanup
+}
+
+run_native_api_smoke
+API_KEY="test-key" "$REPO_ROOT/scripts/openwrt/test-emulated-all.sh"
