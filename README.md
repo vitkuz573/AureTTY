@@ -25,10 +25,13 @@ All transports can run simultaneously and share the same session state.
 ### Platform Support
 
 - **Linux**: PTY backend via `script` from `util-linux` (target: `net10.0`)
+  - x64: stable NativeAOT
+  - arm64, armv7 (glibc): cross-build + emulated API smoke validated
 - **Windows**: Native ConPTY backend (targets: `net10.0-windows`, `net10.0`)
 - **OpenWRT**: Optimized musl builds for routers and embedded devices
   - x86_64: ~15 MB binary (stable)
   - ARM64 (aarch64): ~16 MB binary (preview, musl cross-toolchain required)
+  - ARMv7 (armhf): ~14 MB binary (experimental)
 - **NativeAOT**: Full support for ahead-of-time compilation on all platforms
 
 ### Advanced Capabilities
@@ -323,6 +326,7 @@ docs/
 ├── guides/                 # User guides
 ├── examples/               # Client examples
 ├── architecture/           # Architecture docs
+├── linux/                  # Generic Linux ARM build/testing docs
 └── openwrt/                # OpenWRT support
 ```
 
@@ -376,6 +380,9 @@ ARCH=arm ./scripts/linux/build-aot-arm.sh
 # Run emulated API smoke tests
 ./scripts/linux/test-emulated-all.sh
 ```
+
+See also:
+- [Linux ARM Build + Emulation Guide](docs/linux/README.md)
 
 ### Windows
 

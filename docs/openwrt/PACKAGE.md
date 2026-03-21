@@ -182,6 +182,13 @@ Outputs are written to:
 artifacts/openwrt/ipk/<arch>/auretty_<version>-<release>_<arch>.ipk
 ```
 
+By default, `scripts/openwrt/build-ipk.sh` removes older `auretty_*.ipk` files in the selected output folder before writing a new package.
+Keep historical packages explicitly with:
+
+```bash
+ARCH=x86_64 CLEAN_OLD_PACKAGES=0 ./scripts/openwrt/build-ipk.sh
+```
+
 By default, package architecture is auto-detected from the OpenWRT toolchain folder name:
 - `toolchain-aarch64_generic_...` -> `aarch64_generic`
 - `toolchain-arm_cortex-a7+neon-vfpv4_...` -> `arm_cortex-a7_neon-vfpv4`

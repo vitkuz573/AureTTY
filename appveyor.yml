@@ -101,9 +101,14 @@ build_script:
       $linuxArchive = "artifacts/AureTTY-$tag-linux-x64.zip"
       $winAotArchive = "artifacts/AureTTY-$tag-win-x64-aot.zip"
       $linuxAotArchive = "artifacts/AureTTY-$tag-linux-x64-aot.zip"
+      $linuxArm64AotArchive = "artifacts/AureTTY-$tag-linux-arm64-aot.zip"
+      $linuxArmAotArchive = "artifacts/AureTTY-$tag-linux-arm-aot.zip"
       $openwrtX64Archive = "artifacts/AureTTY-$tag-openwrt-x86_64.zip"
       $openwrtAarch64Archive = "artifacts/AureTTY-$tag-openwrt-aarch64.zip"
       $openwrtArmv7Archive = "artifacts/AureTTY-$tag-openwrt-armv7.zip"
+      $openwrtX64IpkArchive = "artifacts/AureTTY-$tag-openwrt-x86_64-ipk.zip"
+      $openwrtAarch64IpkArchive = "artifacts/AureTTY-$tag-openwrt-aarch64-ipk.zip"
+      $openwrtArmv7IpkArchive = "artifacts/AureTTY-$tag-openwrt-armv7-ipk.zip"
 
       if ($IsWindows) {
           & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64 2>&1
@@ -148,6 +153,22 @@ build_script:
               "$($_.Hash)  $(Split-Path -Leaf $linuxAotArchive)"
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-aot.sha256"
 
+          bash ./scripts/ci/build-linux-arm-emulated.sh
+          if ($LASTEXITCODE -ne 0) {
+              throw "Linux ARM emulated builds failed with exit code $LASTEXITCODE."
+          }
+
+          Compress-Archive -Path "artifacts/publish/linux-arm64-aot/*" -DestinationPath $linuxArm64AotArchive -Force
+          Compress-Archive -Path "artifacts/publish/linux-arm-aot/*" -DestinationPath $linuxArmAotArchive -Force
+
+          Get-FileHash $linuxArm64AotArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $linuxArm64AotArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm64-aot.sha256"
+
+          Get-FileHash $linuxArmAotArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $linuxArmAotArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm-aot.sha256"
+
           bash ./scripts/ci/build-openwrt-artifacts.sh
           if ($LASTEXITCODE -ne 0) {
               throw "OpenWRT builds failed with exit code $LASTEXITCODE."
@@ -156,6 +177,9 @@ build_script:
           Compress-Archive -Path "artifacts/openwrt/x86_64/*" -DestinationPath $openwrtX64Archive -Force
           Compress-Archive -Path "artifacts/openwrt/aarch64/*" -DestinationPath $openwrtAarch64Archive -Force
           Compress-Archive -Path "artifacts/openwrt/armv7/*" -DestinationPath $openwrtArmv7Archive -Force
+          Compress-Archive -Path "artifacts/openwrt/ipk/x86_64/*" -DestinationPath $openwrtX64IpkArchive -Force
+          Compress-Archive -Path "artifacts/openwrt/ipk/aarch64/*" -DestinationPath $openwrtAarch64IpkArchive -Force
+          Compress-Archive -Path "artifacts/openwrt/ipk/armv7/*" -DestinationPath $openwrtArmv7IpkArchive -Force
 
           Get-FileHash $openwrtX64Archive -Algorithm SHA256 | ForEach-Object {
               "$($_.Hash)  $(Split-Path -Leaf $openwrtX64Archive)"
@@ -168,6 +192,18 @@ build_script:
           Get-FileHash $openwrtArmv7Archive -Algorithm SHA256 | ForEach-Object {
               "$($_.Hash)  $(Split-Path -Leaf $openwrtArmv7Archive)"
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-armv7.sha256"
+
+          Get-FileHash $openwrtX64IpkArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $openwrtX64IpkArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-x86_64-ipk.sha256"
+
+          Get-FileHash $openwrtAarch64IpkArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $openwrtAarch64IpkArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-aarch64-ipk.sha256"
+
+          Get-FileHash $openwrtArmv7IpkArchive -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $openwrtArmv7IpkArchive)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-armv7-ipk.sha256"
       }
 
 artifacts:
@@ -179,6 +215,10 @@ artifacts:
     name: auretty-win-x64-aot
   - path: artifacts/AureTTY-*-linux-x64-aot.zip
     name: auretty-linux-x64-aot
+  - path: artifacts/AureTTY-*-linux-arm64-aot.zip
+    name: auretty-linux-arm64-aot
+  - path: artifacts/AureTTY-*-linux-arm-aot.zip
+    name: auretty-linux-arm-aot
   - path: artifacts/AureTTY-*-win-x64.sha256
     name: auretty-win-x64-sha256
   - path: artifacts/AureTTY-*-linux-x64.sha256
@@ -187,18 +227,34 @@ artifacts:
     name: auretty-win-x64-aot-sha256
   - path: artifacts/AureTTY-*-linux-x64-aot.sha256
     name: auretty-linux-x64-aot-sha256
+  - path: artifacts/AureTTY-*-linux-arm64-aot.sha256
+    name: auretty-linux-arm64-aot-sha256
+  - path: artifacts/AureTTY-*-linux-arm-aot.sha256
+    name: auretty-linux-arm-aot-sha256
   - path: artifacts/AureTTY-*-openwrt-x86_64.zip
     name: auretty-openwrt-x86_64
   - path: artifacts/AureTTY-*-openwrt-aarch64.zip
     name: auretty-openwrt-aarch64
   - path: artifacts/AureTTY-*-openwrt-armv7.zip
     name: auretty-openwrt-armv7
+  - path: artifacts/AureTTY-*-openwrt-x86_64-ipk.zip
+    name: auretty-openwrt-x86_64-ipk
+  - path: artifacts/AureTTY-*-openwrt-aarch64-ipk.zip
+    name: auretty-openwrt-aarch64-ipk
+  - path: artifacts/AureTTY-*-openwrt-armv7-ipk.zip
+    name: auretty-openwrt-armv7-ipk
   - path: artifacts/AureTTY-*-openwrt-x86_64.sha256
     name: auretty-openwrt-x86_64-sha256
   - path: artifacts/AureTTY-*-openwrt-aarch64.sha256
     name: auretty-openwrt-aarch64-sha256
   - path: artifacts/AureTTY-*-openwrt-armv7.sha256
     name: auretty-openwrt-armv7-sha256
+  - path: artifacts/AureTTY-*-openwrt-x86_64-ipk.sha256
+    name: auretty-openwrt-x86_64-ipk-sha256
+  - path: artifacts/AureTTY-*-openwrt-aarch64-ipk.sha256
+    name: auretty-openwrt-aarch64-ipk-sha256
+  - path: artifacts/AureTTY-*-openwrt-armv7-ipk.sha256
+    name: auretty-openwrt-armv7-ipk-sha256
 
 deploy_script:
   - ps: |
@@ -269,7 +325,7 @@ deploy_script:
       $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
       Write-Host "Release upload context: Repo='$repo' Tag='$tag' ReleaseId='$($release.id)'."
       Write-Host "Upload base URL: $uploadUrl"
-      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|openwrt-x86_64|openwrt-aarch64|openwrt-armv7)\.(zip|sha256)$'
+      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk)\.(zip|sha256)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
       if (-not $assets) {

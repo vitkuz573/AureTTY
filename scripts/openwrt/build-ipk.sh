@@ -17,6 +17,7 @@ PKG_SECTION="${PKG_SECTION:-net}"
 PKG_PRIORITY="${PKG_PRIORITY:-optional}"
 PKG_DEPENDS="${PKG_DEPENDS:-util-linux-script}"
 KEEP_WORK_DIR="${KEEP_WORK_DIR:-0}"
+CLEAN_OLD_PACKAGES="${CLEAN_OLD_PACKAGES:-1}"
 
 BINARY_PATH="${BINARY_PATH:-$REPO_ROOT/artifacts/openwrt/$ARCH/auretty}"
 OUT_DIR="${OUT_DIR:-$REPO_ROOT/artifacts/openwrt/ipk/$ARCH}"
@@ -126,6 +127,9 @@ PKG_BASENAME="${PKG_NAME}_${PKG_VERSION}-${PKG_RELEASE}_${PACKAGE_ARCH}"
 PKG_OUTPUT="$OUT_DIR/${PKG_BASENAME}.ipk"
 
 mkdir -p "$OUT_DIR"
+if [[ "$CLEAN_OLD_PACKAGES" == "1" ]]; then
+    find "$OUT_DIR" -maxdepth 1 -type f -name "${PKG_NAME}_*.ipk" -delete
+fi
 rm -rf "$WORK_DIR"
 mkdir -p "$WORK_DIR/usr/bin" "$WORK_DIR/etc/init.d" "$WORK_DIR/etc/config" "$WORK_DIR/CONTROL"
 
