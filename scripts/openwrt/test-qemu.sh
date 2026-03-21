@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # AureTTY OpenWRT QEMU Test Script
 # Downloads OpenWRT image and tests AureTTY in QEMU VM
@@ -38,7 +38,17 @@ cd "$QEMU_DIR"
 if [ ! -f "$OPENWRT_IMAGE" ]; then
     echo "Downloading OpenWRT image..."
     wget -q --show-progress "$OPENWRT_URL"
-    gunzip "${OPENWRT_IMAGE}.gz"
+
+    echo "Extracting OpenWRT image..."
+    if ! gzip -dc "${OPENWRT_IMAGE}.gz" > "$OPENWRT_IMAGE"; then
+        if [ -s "$OPENWRT_IMAGE" ]; then
+            echo "Warning: gzip reported non-fatal issues; continuing with extracted image."
+        else
+            echo "Error: failed to extract OpenWRT image"
+            exit 1
+        fi
+    fi
+    rm -f "${OPENWRT_IMAGE}.gz"
 fi
 
 echo "=========================================="
@@ -55,9 +65,18 @@ echo ""
 echo "To exit QEMU: Ctrl+A, then X"
 echo "=========================================="
 
+# Use KVM when available, otherwise fallback to software emulation.
+QEMU_ACCEL_ARGS=()
+if [ -c /dev/kvm ] && [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+  QEMU_ACCEL_ARGS+=(-enable-kvm)
+  echo "KVM acceleration: enabled"
+else
+  echo "KVM acceleration: unavailable, using software emulation (TCG)"
+fi
+
 # Start QEMU with port forwarding
 qemu-system-x86_64 \
-  -enable-kvm \
+  "${QEMU_ACCEL_ARGS[@]}" \
   -m 256M \
   -nographic \
   -device e1000,netdev=net0 \
