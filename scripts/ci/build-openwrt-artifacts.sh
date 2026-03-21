@@ -14,21 +14,42 @@ cd "$REPO_ROOT"
 
 mkdir -p .tools/openwrt-toolchains
 
+verify_tarball_sha256() {
+  local tarball="$1"
+  local expected_sha="$2"
+  local actual_sha
+
+  actual_sha="$(sha256sum "$tarball" | awk '{print $1}')"
+  if [[ "$actual_sha" != "$expected_sha" ]]; then
+    echo "Error: checksum mismatch for toolchain tarball: $tarball" >&2
+    echo "Expected: $expected_sha" >&2
+    echo "Actual:   $actual_sha" >&2
+    echo "Delete the tarball and rerun to download a clean copy." >&2
+    exit 1
+  fi
+}
+
 AARCH64_TARBALL=".tools/openwrt-toolchains/openwrt-toolchain-24.10.6-armsr-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
 AARCH64_DIR=".tools/openwrt-toolchains/openwrt-toolchain-24.10.6-armsr-armv8_gcc-13.3.0_musl.Linux-x86_64"
+# Source: https://downloads.openwrt.org/releases/24.10.6/targets/armsr/armv8/sha256sums
+AARCH64_TARBALL_SHA256="683599de1f5741d7ad7deabaa4e967e55323128897da4660b2efa5080d79f9e2"
 if [ ! -d "$AARCH64_DIR" ]; then
   if [ ! -f "$AARCH64_TARBALL" ]; then
     curl -fL --retry 3 --retry-all-errors -o "$AARCH64_TARBALL" "https://downloads.openwrt.org/releases/24.10.6/targets/armsr/armv8/openwrt-toolchain-24.10.6-armsr-armv8_gcc-13.3.0_musl.Linux-x86_64.tar.zst"
   fi
+  verify_tarball_sha256 "$AARCH64_TARBALL" "$AARCH64_TARBALL_SHA256"
   tar --zstd -xf "$AARCH64_TARBALL" -C .tools/openwrt-toolchains
 fi
 
 ARMV7_TARBALL=".tools/openwrt-toolchains/openwrt-toolchain-24.10.6-ipq40xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
 ARMV7_DIR=".tools/openwrt-toolchains/openwrt-toolchain-24.10.6-ipq40xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64"
+# Source: https://downloads.openwrt.org/releases/24.10.6/targets/ipq40xx/generic/sha256sums
+ARMV7_TARBALL_SHA256="37a533e8a978164b8403593d9761ad57deef918fcf96ecfd17ce6ec90c99b826"
 if [ ! -d "$ARMV7_DIR" ]; then
   if [ ! -f "$ARMV7_TARBALL" ]; then
     curl -fL --retry 3 --retry-all-errors -o "$ARMV7_TARBALL" "https://downloads.openwrt.org/releases/24.10.6/targets/ipq40xx/generic/openwrt-toolchain-24.10.6-ipq40xx-generic_gcc-13.3.0_musl_eabi.Linux-x86_64.tar.zst"
   fi
+  verify_tarball_sha256 "$ARMV7_TARBALL" "$ARMV7_TARBALL_SHA256"
   tar --zstd -xf "$ARMV7_TARBALL" -C .tools/openwrt-toolchains
 fi
 

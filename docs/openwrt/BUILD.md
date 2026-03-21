@@ -126,6 +126,7 @@ CURL_MAX_TIME_SECONDS=15
 - x86_64: `/lib/ld-musl-x86_64.so.1`
 - aarch64: `/lib/ld-musl-aarch64.so.1`
 - armv7: `/lib/ld-musl-armhf.so.1`
+4. Downloaded OpenWRT toolchain tarballs (when used by CI helper scripts) match pinned SHA256 checksums.
 
 This prevents accidental glibc builds being published as OpenWRT artifacts.
 
@@ -166,6 +167,10 @@ It does not block the build.
 ### `binary interpreter mismatch`
 
 A glibc compiler was used. Ensure your compiler is musl-based (`*-linux-musl-gcc`).
+
+### `checksum mismatch for toolchain tarball`
+
+The cached OpenWRT toolchain archive is corrupted or stale. Delete the tarball from `.tools/openwrt-toolchains/` and rerun the build script so it can download a clean copy.
 
 ### `Error: Unsupported architecture: mips`
 
