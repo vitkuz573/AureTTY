@@ -103,6 +103,7 @@ build_script:
       $linuxAotArchive = "artifacts/AureTTY-$tag-linux-x64-aot.zip"
       $linuxArm64AotArchive = "artifacts/AureTTY-$tag-linux-arm64-aot.zip"
       $linuxArmAotArchive = "artifacts/AureTTY-$tag-linux-arm-aot.zip"
+      $linuxX64Manifest = "artifacts/AureTTY-$tag-linux-x64-manifest.txt"
       $linuxArmManifest = "artifacts/AureTTY-$tag-linux-arm-manifest.txt"
       $openwrtX64Archive = "artifacts/AureTTY-$tag-openwrt-x86_64.zip"
       $openwrtAarch64Archive = "artifacts/AureTTY-$tag-openwrt-aarch64.zip"
@@ -145,9 +146,9 @@ build_script:
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-win-x64-aot.sha256"
       }
       else {
-          & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64-aot 2>&1
+          bash ./scripts/ci/build-linux-x64-aot.sh
           if ($LASTEXITCODE -ne 0) {
-              throw "dotnet publish linux-x64-aot failed with exit code $LASTEXITCODE."
+              throw "Linux x64 AOT build+smoke failed with exit code $LASTEXITCODE."
           }
 
           Compress-Archive -Path "artifacts/publish/linux-x64-aot/*" -DestinationPath $linuxAotArchive -Force
@@ -170,6 +171,15 @@ build_script:
           Get-FileHash $linuxArmAotArchive -Algorithm SHA256 | ForEach-Object {
               "$($_.Hash)  $(Split-Path -Leaf $linuxArmAotArchive)"
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm-aot.sha256"
+
+          $linuxX64ManifestSource = "artifacts/publish/linux-x64-manifest.txt"
+          if (-not (Test-Path $linuxX64ManifestSource)) {
+              throw "Missing Linux x64 manifest: $linuxX64ManifestSource"
+          }
+          Copy-Item -Path $linuxX64ManifestSource -Destination $linuxX64Manifest -Force
+          Get-FileHash $linuxX64Manifest -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $linuxX64Manifest)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-x64-manifest.sha256"
 
           bash ./scripts/ci/build-openwrt-artifacts.sh
           if ($LASTEXITCODE -ne 0) {
@@ -265,6 +275,10 @@ artifacts:
     name: auretty-linux-arm64-aot-sha256
   - path: artifacts/AureTTY-*-linux-arm-aot.sha256
     name: auretty-linux-arm-aot-sha256
+  - path: artifacts/AureTTY-*-linux-x64-manifest.txt
+    name: auretty-linux-x64-manifest
+  - path: artifacts/AureTTY-*-linux-x64-manifest.sha256
+    name: auretty-linux-x64-manifest-sha256
   - path: artifacts/AureTTY-*-linux-arm-manifest.txt
     name: auretty-linux-arm-manifest
   - path: artifacts/AureTTY-*-linux-arm-manifest.sha256
@@ -367,7 +381,7 @@ deploy_script:
       $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
       Write-Host "Release upload context: Repo='$repo' Tag='$tag' ReleaseId='$($release.id)'."
       Write-Host "Upload base URL: $uploadUrl"
-      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|linux-arm-manifest|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk|openwrt-manifest)\.(zip|sha256|txt)$'
+      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|linux-x64-manifest|linux-arm-manifest|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk|openwrt-manifest)\.(zip|sha256|txt)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
       if (-not $assets) {

@@ -1,11 +1,12 @@
-# Generic Linux ARM Support
+# Generic Linux Support
 
-This document describes AureTTY NativeAOT support for generic Linux ARM targets (glibc), including host-side emulated API smoke tests.
+This document describes AureTTY NativeAOT support for generic Linux targets (glibc), including native and emulated API smoke tests.
 
 ## Status
 
 | Architecture | RID | Status | Validation |
 |--------------|-----|--------|------------|
+| x64 | `linux-x64` | ✅ Stable | Native API smoke |
 | arm64 (aarch64) | `linux-arm64` | ⚠️ Preview | Build + `qemu-aarch64` API smoke |
 | arm (armv7/armhf) | `linux-arm` | 🧪 Experimental | Build + `qemu-arm` API smoke |
 
@@ -16,7 +17,7 @@ Notes:
 ## Prerequisites
 
 - .NET 10 SDK
-- qemu-user
+- qemu-user (for ARM emulated smoke)
 - cross-compilers:
   - `gcc-aarch64-linux-gnu`
   - `gcc-arm-linux-gnueabihf`
@@ -31,6 +32,9 @@ sudo apt-get install -y qemu-user gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
 ## Build
 
 ```bash
+# x64
+dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64-aot
+
 # arm64
 ARCH=arm64 ./scripts/linux/build-aot-arm.sh
 
@@ -41,13 +45,17 @@ ARCH=arm ./scripts/linux/build-aot-arm.sh
 Outputs:
 
 ```text
+artifacts/publish/linux-x64-aot/AureTTY
 artifacts/publish/linux-arm64-aot/AureTTY
 artifacts/publish/linux-arm-aot/AureTTY
 ```
 
-## Emulated API Smoke
+## API Smoke
 
 ```bash
+# native x64
+API_KEY=test-key ./scripts/linux/test-native-api.sh
+
 # One architecture
 ARCH=arm64 API_KEY=test-key ./scripts/linux/test-emulated-api.sh
 ARCH=arm API_KEY=test-key ./scripts/linux/test-emulated-api.sh
@@ -81,19 +89,23 @@ SERVER_LOG=/tmp/auretty-linux-arm64.log ARCH=arm64 API_KEY=test-key ./scripts/li
 Use the consolidated script to install prerequisites, build both binaries, and run emulated API smoke tests:
 
 ```bash
+bash ./scripts/ci/build-linux-x64-aot.sh
 bash ./scripts/ci/build-linux-arm-emulated.sh
 ```
 
-This script is the reference workflow used for CI validation.
-It also writes a deterministic artifact manifest:
+These scripts are the reference workflow used for CI validation.
+They also write deterministic artifact manifests:
 
 ```text
+artifacts/publish/linux-x64-manifest.txt
 artifacts/publish/linux-arm-manifest.txt
 ```
 
-In AppVeyor tagged releases this manifest is published as:
+In AppVeyor tagged releases these manifests are published as:
 
 ```text
+artifacts/AureTTY-<tag>-linux-x64-manifest.txt
+artifacts/AureTTY-<tag>-linux-x64-manifest.sha256
 artifacts/AureTTY-<tag>-linux-arm-manifest.txt
 artifacts/AureTTY-<tag>-linux-arm-manifest.sha256
 ```
