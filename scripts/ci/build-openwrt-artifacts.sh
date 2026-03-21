@@ -124,6 +124,30 @@ validate_ipk() {
     exit 1
   fi
 
+  local pkg_arch
+  pkg_arch="$(ar p "$pkg_file" control.tar.gz | tar -xzO ./control | sed -n 's/^Architecture: //p' | head -n 1)"
+  if [[ -z "$pkg_arch" ]]; then
+    echo "Error: invalid .ipk (Architecture field missing): $pkg_file" >&2
+    exit 1
+  fi
+
+  case "$arch" in
+    aarch64)
+      if [[ "$pkg_arch" == "aarch64" ]]; then
+        echo "Error: package architecture is too generic for aarch64 target: $pkg_arch" >&2
+        echo "Expected target-specific arch (for example aarch64_generic)." >&2
+        exit 1
+      fi
+      ;;
+    armv7)
+      if [[ "$pkg_arch" == "armv7" || "$pkg_arch" == "arm" ]]; then
+        echo "Error: package architecture is too generic for armv7 target: $pkg_arch" >&2
+        echo "Expected target-specific arch (for example arm_cortex-a7_neon-vfpv4)." >&2
+        exit 1
+      fi
+      ;;
+  esac
+
   echo "Validated .ipk: $pkg_file"
 }
 

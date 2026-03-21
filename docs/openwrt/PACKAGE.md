@@ -182,6 +182,16 @@ Outputs are written to:
 artifacts/openwrt/ipk/<arch>/auretty_<version>-<release>_<arch>.ipk
 ```
 
+By default, package architecture is auto-detected from the OpenWRT toolchain folder name:
+- `toolchain-aarch64_generic_...` -> `aarch64_generic`
+- `toolchain-arm_cortex-a7+neon-vfpv4_...` -> `arm_cortex-a7_neon-vfpv4`
+
+Override manually if needed:
+
+```bash
+ARCH=armv7 PACKAGE_ARCH=arm_cortex-a7_neon-vfpv4 ./scripts/openwrt/build-ipk.sh
+```
+
 ### Using OpenWRT SDK
 
 ```bash

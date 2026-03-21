@@ -135,6 +135,8 @@ See [QEMU Testing](QEMU_TESTING.md).
 ./scripts/openwrt/build-ipk-all.sh
 ```
 
+For ARM targets, package architecture is auto-detected from the local OpenWRT toolchain (for example `aarch64_generic`, `arm_cortex-a7_neon-vfpv4`).
+
 See [Package Guide](PACKAGE.md) for SDK and manual packaging workflows.
 
 ## Troubleshooting

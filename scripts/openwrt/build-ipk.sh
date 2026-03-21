@@ -7,7 +7,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 ARCH="${ARCH:-x86_64}"
-PACKAGE_ARCH="${PACKAGE_ARCH:-$ARCH}"
+PACKAGE_ARCH="${PACKAGE_ARCH:-auto}"
 PKG_NAME="${PKG_NAME:-auretty}"
 PKG_VERSION="${PKG_VERSION:-auto}"
 PKG_BASE_VERSION="${PKG_BASE_VERSION:-0.0.0}"
@@ -23,6 +23,71 @@ OUT_DIR="${OUT_DIR:-$REPO_ROOT/artifacts/openwrt/ipk/$ARCH}"
 WORK_DIR="$OUT_DIR/${PKG_NAME}_ipk_root"
 INIT_SCRIPT="$REPO_ROOT/package/auretty/files/auretty.init"
 CONFIG_FILE="$REPO_ROOT/package/auretty/files/auretty.config"
+
+detect_package_arch_from_toolchain() {
+    local normalized_arch="$1"
+    local root
+    local candidate
+    local base
+    local package_arch
+
+    for root in "$REPO_ROOT/.tools/openwrt-toolchains" "$REPO_ROOT/.tools/musl-cross"; do
+        [[ -d "$root" ]] || continue
+        case "$normalized_arch" in
+            x86|i386|i686)
+                while IFS= read -r candidate; do
+                    base="$(basename "$candidate")"
+                    package_arch="${base#toolchain-}"
+                    package_arch="${package_arch%%_gcc-*}"
+                    package_arch="${package_arch//+/_}"
+                    if [[ "$package_arch" == i386* || "$package_arch" == i486* || "$package_arch" == i586* || "$package_arch" == i686* ]]; then
+                        echo "$package_arch"
+                        return 0
+                    fi
+                done < <(find "$root" -type d -name 'toolchain-i?86*_gcc-*' | sort)
+                ;;
+            aarch64|arm64)
+                while IFS= read -r candidate; do
+                    base="$(basename "$candidate")"
+                    package_arch="${base#toolchain-}"
+                    package_arch="${package_arch%%_gcc-*}"
+                    package_arch="${package_arch//+/_}"
+                    if [[ "$package_arch" == aarch64* ]]; then
+                        echo "$package_arch"
+                        return 0
+                    fi
+                done < <(find "$root" -type d -name 'toolchain-aarch64*_gcc-*' | sort)
+                ;;
+            armv7|armhf|arm)
+                while IFS= read -r candidate; do
+                    base="$(basename "$candidate")"
+                    package_arch="${base#toolchain-}"
+                    package_arch="${package_arch%%_gcc-*}"
+                    package_arch="${package_arch//+/_}"
+                    if [[ "$package_arch" == arm_* ]]; then
+                        echo "$package_arch"
+                        return 0
+                    fi
+                done < <(find "$root" -type d -name 'toolchain-arm*_gcc-*' | sort)
+                ;;
+        esac
+    done
+
+    return 1
+}
+
+if [[ "$PACKAGE_ARCH" == "auto" ]]; then
+    if detected_package_arch="$(detect_package_arch_from_toolchain "$ARCH")"; then
+        PACKAGE_ARCH="$detected_package_arch"
+    else
+        case "$ARCH" in
+            x86|i386|i686) PACKAGE_ARCH="i386" ;;
+            aarch64|arm64) PACKAGE_ARCH="aarch64" ;;
+            armv7|armhf|arm) PACKAGE_ARCH="armv7" ;;
+            *) PACKAGE_ARCH="$ARCH" ;;
+        esac
+    fi
+fi
 
 for required_tool in ar tar; do
     if ! command -v "$required_tool" >/dev/null 2>&1; then
