@@ -20,3 +20,6 @@ API_KEY="test-key" ARM64_ATTEMPTS="5" START_TIMEOUT_SECONDS="90" "$REPO_ROOT/scr
   "$REPO_ROOT/artifacts/publish/linux-arm-manifest.txt" \
   "$REPO_ROOT/artifacts/publish/linux-arm64-aot/AureTTY" \
   "$REPO_ROOT/artifacts/publish/linux-arm-aot/AureTTY"
+
+"$REPO_ROOT/scripts/ci/validate-artifact-manifest.sh" \
+  "$REPO_ROOT/artifacts/publish/linux-arm-manifest.txt"

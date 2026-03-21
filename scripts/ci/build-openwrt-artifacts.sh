@@ -153,3 +153,6 @@ ARMV7_IPK="$(ls -1t "$REPO_ROOT/artifacts/openwrt/ipk/armv7"/auretty_*.ipk | hea
   "$X86_64_IPK" \
   "$AARCH64_IPK" \
   "$ARMV7_IPK"
+
+"$REPO_ROOT/scripts/ci/validate-artifact-manifest.sh" \
+  "$REPO_ROOT/artifacts/openwrt/manifest.txt"
