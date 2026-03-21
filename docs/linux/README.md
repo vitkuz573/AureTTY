@@ -60,6 +60,7 @@ Notes:
 - `arm64` emulated smoke defaults to `DOTNET_PROCESSOR_COUNT=1` for startup stability under `qemu-user`.
 - `scripts/linux/test-emulated-all.sh` retries `arm64` smoke up to 5 times by default.
 - default server logs are written to `artifacts/test-logs/linux/<arch>/auretty-emulated-server.log`.
+- API smoke curl tuning can be overridden with `CURL_CONNECT_TIMEOUT_SECONDS` and `CURL_MAX_TIME_SECONDS`.
 - Override when needed:
 
 ```bash

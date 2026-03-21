@@ -8,12 +8,22 @@ API_KEY="${API_KEY:-test-key}"
 BASE_URL="${BASE_URL:-http://localhost:17850/api/v1}"
 VIEWER_ID="test-viewer"
 TEST_SUITE_NAME="${TEST_SUITE_NAME:-AureTTY API Test Suite}"
+CURL_CONNECT_TIMEOUT_SECONDS="${CURL_CONNECT_TIMEOUT_SECONDS:-3}"
+CURL_MAX_TIME_SECONDS="${CURL_MAX_TIME_SECONDS:-15}"
+
+CURL_COMMON_ARGS=(
+    --silent
+    --show-error
+    --connect-timeout "$CURL_CONNECT_TIMEOUT_SECONDS"
+    --max-time "$CURL_MAX_TIME_SECONDS"
+)
 
 echo "=========================================="
 echo "$TEST_SUITE_NAME"
 echo "=========================================="
 echo "Base URL: $BASE_URL"
 echo "API Key: $API_KEY"
+echo "Curl timeouts: connect=${CURL_CONNECT_TIMEOUT_SECONDS}s, max=${CURL_MAX_TIME_SECONDS}s"
 echo "=========================================="
 
 # Colors for output
@@ -37,7 +47,7 @@ test_fail() {
 # Test 1: Health check
 echo ""
 echo "Test 1: Health check"
-if curl -s -f -H "X-AureTTY-Key: $API_KEY" "$BASE_URL/health" | grep -q '"status":"ok"'; then
+if curl "${CURL_COMMON_ARGS[@]}" --fail -H "X-AureTTY-Key: $API_KEY" "$BASE_URL/health" | grep -q '"status":"ok"'; then
     test_pass "Health endpoint returned OK"
 else
     test_fail "Health endpoint failed"
@@ -46,13 +56,16 @@ fi
 # Test 2: Create session
 echo ""
 echo "Test 2: Create session"
-RESPONSE=$(curl -s -X POST \
+if ! RESPONSE=$(curl "${CURL_COMMON_ARGS[@]}" --fail -X POST \
   -H "X-AureTTY-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"shell":"sh"}' \
-  "$BASE_URL/viewers/$VIEWER_ID/sessions")
+  "$BASE_URL/viewers/$VIEWER_ID/sessions"); then
+    test_fail "Session creation request failed"
+    exit 1
+fi
 
-SESSION_ID=$(echo "$RESPONSE" | grep -o '"sessionId":"[^"]*"' | cut -d'"' -f4)
+SESSION_ID="$(echo "$RESPONSE" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p' | head -n 1)"
 
 if [ -n "$SESSION_ID" ]; then
     test_pass "Session created (ID: $SESSION_ID)"
@@ -65,7 +78,7 @@ fi
 # Test 3: Send input
 echo ""
 echo "Test 3: Send input"
-if curl -s -f -X POST \
+if curl "${CURL_COMMON_ARGS[@]}" --fail -X POST \
   -H "X-AureTTY-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"text":"echo test\n","sequence":1}' \
@@ -78,7 +91,7 @@ fi
 # Test 4: Get session info
 echo ""
 echo "Test 4: Get session info"
-if curl -s -f -H "X-AureTTY-Key: $API_KEY" \
+if curl "${CURL_COMMON_ARGS[@]}" --fail -H "X-AureTTY-Key: $API_KEY" \
   "$BASE_URL/viewers/$VIEWER_ID/sessions/$SESSION_ID" | grep -q "$SESSION_ID"; then
     test_pass "Session info retrieved"
 else
@@ -88,7 +101,7 @@ fi
 # Test 5: List sessions
 echo ""
 echo "Test 5: List sessions"
-if curl -s -f -H "X-AureTTY-Key: $API_KEY" \
+if curl "${CURL_COMMON_ARGS[@]}" --fail -H "X-AureTTY-Key: $API_KEY" \
   "$BASE_URL/viewers/$VIEWER_ID/sessions" | grep -q "$SESSION_ID"; then
     test_pass "Session listed"
 else
@@ -98,7 +111,7 @@ fi
 # Test 6: Resize terminal
 echo ""
 echo "Test 6: Resize terminal"
-if curl -s -f -X PUT \
+if curl "${CURL_COMMON_ARGS[@]}" --fail -X PUT \
   -H "X-AureTTY-Key: $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"rows":40,"columns":120}' \
@@ -113,7 +126,7 @@ echo ""
 echo "Test 7: Send multiple inputs"
 SUCCESS=true
 for i in {2..5}; do
-    if ! curl -s -f -X POST \
+    if ! curl "${CURL_COMMON_ARGS[@]}" --fail -X POST \
       -H "X-AureTTY-Key: $API_KEY" \
       -H "Content-Type: application/json" \
       -d "{\"text\":\"echo line $i\n\",\"sequence\":$i}" \
@@ -132,7 +145,7 @@ fi
 # Test 8: Close session
 echo ""
 echo "Test 8: Close session"
-if curl -s -f -X DELETE \
+if curl "${CURL_COMMON_ARGS[@]}" --fail -X DELETE \
   -H "X-AureTTY-Key: $API_KEY" \
   "$BASE_URL/viewers/$VIEWER_ID/sessions/$SESSION_ID" > /dev/null; then
     test_pass "Session closed"
@@ -143,7 +156,7 @@ fi
 # Test 9: Verify session is closed
 echo ""
 echo "Test 9: Verify session closed"
-if ! curl -s -f -H "X-AureTTY-Key: $API_KEY" \
+if ! curl "${CURL_COMMON_ARGS[@]}" --fail -H "X-AureTTY-Key: $API_KEY" \
   "$BASE_URL/viewers/$VIEWER_ID/sessions/$SESSION_ID" > /dev/null 2>&1; then
     test_pass "Session no longer exists"
 else

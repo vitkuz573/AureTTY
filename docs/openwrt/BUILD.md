@@ -110,6 +110,10 @@ AARCH64_ATTEMPTS=5
 
 # Optional: override server log output path for emulated smoke
 SERVER_LOG=/tmp/auretty-openwrt-emulated.log
+
+# Optional: API smoke curl timeouts
+CURL_CONNECT_TIMEOUT_SECONDS=3
+CURL_MAX_TIME_SECONDS=15
 ```
 
 ## What the Script Validates
