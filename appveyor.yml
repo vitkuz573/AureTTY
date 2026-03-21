@@ -103,12 +103,14 @@ build_script:
       $linuxAotArchive = "artifacts/AureTTY-$tag-linux-x64-aot.zip"
       $linuxArm64AotArchive = "artifacts/AureTTY-$tag-linux-arm64-aot.zip"
       $linuxArmAotArchive = "artifacts/AureTTY-$tag-linux-arm-aot.zip"
+      $linuxArmManifest = "artifacts/AureTTY-$tag-linux-arm-manifest.txt"
       $openwrtX64Archive = "artifacts/AureTTY-$tag-openwrt-x86_64.zip"
       $openwrtAarch64Archive = "artifacts/AureTTY-$tag-openwrt-aarch64.zip"
       $openwrtArmv7Archive = "artifacts/AureTTY-$tag-openwrt-armv7.zip"
       $openwrtX64IpkArchive = "artifacts/AureTTY-$tag-openwrt-x86_64-ipk.zip"
       $openwrtAarch64IpkArchive = "artifacts/AureTTY-$tag-openwrt-aarch64-ipk.zip"
       $openwrtArmv7IpkArchive = "artifacts/AureTTY-$tag-openwrt-armv7-ipk.zip"
+      $openwrtManifest = "artifacts/AureTTY-$tag-openwrt-manifest.txt"
 
       if ($IsWindows) {
           & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64 2>&1
@@ -205,6 +207,24 @@ build_script:
               "$($_.Hash)  $(Split-Path -Leaf $openwrtArmv7IpkArchive)"
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-armv7-ipk.sha256"
 
+          $linuxArmManifestSource = "artifacts/publish/linux-arm-manifest.txt"
+          if (-not (Test-Path $linuxArmManifestSource)) {
+              throw "Missing Linux ARM manifest: $linuxArmManifestSource"
+          }
+          Copy-Item -Path $linuxArmManifestSource -Destination $linuxArmManifest -Force
+          Get-FileHash $linuxArmManifest -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $linuxArmManifest)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-linux-arm-manifest.sha256"
+
+          $openwrtManifestSource = "artifacts/openwrt/manifest.txt"
+          if (-not (Test-Path $openwrtManifestSource)) {
+              throw "Missing OpenWRT manifest: $openwrtManifestSource"
+          }
+          Copy-Item -Path $openwrtManifestSource -Destination $openwrtManifest -Force
+          Get-FileHash $openwrtManifest -Algorithm SHA256 | ForEach-Object {
+              "$($_.Hash)  $(Split-Path -Leaf $openwrtManifest)"
+          } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-manifest.sha256"
+
           bash ./scripts/ci/validate-release-archives.sh `
             "$linuxAotArchive" `
             "$linuxArm64AotArchive" `
@@ -245,6 +265,10 @@ artifacts:
     name: auretty-linux-arm64-aot-sha256
   - path: artifacts/AureTTY-*-linux-arm-aot.sha256
     name: auretty-linux-arm-aot-sha256
+  - path: artifacts/AureTTY-*-linux-arm-manifest.txt
+    name: auretty-linux-arm-manifest
+  - path: artifacts/AureTTY-*-linux-arm-manifest.sha256
+    name: auretty-linux-arm-manifest-sha256
   - path: artifacts/AureTTY-*-openwrt-x86_64.zip
     name: auretty-openwrt-x86_64
   - path: artifacts/AureTTY-*-openwrt-aarch64.zip
@@ -269,6 +293,10 @@ artifacts:
     name: auretty-openwrt-aarch64-ipk-sha256
   - path: artifacts/AureTTY-*-openwrt-armv7-ipk.sha256
     name: auretty-openwrt-armv7-ipk-sha256
+  - path: artifacts/AureTTY-*-openwrt-manifest.txt
+    name: auretty-openwrt-manifest
+  - path: artifacts/AureTTY-*-openwrt-manifest.sha256
+    name: auretty-openwrt-manifest-sha256
 
 deploy_script:
   - ps: |
@@ -339,7 +367,7 @@ deploy_script:
       $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
       Write-Host "Release upload context: Repo='$repo' Tag='$tag' ReleaseId='$($release.id)'."
       Write-Host "Upload base URL: $uploadUrl"
-      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk)\.(zip|sha256)$'
+      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|linux-arm-manifest|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk|openwrt-manifest)\.(zip|sha256|txt)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
       if (-not $assets) {

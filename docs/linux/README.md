@@ -90,3 +90,10 @@ It also writes a deterministic artifact manifest:
 ```text
 artifacts/publish/linux-arm-manifest.txt
 ```
+
+In AppVeyor tagged releases this manifest is published as:
+
+```text
+artifacts/AureTTY-<tag>-linux-arm-manifest.txt
+artifacts/AureTTY-<tag>-linux-arm-manifest.sha256
+```

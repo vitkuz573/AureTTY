@@ -216,3 +216,10 @@ The OpenWRT CI artifact pipeline also writes:
 ```text
 artifacts/openwrt/manifest.txt
 ```
+
+In AppVeyor tagged releases this manifest is published as:
+
+```text
+artifacts/AureTTY-<tag>-openwrt-manifest.txt
+artifacts/AureTTY-<tag>-openwrt-manifest.sha256
+```
