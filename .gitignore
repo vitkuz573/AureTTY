@@ -5,6 +5,7 @@
 *.suo
 *.nupkg
 *.snupkg
+*.core
 .vs/
 
 **/terminal-publish/

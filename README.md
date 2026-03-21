@@ -364,6 +364,19 @@ dotnet publish src/AureTTY/AureTTY.csproj \
 bash demos/linux/run-linux-aot-smoke.sh
 ```
 
+**Generic Linux ARM (glibc) Build + Emulated Smoke:**
+```bash
+# Debian/Ubuntu prerequisites
+sudo apt-get install qemu-user gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+
+# Build AOT binaries
+ARCH=arm64 ./scripts/linux/build-aot-arm.sh
+ARCH=arm ./scripts/linux/build-aot-arm.sh
+
+# Run emulated API smoke tests
+./scripts/linux/test-emulated-all.sh
+```
+
 ### Windows
 
 **Requirements:**
