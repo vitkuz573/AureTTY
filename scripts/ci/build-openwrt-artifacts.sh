@@ -38,6 +38,7 @@ run_native_api_smoke() {
   local binary="$REPO_ROOT/artifacts/openwrt/x86_64/auretty"
   local log_file="$REPO_ROOT/artifacts/test-logs/openwrt/x86_64/auretty-api-smoke-server.log"
   local pid
+  local ready=0
 
   mkdir -p "$(dirname "$log_file")"
 
@@ -54,10 +55,21 @@ run_native_api_smoke() {
 
   for _ in $(seq 1 60); do
     if curl -s -f -H "X-AureTTY-Key: test-key" "http://127.0.0.1:17850/api/v1/health" >/dev/null 2>&1; then
+      ready=1
+      break
+    fi
+    if ! kill -0 "$pid" >/dev/null 2>&1; then
       break
     fi
     sleep 1
   done
+
+  if [[ "$ready" -ne 1 ]]; then
+    echo "Error: native x86_64 AureTTY failed to become healthy." >&2
+    echo "Server log: $log_file" >&2
+    tail -n 120 "$log_file" >&2 || true
+    return 1
+  fi
 
   API_KEY="test-key" BASE_URL="http://127.0.0.1:17850/api/v1" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$REPO_ROOT/scripts/openwrt/test-api.sh"
   trap - EXIT
@@ -66,26 +78,7 @@ run_native_api_smoke() {
 
 run_native_api_smoke
 
-run_with_retry() {
-  local attempts="$1"
-  shift
-  local attempt=1
-
-  while true; do
-    if "$@"; then
-      return 0
-    fi
-    if (( attempt >= attempts )); then
-      return 1
-    fi
-    echo "Retrying ($((attempt + 1))/$attempts): $*"
-    attempt=$((attempt + 1))
-    sleep 2
-  done
-}
-
-run_with_retry 5 env ARCH="aarch64" API_KEY="test-key" START_TIMEOUT_SECONDS="90" "$REPO_ROOT/scripts/openwrt/test-emulated-api.sh"
-env ARCH="armv7" API_KEY="test-key" "$REPO_ROOT/scripts/openwrt/test-emulated-api.sh"
+API_KEY="test-key" AARCH64_ATTEMPTS="5" START_TIMEOUT_SECONDS="90" "$REPO_ROOT/scripts/openwrt/test-emulated-all.sh"
 
 "$REPO_ROOT/scripts/openwrt/build-ipk-all.sh"
 

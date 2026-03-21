@@ -58,11 +58,15 @@ API_KEY=test-key ./scripts/linux/test-emulated-all.sh
 
 Notes:
 - `arm64` emulated smoke defaults to `DOTNET_PROCESSOR_COUNT=1` for startup stability under `qemu-user`.
+- `scripts/linux/test-emulated-all.sh` retries `arm64` smoke up to 5 times by default.
 - default server logs are written to `artifacts/test-logs/linux/<arch>/auretty-emulated-server.log`.
 - Override when needed:
 
 ```bash
 APP_DOTNET_PROCESSOR_COUNT=2 ARCH=arm64 API_KEY=test-key ./scripts/linux/test-emulated-api.sh
+
+# Override retry count for arm64 in all-architectures run
+ARM64_ATTEMPTS=3 API_KEY=test-key ./scripts/linux/test-emulated-all.sh
 ```
 
 Override log path:
