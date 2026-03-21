@@ -10,8 +10,7 @@ source "$COMMON_LIB"
 
 cd "$REPO_ROOT"
 
-sudo apt-get update
-sudo apt-get install -y musl-tools musl-dev zstd xz-utils curl binutils file ruby-full qemu-user
+"$REPO_ROOT/scripts/ci/install-linux-build-deps.sh"
 
 mkdir -p .tools/openwrt-toolchains
 

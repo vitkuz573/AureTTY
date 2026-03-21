@@ -207,6 +207,12 @@ AppVeyor Linux release builds validate generated archives with:
 bash ./scripts/ci/validate-release-archives.sh <archive.zip> [...]
 ```
 
+OpenWRT and generic Linux CI scripts share dependency setup via:
+
+```bash
+bash ./scripts/ci/install-linux-build-deps.sh
+```
+
 and verify all generated `.sha256` files against payloads with:
 
 ```bash

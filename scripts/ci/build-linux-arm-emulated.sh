@@ -8,8 +8,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$REPO_ROOT"
 
-sudo apt-get update
-sudo apt-get install -y qemu-user gcc-aarch64-linux-gnu gcc-arm-linux-gnueabihf
+"$REPO_ROOT/scripts/ci/install-linux-build-deps.sh"
 
 ARCH=arm64 "$REPO_ROOT/scripts/linux/build-aot-arm.sh"
 ARCH=arm "$REPO_ROOT/scripts/linux/build-aot-arm.sh"

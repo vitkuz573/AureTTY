@@ -101,6 +101,8 @@ artifacts/publish/linux-x64-manifest.txt
 artifacts/publish/linux-arm-manifest.txt
 ```
 
+Both CI scripts call a shared dependency installer (`scripts/ci/install-linux-build-deps.sh`) that uses a repo-local stamp file to skip repeated `apt-get` runs in the same workspace.
+
 In AppVeyor tagged releases these manifests are published as:
 
 ```text
