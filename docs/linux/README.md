@@ -89,6 +89,7 @@ SERVER_LOG=/tmp/auretty-linux-arm64.log ARCH=arm64 API_KEY=test-key ./scripts/li
 Use the consolidated script to install prerequisites, build both binaries, and run emulated API smoke tests:
 
 ```bash
+bash ./scripts/ci/build-linux-x64-scd.sh
 bash ./scripts/ci/build-linux-x64-aot.sh
 bash ./scripts/ci/build-linux-arm-emulated.sh
 ```

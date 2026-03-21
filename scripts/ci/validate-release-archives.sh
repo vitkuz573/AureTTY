@@ -62,7 +62,7 @@ validate_archive() {
     assert_not_contains_regex "$archive" '(^|/).*\.log$' "generic log file"
 
     case "$base" in
-        AureTTY-*-linux-x64-aot.zip|AureTTY-*-linux-arm64-aot.zip|AureTTY-*-linux-arm-aot.zip)
+        AureTTY-*-linux-x64.zip|AureTTY-*-linux-x64-aot.zip|AureTTY-*-linux-arm64-aot.zip|AureTTY-*-linux-arm-aot.zip)
             assert_contains_regex "$archive" '(^|/)AureTTY$' "AureTTY binary"
             ;;
         AureTTY-*-openwrt-x86_64.zip|AureTTY-*-openwrt-aarch64.zip|AureTTY-*-openwrt-armv7.zip)
@@ -87,4 +87,3 @@ validate_archive() {
 for archive in "$@"; do
     validate_archive "$archive"
 done
-

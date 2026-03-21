@@ -146,21 +146,22 @@ build_script:
               throw "dotnet publish win-x64 failed with exit code $LASTEXITCODE."
           }
 
-          & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0 -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/linux-x64 2>&1
-          if ($LASTEXITCODE -ne 0) {
-              throw "dotnet publish linux-x64 failed with exit code $LASTEXITCODE."
-          }
-
           & $dotnet publish src/AureTTY/AureTTY.csproj -f net10.0-windows -c Release -r win-x64 --self-contained true -p:PublishAot=true -p:OpenApiGenerateDocuments=false -p:OpenApiGenerateDocumentsOnBuild=false -o artifacts/publish/win-x64-aot 2>&1
           if ($LASTEXITCODE -ne 0) {
               throw "dotnet publish win-x64-aot failed with exit code $LASTEXITCODE."
           }
 
           Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/win-x64/*" -ArchivePath $winArchive -ChecksumPath "artifacts/AureTTY-$tag-win-x64.sha256"
-          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-x64/*" -ArchivePath $linuxArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-x64.sha256"
           Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/win-x64-aot/*" -ArchivePath $winAotArchive -ChecksumPath "artifacts/AureTTY-$tag-win-x64-aot.sha256"
       }
       else {
+          bash ./scripts/ci/build-linux-x64-scd.sh
+          if ($LASTEXITCODE -ne 0) {
+              throw "Linux x64 single-file build+smoke failed with exit code $LASTEXITCODE."
+          }
+
+          Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-x64/*" -ArchivePath $linuxArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-x64.sha256"
+
           bash ./scripts/ci/build-linux-x64-aot.sh
           if ($LASTEXITCODE -ne 0) {
               throw "Linux x64 AOT build+smoke failed with exit code $LASTEXITCODE."
@@ -210,6 +211,7 @@ build_script:
           Write-ArtifactSha256 -ArtifactPath $openwrtManifest -ChecksumPath "artifacts/AureTTY-$tag-openwrt-manifest.sha256"
 
           bash ./scripts/ci/validate-sha256-files.sh `
+            "artifacts/AureTTY-$tag-linux-x64.sha256" `
             "artifacts/AureTTY-$tag-linux-x64-aot.sha256" `
             "artifacts/AureTTY-$tag-linux-arm64-aot.sha256" `
             "artifacts/AureTTY-$tag-linux-arm-aot.sha256" `
@@ -227,6 +229,7 @@ build_script:
           }
 
           bash ./scripts/ci/validate-release-archives.sh `
+            "$linuxArchive" `
             "$linuxAotArchive" `
             "$linuxArm64AotArchive" `
             "$linuxArmAotArchive" `
