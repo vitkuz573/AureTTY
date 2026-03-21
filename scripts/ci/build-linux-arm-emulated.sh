@@ -15,3 +15,8 @@ ARCH=arm64 "$REPO_ROOT/scripts/linux/build-aot-arm.sh"
 ARCH=arm "$REPO_ROOT/scripts/linux/build-aot-arm.sh"
 
 API_KEY="test-key" ARM64_ATTEMPTS="5" START_TIMEOUT_SECONDS="90" "$REPO_ROOT/scripts/linux/test-emulated-all.sh"
+
+"$REPO_ROOT/scripts/ci/write-artifact-manifest.sh" \
+  "$REPO_ROOT/artifacts/publish/linux-arm-manifest.txt" \
+  "$REPO_ROOT/artifacts/publish/linux-arm64-aot/AureTTY" \
+  "$REPO_ROOT/artifacts/publish/linux-arm-aot/AureTTY"

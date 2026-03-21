@@ -210,3 +210,9 @@ bash ./scripts/ci/validate-release-archives.sh <archive.zip> [...]
 Validation checks include:
 - expected payload presence (binary or `.ipk` depending on archive type),
 - rejection of leaked smoke/log artifacts (for example `auretty-emulated-server.log`).
+
+The OpenWRT CI artifact pipeline also writes:
+
+```text
+artifacts/openwrt/manifest.txt
+```

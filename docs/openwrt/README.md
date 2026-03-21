@@ -145,6 +145,12 @@ See [QEMU Testing](QEMU_TESTING.md).
 
 For ARM targets, package architecture is auto-detected from the local OpenWRT toolchain (for example `aarch64_generic`, `arm_cortex-a7_neon-vfpv4`).
 
+The CI packaging flow also writes a deterministic artifact manifest:
+
+```text
+artifacts/openwrt/manifest.txt
+```
+
 See [Package Guide](PACKAGE.md) for SDK and manual packaging workflows.
 
 ## Troubleshooting

@@ -85,3 +85,8 @@ bash ./scripts/ci/build-linux-arm-emulated.sh
 ```
 
 This script is the reference workflow used for CI validation.
+It also writes a deterministic artifact manifest:
+
+```text
+artifacts/publish/linux-arm-manifest.txt
+```

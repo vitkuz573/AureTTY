@@ -140,3 +140,16 @@ validate_ipk() {
 validate_ipk x86_64
 validate_ipk aarch64
 validate_ipk armv7
+
+X86_64_IPK="$(ls -1t "$REPO_ROOT/artifacts/openwrt/ipk/x86_64"/auretty_*.ipk | head -n 1)"
+AARCH64_IPK="$(ls -1t "$REPO_ROOT/artifacts/openwrt/ipk/aarch64"/auretty_*.ipk | head -n 1)"
+ARMV7_IPK="$(ls -1t "$REPO_ROOT/artifacts/openwrt/ipk/armv7"/auretty_*.ipk | head -n 1)"
+
+"$REPO_ROOT/scripts/ci/write-artifact-manifest.sh" \
+  "$REPO_ROOT/artifacts/openwrt/manifest.txt" \
+  "$REPO_ROOT/artifacts/openwrt/x86_64/auretty" \
+  "$REPO_ROOT/artifacts/openwrt/aarch64/auretty" \
+  "$REPO_ROOT/artifacts/openwrt/armv7/auretty" \
+  "$X86_64_IPK" \
+  "$AARCH64_IPK" \
+  "$ARMV7_IPK"
