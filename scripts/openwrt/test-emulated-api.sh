@@ -6,11 +6,14 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+COMMON_LIB="$SCRIPT_DIR/../lib/smoke-helpers.sh"
 
 ARCH="${ARCH:-aarch64}"
 API_KEY="${API_KEY:-test-key}"
 START_TIMEOUT_SECONDS="${START_TIMEOUT_SECONDS:-60}"
 APP_DOTNET_PROCESSOR_COUNT="${APP_DOTNET_PROCESSOR_COUNT:-}"
+
+source "$COMMON_LIB"
 
 QEMU_BIN="${QEMU_BIN:-}"
 LOADER_NAME=""
@@ -131,18 +134,9 @@ cleanup() {
 trap cleanup EXIT
 
 ready=0
-for _ in $(seq 1 "$START_TIMEOUT_SECONDS"); do
-    if curl -s -f -H "X-AureTTY-Key: $API_KEY" "$BASE_URL/health" >/dev/null 2>&1; then
-        ready=1
-        break
-    fi
-
-    if ! kill -0 "$SERVER_PID" >/dev/null 2>&1; then
-        break
-    fi
-
-    sleep 1
-done
+if wait_for_http_health "$BASE_URL/health" "$API_KEY" "$START_TIMEOUT_SECONDS" "$SERVER_PID"; then
+    ready=1
+fi
 
 if [[ "$ready" -ne 1 ]]; then
     echo "Error: emulated AureTTY failed to become healthy for $ARCH." >&2

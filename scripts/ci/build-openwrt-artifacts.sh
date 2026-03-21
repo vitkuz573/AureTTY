@@ -4,6 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BUILD_SCRIPT="$REPO_ROOT/scripts/openwrt/build.sh"
+COMMON_LIB="$SCRIPT_DIR/../lib/smoke-helpers.sh"
+
+source "$COMMON_LIB"
 
 cd "$REPO_ROOT"
 
@@ -38,7 +41,6 @@ run_native_api_smoke() {
   local binary="$REPO_ROOT/artifacts/openwrt/x86_64/auretty"
   local log_file="$REPO_ROOT/artifacts/test-logs/openwrt/x86_64/auretty-api-smoke-server.log"
   local pid
-  local ready=0
 
   mkdir -p "$(dirname "$log_file")"
 
@@ -53,18 +55,7 @@ run_native_api_smoke() {
   }
   trap cleanup EXIT
 
-  for _ in $(seq 1 60); do
-    if curl -s -f -H "X-AureTTY-Key: test-key" "http://127.0.0.1:17850/api/v1/health" >/dev/null 2>&1; then
-      ready=1
-      break
-    fi
-    if ! kill -0 "$pid" >/dev/null 2>&1; then
-      break
-    fi
-    sleep 1
-  done
-
-  if [[ "$ready" -ne 1 ]]; then
+  if ! wait_for_http_health "http://127.0.0.1:17850/api/v1/health" "test-key" "60" "$pid"; then
     echo "Error: native x86_64 AureTTY failed to become healthy." >&2
     echo "Server log: $log_file" >&2
     tail -n 120 "$log_file" >&2 || true
