@@ -8,9 +8,13 @@ public sealed class TerminalHealthResponse
 
     public required string[] Transports { get; init; }
 
-    public bool AllowApiKeyQueryParameter { get; init; }
+    public int WebSocketHelloTimeoutSeconds { get; init; }
 
     public int MaxConcurrentSessions { get; init; }
 
     public int MaxSessionsPerViewer { get; init; }
+
+    public int SessionIdleTimeoutSeconds { get; init; }
+
+    public int SessionHardLifetimeSeconds { get; init; }
 }

@@ -46,6 +46,36 @@ public sealed class WebSocketTerminalSessionEventPublisherTests
     }
 
     [Fact]
+    public async Task SendTerminalSessionEventAsync_WhenMultiplexedSessionNotSubscribed_DoesNotDeliverEvent()
+    {
+        var sut = new WebSocketTerminalSessionEventPublisher();
+        var connectionId = "conn-mux";
+        var reader = sut.RegisterMultiplexedConnection(connectionId, "viewer-1");
+        sut.RegisterSessionSubscription(connectionId, "session-1", "viewer-1");
+
+        await sut.SendTerminalSessionEventAsync(
+            "viewer-1",
+            new TerminalSessionEvent("session-2", TerminalSessionEventType.Output)
+            {
+                Text = "ignored"
+            });
+
+        Assert.False(reader.TryRead(out _));
+
+        await sut.SendTerminalSessionEventAsync(
+            "viewer-1",
+            new TerminalSessionEvent("session-1", TerminalSessionEventType.Output)
+            {
+                Text = "accepted"
+            });
+
+        Assert.True(reader.TryRead(out var acceptedEvent));
+        Assert.Equal("accepted", acceptedEvent!.Text);
+
+        sut.UnregisterConnection(connectionId);
+    }
+
+    [Fact]
     public async Task SendTerminalSessionEventAsync_WhenSlowSubscriber_RecordsDroppedEvents()
     {
         var options = new TerminalServiceOptions(
@@ -56,7 +86,7 @@ public sealed class WebSocketTerminalSessionEventPublisherTests
             HttpListenUrl: "http://127.0.0.1:17850",
             ApiKey: "api-key")
         {
-            SseSubscriptionBufferCapacity = 1
+            WebSocketSubscriptionBufferCapacity = 1
         };
         var metrics = new AureTTY.Core.Services.TerminalMetrics();
         var sut = new WebSocketTerminalSessionEventPublisher(options, metrics);

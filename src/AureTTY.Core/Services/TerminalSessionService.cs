@@ -28,6 +28,7 @@ public sealed class TerminalSessionService(
     private static readonly TimeSpan OutputPumpDrainTimeoutOnClose = TimeSpan.FromMilliseconds(300);
     private static readonly TimeSpan OutputPumpForcedCloseTimeout = TimeSpan.FromMilliseconds(500);
     private static readonly TimeSpan ProcessExitAfterCloseTimeout = TimeSpan.FromSeconds(2);
+    private static readonly TimeSpan SessionLifecycleCheckInterval = TimeSpan.FromSeconds(1);
     private const int InputDiagnosticsCapacity = 256;
     private static readonly bool EnableInputHexLogging = IsInputHexLoggingEnabled();
     private const int InputLogPreviewCharLimit = 96;
@@ -40,6 +41,8 @@ public sealed class TerminalSessionService(
     private readonly ILogger<TerminalSessionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, TerminalSessionInstance> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private readonly Lock _sessionAdmissionSync = new();
+    private readonly TimeSpan _sessionIdleTimeout = TimeSpan.FromSeconds(runtimeLimits.SessionIdleTimeoutSeconds);
+    private readonly TimeSpan _sessionHardLifetime = TimeSpan.FromSeconds(runtimeLimits.SessionHardLifetimeSeconds);
 
     public Task<IReadOnlyCollection<TerminalSessionHandle>> GetAllSessionsAsync(CancellationToken cancellationToken = default)
     {
@@ -159,6 +162,7 @@ public sealed class TerminalSessionService(
         }
 
         session.Reattach(viewerId);
+        session.TouchActivity();
         if (request.Columns is not null)
         {
             session.Columns = NormalizeDimension(request.Columns);
@@ -267,6 +271,7 @@ public sealed class TerminalSessionService(
             }
 
             await process.StandardInput.FlushAsync(cancellationToken);
+            session.TouchActivity();
             _metrics.RecordInputAccepted(orderedInputChunks.Count);
         }
         finally
@@ -293,6 +298,7 @@ public sealed class TerminalSessionService(
         var session = ResolveSession(viewerId, request.SessionId);
         session.Columns = NormalizeDimension(request.Columns);
         session.Rows = NormalizeDimension(request.Rows);
+        session.TouchActivity();
 
         var process = session.GetProcess();
         if (process is IResizableTerminalProcess resizableProcess &&
@@ -316,6 +322,7 @@ public sealed class TerminalSessionService(
                     var process = session.GetProcess();
                     if (process != null)
                     {
+                        session.TouchActivity();
                         if (!TrySendNativeInterrupt(process.Id))
                         {
                             process.StandardInput.Write("\u0003");
@@ -329,12 +336,14 @@ public sealed class TerminalSessionService(
             case TerminalSessionSignal.EndOfInput:
                 {
                     var process = session.GetProcess();
+                    session.TouchActivity();
                     process?.StandardInput.Close();
                     return Task.CompletedTask;
                 }
 
             case TerminalSessionSignal.Terminate:
                 {
+                    session.TouchActivity();
                     session.RequestClose();
                     session.TryKillProcess();
                     return Task.CompletedTask;
@@ -463,10 +472,14 @@ public sealed class TerminalSessionService(
             await PublishEventAsync(session, TerminalSessionEventType.Started, TerminalSessionState.Running, processId: session.ProcessId);
 
             using var outputPumpCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(session.CancelSource.Token);
+            using var sessionLifecycleCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(session.CancelSource.Token);
             var stdoutTask = PumpOutputAsync(session, process.StandardOutput, isStdErr: false, outputPumpCancellationSource.Token);
             var stderrTask = PumpOutputAsync(session, process.StandardError, isStdErr: true, outputPumpCancellationSource.Token);
+            var lifecycleTask = MonitorSessionLifecycleAsync(session, sessionLifecycleCancellationSource.Token);
 
             var exitCode = await WaitForProcessExitAsync(session, process);
+            await sessionLifecycleCancellationSource.CancelAsync();
+            await SafeAwaitCancellationAsync(lifecycleTask);
 
             var drainTimeout = session.CloseRequested
                 ? OutputPumpDrainTimeoutOnClose
@@ -511,6 +524,54 @@ public sealed class TerminalSessionService(
             lock (_sessionAdmissionSync)
             {
                 _sessions.TryRemove(session.SessionId, out _);
+            }
+        }
+    }
+
+    private async Task MonitorSessionLifecycleAsync(TerminalSessionInstance session, CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                await Task.Delay(SessionLifecycleCheckInterval, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+
+            if (session.CloseRequested || session.IsCompleted)
+            {
+                break;
+            }
+
+            var now = DateTimeOffset.UtcNow;
+            var sessionAge = now - session.CreatedAtUtc;
+            if (sessionAge >= _sessionHardLifetime)
+            {
+                _logger.LogInformation(
+                    "Terminal session closed due to hard lifetime timeout. SessionId={SessionId} ViewerId={ViewerId} MaxLifetimeSeconds={MaxLifetimeSeconds}.",
+                    session.SessionId,
+                    session.GetViewerIdForLog(),
+                    (int)_sessionHardLifetime.TotalSeconds);
+                session.RequestClose();
+                session.TryKillProcess();
+                break;
+            }
+
+            var idleFor = now - session.GetLastActivityUtc();
+            if (idleFor >= _sessionIdleTimeout)
+            {
+                _logger.LogInformation(
+                    "Terminal session closed due to idle timeout. SessionId={SessionId} ViewerId={ViewerId} IdleSeconds={IdleSeconds} MaxIdleSeconds={MaxIdleSeconds}.",
+                    session.SessionId,
+                    session.GetViewerIdForLog(),
+                    (int)idleFor.TotalSeconds,
+                    (int)_sessionIdleTimeout.TotalSeconds);
+                session.RequestClose();
+                session.TryKillProcess();
+                break;
             }
         }
     }
@@ -953,6 +1014,18 @@ public sealed class TerminalSessionService(
         return null;
     }
 
+    private static async Task SafeAwaitCancellationAsync(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch (OperationCanceledException)
+        {
+            // Expected during shutdown.
+        }
+    }
+
     private static bool IsInputHexLoggingEnabled()
     {
         var value = Environment.GetEnvironmentVariable("AURETTY_TERMINAL_LOG_INPUT_HEX");
@@ -1057,6 +1130,7 @@ public sealed class TerminalSessionService(
         private long _lastOutputSequenceNumber;
         private long _lastAcceptedInputSequenceNumber;
         private long _nextInputSequenceNumber = 1;
+        private DateTimeOffset _lastActivityUtc = DateTimeOffset.UtcNow;
 
         public string SessionId { get; } = request.SessionId;
 
@@ -1101,6 +1175,7 @@ public sealed class TerminalSessionService(
             {
                 _viewerId = viewerId;
                 ResetInputSequenceStateCore(viewerId);
+                _lastActivityUtc = DateTimeOffset.UtcNow;
             }
         }
 
@@ -1122,6 +1197,7 @@ public sealed class TerminalSessionService(
             lock (_stateSync)
             {
                 _lastOutputSequenceNumber++;
+                _lastActivityUtc = DateTimeOffset.UtcNow;
                 _outputBuffer.Enqueue(new TerminalOutputEntry(_lastOutputSequenceNumber, text, isStdErr));
 
                 while (_outputBuffer.Count > _replayBufferCapacity)
@@ -1172,6 +1248,8 @@ public sealed class TerminalSessionService(
                     ResetInputSequenceStateCore(viewerId);
                 }
 
+                _lastActivityUtc = DateTimeOffset.UtcNow;
+
                 if (sequence < _nextInputSequenceNumber)
                 {
                     return [];
@@ -1201,6 +1279,22 @@ public sealed class TerminalSessionService(
                 }
 
                 return orderedInput;
+            }
+        }
+
+        public void TouchActivity()
+        {
+            lock (_stateSync)
+            {
+                _lastActivityUtc = DateTimeOffset.UtcNow;
+            }
+        }
+
+        public DateTimeOffset GetLastActivityUtc()
+        {
+            lock (_stateSync)
+            {
+                return _lastActivityUtc;
             }
         }
 

@@ -11,7 +11,6 @@ public sealed class TerminalMetrics
     private readonly Counter<long> _sessionRejectedCounter;
     private readonly Counter<long> _inputAcceptedCounter;
     private readonly Counter<long> _inputRejectedCounter;
-    private readonly Counter<long> _sseEventDroppedCounter;
     private readonly Counter<long> _wsEventDroppedCounter;
 
     public TerminalMetrics()
@@ -22,7 +21,6 @@ public sealed class TerminalMetrics
         _sessionRejectedCounter = _meter.CreateCounter<long>("auretty.sessions.rejected");
         _inputAcceptedCounter = _meter.CreateCounter<long>("auretty.input.chunks.accepted");
         _inputRejectedCounter = _meter.CreateCounter<long>("auretty.input.chunks.rejected");
-        _sseEventDroppedCounter = _meter.CreateCounter<long>("auretty.sse.events.dropped");
         _wsEventDroppedCounter = _meter.CreateCounter<long>("auretty.ws.events.dropped");
     }
 
@@ -37,8 +35,6 @@ public sealed class TerminalMetrics
     public void RecordInputAccepted(long chunks) => _inputAcceptedCounter.Add(chunks);
 
     public void RecordInputRejected(long chunks) => _inputRejectedCounter.Add(chunks);
-
-    public void RecordSseEventDropped(long events) => _sseEventDroppedCounter.Add(events);
 
     public void RecordWsEventDropped(long events) => _wsEventDroppedCounter.Add(events);
 }

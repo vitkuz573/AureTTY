@@ -6,6 +6,5 @@ public static class TerminalApiRoutes
     public const string Health = ApiBase + "/health";
     public const string AllSessions = ApiBase + "/sessions";
     public const string ViewerSessions = ApiBase + "/viewers/{viewerId}/sessions";
-    public const string ViewerEvents = ApiBase + "/viewers/{viewerId}/events";
     public const string ViewerSessionsWebSocket = ApiBase + "/viewers/{viewerId}/sessions/ws";
 }

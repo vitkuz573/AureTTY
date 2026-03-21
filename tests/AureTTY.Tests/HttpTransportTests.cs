@@ -28,7 +28,7 @@ public sealed class HttpTransportTests
     }
 
     [Fact]
-    public async Task Api_WhenSessionLifecycleOverHttpAndSse_CompletesSuccessfully()
+    public async Task Api_WhenSessionLifecycleOverHttp_CompletesSuccessfully()
     {
         await using var host = await CreateHostAsync();
         using var client = host.GetTestClient();
@@ -66,37 +66,6 @@ public sealed class HttpTransportTests
         Assert.Equal(handle.SessionId, diagnostics.SessionId);
         Assert.Equal("viewer-http", diagnostics.ViewerId);
 
-        using var response = await client.GetAsync(
-            "/api/v1/viewers/viewer-http/events",
-            HttpCompletionOption.ResponseHeadersRead);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        await using var stream = await response.Content.ReadAsStreamAsync();
-        using var reader = new StreamReader(stream);
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-
-        var connectedLine = await reader.ReadLineAsync(timeout.Token);
-        Assert.Equal(": connected", connectedLine);
-        _ = await reader.ReadLineAsync(timeout.Token);
-
-        var eventPublisher = host.Services.GetRequiredService<HttpTerminalSessionEventPublisher>();
-        var expectedEvent = new TerminalSessionEvent(handle.SessionId, TerminalSessionEventType.Output)
-        {
-            Text = "hello-from-http"
-        };
-
-        var dataLineTask = Task.Run(
-            () => ReadSseDataLineAsync(reader, timeout.Token),
-            timeout.Token);
-        for (var attempt = 0; attempt < 50 && !dataLineTask.IsCompleted; attempt++)
-        {
-            await eventPublisher.SendTerminalSessionEventAsync("viewer-http", expectedEvent);
-            await Task.Delay(50, timeout.Token);
-        }
-        var dataLine = await dataLineTask.WaitAsync(timeout.Token);
-
-        Assert.NotNull(dataLine);
-        Assert.Contains("hello-from-http", dataLine, StringComparison.Ordinal);
-
         var deleteResponse = await client.DeleteAsync($"/api/v1/viewers/viewer-http/sessions/{handle.SessionId}");
         Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
     }
@@ -113,7 +82,6 @@ public sealed class HttpTransportTests
             HttpListenUrl: "http://127.0.0.1:17850",
             ApiKey: "test-api-key"));
         builder.Services.AddSingleton<ITerminalSessionService, InMemoryTerminalSessionService>();
-        builder.Services.AddSingleton<HttpTerminalSessionEventPublisher>();
 
         var app = builder.Build();
         app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
@@ -121,25 +89,6 @@ public sealed class HttpTransportTests
 
         await app.StartAsync();
         return app;
-    }
-
-    private static async Task<string?> ReadSseDataLineAsync(StreamReader reader, CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            var line = await reader.ReadLineAsync(cancellationToken);
-            if (line is null)
-            {
-                return null;
-            }
-
-            if (line.StartsWith("data: ", StringComparison.Ordinal))
-            {
-                return line;
-            }
-        }
-
-        return null;
     }
 
     private sealed class InMemoryTerminalSessionService : ITerminalSessionService

@@ -1,7 +1,9 @@
+using System.Net.WebSockets;
 using System.Text.Json;
 using AureTTY.Api;
 using AureTTY.Services;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace AureTTY.Tests;
 
@@ -37,7 +39,7 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenQueryKeyMatchesAndDisabled_ReturnsUnauthorized()
+    public async Task InvokeAsync_WhenWebSocketRequest_SkipsHttpApiKeyValidation()
     {
         var wasCalled = false;
         var middleware = new ApiKeyAuthenticationMiddleware(_ =>
@@ -46,29 +48,10 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
             return Task.CompletedTask;
         });
 
-        var context = CreateContext("/api/v1/health");
-        context.Request.QueryString = new QueryString("?api_key=secret");
+        var context = CreateContext("/api/v1/viewers/v/sessions/ws");
+        context.Features.Set<IHttpWebSocketFeature>(new TestWebSocketFeature(isWebSocketRequest: true));
 
         await middleware.InvokeAsync(context, CreateOptions("secret"));
-
-        Assert.False(wasCalled);
-        Assert.Equal(StatusCodes.Status401Unauthorized, context.Response.StatusCode);
-    }
-
-    [Fact]
-    public async Task InvokeAsync_WhenQueryKeyMatchesAndEnabled_CallsNext()
-    {
-        var wasCalled = false;
-        var middleware = new ApiKeyAuthenticationMiddleware(_ =>
-        {
-            wasCalled = true;
-            return Task.CompletedTask;
-        });
-
-        var context = CreateContext("/api/v1/health");
-        context.Request.QueryString = new QueryString("?api_key=secret");
-
-        await middleware.InvokeAsync(context, CreateOptions("secret", allowApiKeyQuery: true));
 
         Assert.True(wasCalled);
     }
@@ -108,7 +91,7 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
         return context;
     }
 
-    private static TerminalServiceOptions CreateOptions(string apiKey, bool allowApiKeyQuery = false)
+    private static TerminalServiceOptions CreateOptions(string apiKey)
     {
         return new TerminalServiceOptions(
             PipeName: "pipe-auth",
@@ -116,9 +99,16 @@ public sealed class ApiKeyAuthenticationMiddlewareTests
             EnablePipeApi: true,
             EnableHttpApi: true,
             HttpListenUrl: "http://127.0.0.1:17850",
-            ApiKey: apiKey)
+            ApiKey: apiKey);
+    }
+
+    private sealed class TestWebSocketFeature(bool isWebSocketRequest) : IHttpWebSocketFeature
+    {
+        public bool IsWebSocketRequest { get; } = isWebSocketRequest;
+
+        public Task<WebSocket> AcceptAsync(WebSocketAcceptContext context)
         {
-            AllowApiKeyQueryParameter = allowApiKeyQuery
-        };
+            throw new NotSupportedException();
+        }
     }
 }

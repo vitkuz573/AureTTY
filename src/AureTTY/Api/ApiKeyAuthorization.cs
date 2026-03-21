@@ -12,41 +12,29 @@ internal static class ApiKeyAuthorization
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(options);
 
-        if (string.IsNullOrWhiteSpace(options.ApiKey))
-        {
-            return false;
-        }
-
         if (context.Request.Headers.TryGetValue(TerminalServiceOptions.ApiKeyHeaderName, out var headerValues))
         {
             foreach (var headerValue in headerValues)
             {
-                if (SecureEquals(headerValue, options.ApiKey))
+                if (IsApiKeyValid(headerValue, options))
                 {
                     return true;
                 }
             }
         }
 
-        if (!options.AllowApiKeyQueryParameter)
-        {
-            return false;
-        }
-
-        if (!context.Request.Query.TryGetValue("api_key", out var queryValues))
-        {
-            return false;
-        }
-
-        foreach (var queryValue in queryValues)
-        {
-            if (SecureEquals(queryValue, options.ApiKey))
-            {
-                return true;
-            }
-        }
-
         return false;
+    }
+
+    public static bool IsApiKeyValid(string? candidate, TerminalServiceOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (string.IsNullOrWhiteSpace(options.ApiKey))
+        {
+            return false;
+        }
+
+        return SecureEquals(candidate, options.ApiKey);
     }
 
     private static bool SecureEquals(string? candidate, string expected)

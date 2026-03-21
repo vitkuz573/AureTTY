@@ -24,15 +24,12 @@ public sealed class WebSocketMessagePackTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/sessions/ws?protocol=msgpack"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var pingMessage = new TerminalIpcMessage
         {
@@ -57,15 +54,12 @@ public sealed class WebSocketMessagePackTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/sessions/ws?protocol=messagepack"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
             "viewer-msgpack",
@@ -119,15 +113,12 @@ public sealed class WebSocketMessagePackTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/route-viewer/sessions/ws?protocol=msgpack"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
             "payload-viewer",
@@ -154,15 +145,12 @@ public sealed class WebSocketMessagePackTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/sessions/ws?protocol=msgpack"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var startMessage = new TerminalIpcMessage
         {
@@ -227,7 +215,6 @@ public sealed class WebSocketMessagePackTests
             HttpListenUrl: "http://127.0.0.1:17850",
             ApiKey: "test-api-key"));
         builder.Services.AddSingleton<ITerminalSessionService, InMemoryTerminalSessionService>();
-        builder.Services.AddSingleton<HttpTerminalSessionEventPublisher>();
         builder.Services.AddSingleton<WebSocketTerminalSessionEventPublisher>();
 
         var app = builder.Build();
@@ -243,6 +230,23 @@ public sealed class WebSocketMessagePackTests
     {
         var data = MessagePackSerializer.Serialize(message, MessagePackSerializerOptions.Standard);
         await ws.SendAsync(new ArraySegment<byte>(data), WebSocketMessageType.Binary, endOfMessage: true, cancellationToken);
+    }
+
+    private static async Task SendHelloAsync(WebSocket ws, string token, CancellationToken cancellationToken)
+    {
+        var helloMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "hello-1",
+            Method = TerminalIpcMethods.Hello,
+            Payload = new TerminalIpcHelloPayload(token)
+        };
+
+        await SendMessagePackAsync(ws, helloMessage, cancellationToken);
+        var helloResponse = await ReceiveMessagePackAsync(ws, cancellationToken);
+        Assert.NotNull(helloResponse);
+        Assert.Equal(TerminalIpcMessageTypes.Response, helloResponse.Type);
+        Assert.Equal(TerminalIpcMethods.Hello, helloResponse.Method);
     }
 
     private static async Task<TerminalIpcMessage?> ReceiveMessagePackAsync(WebSocket ws, CancellationToken cancellationToken)
@@ -266,7 +270,7 @@ public sealed class WebSocketMessagePackTests
         }
 
         return MessagePackSerializer.Deserialize<TerminalIpcMessage>(
-            buffer.AsSpan(0, totalBytes).ToArray(),
+            buffer.AsMemory(0, totalBytes),
             MessagePackSerializerOptions.Standard);
     }
 

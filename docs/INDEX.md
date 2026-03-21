@@ -62,7 +62,6 @@ Complete documentation for AureTTY - a high-performance terminal runtime with mu
 
 ### Transport Options
 - [HTTP REST API](api/REST_API.md)
-- [Server-Sent Events (SSE)](api/REST_API.md#stream-events-sse)
 - [WebSocket (JSON/MessagePack)](api/WEBSOCKET_API.md)
 - [IPC Pipe](architecture/OVERVIEW.md#ipc-pipe)
 
@@ -92,7 +91,6 @@ Complete documentation for AureTTY - a high-performance terminal runtime with mu
 - WebSocket: [terminal.start](api/WEBSOCKET_API.md#terminalstart)
 
 **...stream terminal output?**
-- SSE: [Stream Events](api/REST_API.md#stream-events-sse)
 - WebSocket: [Events](api/WEBSOCKET_API.md#events)
 
 **...use MessagePack for better performance?**
@@ -128,7 +126,6 @@ Complete documentation for AureTTY - a high-performance terminal runtime with mu
 GET    /api/v1/health
 GET    /api/v1/sessions
 DELETE /api/v1/sessions
-GET    /api/v1/viewers/{viewerId}/events (SSE)
 GET    /api/v1/viewers/{viewerId}/sessions
 POST   /api/v1/viewers/{viewerId}/sessions
 GET    /api/v1/viewers/{viewerId}/sessions/{sessionId}
@@ -147,11 +144,12 @@ DELETE /api/v1/viewers/{viewerId}/sessions
 GET /api/v1/viewers/{viewerId}/sessions/ws
 ```
 
-Query parameters: `?protocol=json|msgpack&api_key=...`
+Query parameters: `?protocol=json|msgpack`
 
 ### WebSocket IPC Methods
 
 ```
+hello                            - Required WebSocket handshake
 terminal.ping                    - Ping/pong keepalive
 terminal.start                   - Start new session
 terminal.resume                  - Resume with replay
@@ -185,12 +183,14 @@ dropped   - Events dropped (backpressure)
 --pipe-token <token>               # Pipe token
 --http-listen-url <url>            # HTTP URL
 --api-key <key>                    # API key
---allow-api-key-query              # Allow query param auth
+--ws-subscription-buffer-capacity <n>  # WebSocket buffer size
+--ws-hello-timeout-seconds <n>         # Hello handshake timeout
 --max-concurrent-sessions <n>      # Max total sessions
 --max-sessions-per-viewer <n>      # Max per viewer
 --replay-buffer-capacity <n>       # Replay buffer size
 --max-pending-input-chunks <n>     # Input queue size
---sse-subscription-buffer-capacity <n>  # SSE buffer size
+--session-idle-timeout-seconds <n> # Idle timeout
+--session-hard-lifetime-seconds <n># Hard lifetime timeout
 ```
 
 ### Environment Variables
@@ -201,12 +201,14 @@ AURETTY_PIPE_NAME
 AURETTY_PIPE_TOKEN
 AURETTY_HTTP_LISTEN_URL
 AURETTY_API_KEY
-AURETTY_ALLOW_API_KEY_QUERY
+AURETTY_WS_SUBSCRIPTION_BUFFER_CAPACITY
+AURETTY_WS_HELLO_TIMEOUT_SECONDS
 AURETTY_MAX_CONCURRENT_SESSIONS
 AURETTY_MAX_SESSIONS_PER_VIEWER
 AURETTY_REPLAY_BUFFER_CAPACITY
 AURETTY_MAX_PENDING_INPUT_CHUNKS
-AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY
+AURETTY_SESSION_IDLE_TIMEOUT_SECONDS
+AURETTY_SESSION_HARD_LIFETIME_SECONDS
 ```
 
 ## Code Examples
@@ -224,9 +226,7 @@ curl -X POST -H "X-AureTTY-Key: key" \
   -d '{"text":"echo hello\n","sequence":1}' \
   http://localhost:17850/api/v1/viewers/v1/sessions/s1/inputs
 
-# Stream events
-curl -N -H "X-AureTTY-Key: key" \
-  http://localhost:17850/api/v1/viewers/v1/events
+# Realtime output is available via WebSocket /sessions/ws
 ```
 
 ### Python

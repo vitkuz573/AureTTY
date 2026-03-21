@@ -13,8 +13,8 @@ public sealed record CliArguments(
     string HttpListenUrl,
     string ApiKey,
     TerminalRuntimeLimits RuntimeLimits,
-    int SseSubscriptionBufferCapacity,
-    bool AllowApiKeyQueryParameter)
+    int WebSocketSubscriptionBufferCapacity,
+    int WebSocketHelloTimeoutSeconds)
 {
     public const string PipeNameEnvironmentVariable = "AURETTY_PIPE_NAME";
     public const string PipeTokenEnvironmentVariable = "AURETTY_PIPE_TOKEN";
@@ -25,8 +25,10 @@ public sealed record CliArguments(
     public const string MaxSessionsPerViewerEnvironmentVariable = "AURETTY_MAX_SESSIONS_PER_VIEWER";
     public const string ReplayBufferCapacityEnvironmentVariable = "AURETTY_REPLAY_BUFFER_CAPACITY";
     public const string MaxPendingInputChunksEnvironmentVariable = "AURETTY_MAX_PENDING_INPUT_CHUNKS";
-    public const string SseSubscriptionBufferCapacityEnvironmentVariable = "AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY";
-    public const string AllowApiKeyQueryEnvironmentVariable = "AURETTY_ALLOW_API_KEY_QUERY";
+    public const string SessionIdleTimeoutSecondsEnvironmentVariable = "AURETTY_SESSION_IDLE_TIMEOUT_SECONDS";
+    public const string SessionHardLifetimeSecondsEnvironmentVariable = "AURETTY_SESSION_HARD_LIFETIME_SECONDS";
+    public const string WebSocketSubscriptionBufferCapacityEnvironmentVariable = "AURETTY_WS_SUBSCRIPTION_BUFFER_CAPACITY";
+    public const string WebSocketHelloTimeoutSecondsEnvironmentVariable = "AURETTY_WS_HELLO_TIMEOUT_SECONDS";
 
     private const string PipeTransport = "pipe";
     private const string HttpTransport = "http";
@@ -63,8 +65,10 @@ public sealed record CliArguments(
         var maxSessionsPerViewer = parseResult.GetValue(CliOptions.MaxSessionsPerViewer);
         var replayBufferCapacity = parseResult.GetValue(CliOptions.ReplayBufferCapacity);
         var maxPendingInputChunks = parseResult.GetValue(CliOptions.MaxPendingInputChunks);
-        var sseSubscriptionBufferCapacity = parseResult.GetValue(CliOptions.SseSubscriptionBufferCapacity);
-        var allowApiKeyQueryParameter = parseResult.GetValue(CliOptions.AllowApiKeyQueryParameter);
+        var sessionIdleTimeoutSeconds = parseResult.GetValue(CliOptions.SessionIdleTimeoutSeconds);
+        var sessionHardLifetimeSeconds = parseResult.GetValue(CliOptions.SessionHardLifetimeSeconds);
+        var webSocketSubscriptionBufferCapacity = parseResult.GetValue(CliOptions.WebSocketSubscriptionBufferCapacity);
+        var webSocketHelloTimeoutSeconds = parseResult.GetValue(CliOptions.WebSocketHelloTimeoutSeconds);
 
         pipeName = string.IsNullOrWhiteSpace(pipeName) ? TerminalIpcDefaults.PipeName : pipeName.Trim();
         pipeToken = string.IsNullOrWhiteSpace(pipeToken) ? string.Empty : pipeToken.Trim();
@@ -93,7 +97,9 @@ public sealed record CliArguments(
             maxConcurrentSessions,
             maxSessionsPerViewer,
             replayBufferCapacity,
-            maxPendingInputChunks);
+            maxPendingInputChunks,
+            sessionIdleTimeoutSeconds,
+            sessionHardLifetimeSeconds);
 
         try
         {
@@ -113,8 +119,8 @@ public sealed record CliArguments(
             HttpListenUrl: httpListenUrl,
             ApiKey: apiKey,
             RuntimeLimits: runtimeLimits,
-            SseSubscriptionBufferCapacity: sseSubscriptionBufferCapacity,
-            AllowApiKeyQueryParameter: allowApiKeyQueryParameter);
+            WebSocketSubscriptionBufferCapacity: webSocketSubscriptionBufferCapacity,
+            WebSocketHelloTimeoutSeconds: webSocketHelloTimeoutSeconds);
         return true;
     }
 
@@ -129,8 +135,8 @@ public sealed record CliArguments(
             ApiKey)
         {
             RuntimeLimits = RuntimeLimits,
-            SseSubscriptionBufferCapacity = SseSubscriptionBufferCapacity,
-            AllowApiKeyQueryParameter = AllowApiKeyQueryParameter
+            WebSocketSubscriptionBufferCapacity = WebSocketSubscriptionBufferCapacity,
+            WebSocketHelloTimeout = TimeSpan.FromSeconds(WebSocketHelloTimeoutSeconds)
         };
     }
 

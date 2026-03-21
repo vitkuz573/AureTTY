@@ -209,9 +209,14 @@ public sealed class CliArgumentsTests
             "6000",
             "--max-pending-input-chunks",
             "16000",
-            "--sse-subscription-buffer-capacity",
+            "--session-idle-timeout-seconds",
+            "120",
+            "--session-hard-lifetime-seconds",
+            "1800",
+            "--ws-subscription-buffer-capacity",
             "256",
-            "--allow-api-key-query");
+            "--ws-hello-timeout-seconds",
+            "9");
 
         var parsed = CliArguments.TryCreate(
             parseResult,
@@ -232,10 +237,10 @@ public sealed class CliArgumentsTests
         Assert.Equal("http://127.0.0.1:17851", options.HttpListenUrl);
         Assert.Equal("api-key-value", options.ApiKey);
         Assert.Equal(
-            new TerminalRuntimeLimits(64, 16, 6000, 16000),
+            new TerminalRuntimeLimits(64, 16, 6000, 16000, 120, 1800),
             options.RuntimeLimits);
-        Assert.Equal(256, options.SseSubscriptionBufferCapacity);
-        Assert.True(options.AllowApiKeyQueryParameter);
+        Assert.Equal(256, options.WebSocketSubscriptionBufferCapacity);
+        Assert.Equal(TimeSpan.FromSeconds(9), options.WebSocketHelloTimeout);
     }
 
     private static System.CommandLine.ParseResult Parse(params string[] args)

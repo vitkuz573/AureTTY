@@ -1,4 +1,3 @@
-using System.Text.Json;
 using AureTTY.Api.Models;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
@@ -38,9 +37,11 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
                         Status = "ok",
                         ApiVersion = TerminalServiceOptions.ApiVersion,
                         Transports = [.. transports],
-                        AllowApiKeyQueryParameter = options.AllowApiKeyQueryParameter,
+                        WebSocketHelloTimeoutSeconds = (int)Math.Ceiling(options.WebSocketHelloTimeout.TotalSeconds),
                         MaxConcurrentSessions = options.RuntimeLimits.MaxConcurrentSessions,
-                        MaxSessionsPerViewer = options.RuntimeLimits.MaxSessionsPerViewer
+                        MaxSessionsPerViewer = options.RuntimeLimits.MaxSessionsPerViewer,
+                        SessionIdleTimeoutSeconds = options.RuntimeLimits.SessionIdleTimeoutSeconds,
+                        SessionHardLifetimeSeconds = options.RuntimeLimits.SessionHardLifetimeSeconds
                     },
                     AureTTYJsonSerializerContext.Default.TerminalHealthResponse);
             });
@@ -72,40 +73,6 @@ public static class TerminalHttpEndpointRouteBuilderExtensions
                 catch (Exception ex)
                 {
                     return TerminalApiProblemMapper.Map(ex);
-                }
-            });
-
-        app.MapGet($"/{TerminalApiRoutes.ViewerEvents}",
-            async Task (string viewerId, HttpContext context, HttpTerminalSessionEventPublisher eventPublisher, CancellationToken cancellationToken) =>
-            {
-                if (string.IsNullOrWhiteSpace(viewerId))
-                {
-                    await Results.Json(
-                        new ApiErrorResponse
-                        {
-                            Error = "ViewerId is required."
-                        },
-                        AureTTYJsonSerializerContext.Default.ApiErrorResponse,
-                        statusCode: StatusCodes.Status400BadRequest).ExecuteAsync(context);
-                    return;
-                }
-
-                context.Response.StatusCode = StatusCodes.Status200OK;
-                context.Response.ContentType = "text/event-stream";
-                context.Response.Headers.CacheControl = "no-cache";
-                context.Response.Headers.Connection = "keep-alive";
-
-                await context.Response.WriteAsync(": connected\n\n", cancellationToken);
-                await context.Response.Body.FlushAsync(cancellationToken);
-
-                await foreach (var terminalEvent in eventPublisher.StreamViewerEventsAsync(viewerId, cancellationToken))
-                {
-                    var payload = JsonSerializer.Serialize(
-                        terminalEvent,
-                        AureTTYJsonSerializerContext.Default.TerminalSessionEvent);
-                    await context.Response.WriteAsync("event: terminal.session\n", cancellationToken);
-                    await context.Response.WriteAsync($"data: {payload}\n\n", cancellationToken);
-                    await context.Response.Body.FlushAsync(cancellationToken);
                 }
             });
 

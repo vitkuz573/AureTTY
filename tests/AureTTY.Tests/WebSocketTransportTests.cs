@@ -20,36 +20,42 @@ namespace AureTTY.Tests;
 public sealed class WebSocketTransportTests
 {
     [Fact]
-    public async Task WebSocket_WhenApiKeyIsMissing_RejectsConnection()
+    public async Task WebSocket_WhenHelloHandshakeIsMissing_ReturnsHandshakeError()
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        var ex = await Assert.ThrowsAnyAsync<Exception>(
-            () => wsClient.ConnectAsync(
-                new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
-                timeout.Token));
-
-        Assert.True(
-            ex is WebSocketException or InvalidOperationException,
-            $"Expected WebSocketException or InvalidOperationException but got {ex.GetType().Name}");
-    }
-
-    [Fact]
-    public async Task WebSocket_WhenApiKeyIsProvided_AcceptsAndHandlesPing()
-    {
-        await using var host = await CreateHostAsync();
-        var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
+
+        var pingMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "ping-without-hello",
+            Method = TerminalIpcMethods.Ping
+        };
+
+        await SendMessageAsync(ws, pingMessage, timeout.Token);
+        var response = await ReceiveMessageAsync(ws, timeout.Token);
+
+        Assert.NotNull(response);
+        Assert.Equal(TerminalIpcMessageTypes.Error, response.Type);
+        Assert.Contains("First WebSocket message must be 'hello'", response.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WebSocket_WhenHelloTokenIsValid_AcceptsAndHandlesPing()
+    {
+        await using var host = await CreateHostAsync();
+        var wsClient = host.GetTestServer().CreateWebSocketClient();
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var ws = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
+            timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var pingMessage = new TerminalIpcMessage
         {
@@ -70,31 +76,30 @@ public sealed class WebSocketTransportTests
     }
 
     [Fact]
-    public async Task WebSocket_WhenApiKeyInQueryParameter_AcceptsConnection()
+    public async Task WebSocket_WhenHelloTokenIsInvalid_ReturnsUnauthorizedError()
     {
-        await using var host = await CreateHostAsync(allowApiKeyQueryParameter: true);
+        await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws?api_key=test-api-key"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
 
-        var pingMessage = new TerminalIpcMessage
+        var helloMessage = new TerminalIpcMessage
         {
             Type = TerminalIpcMessageTypes.Request,
-            Id = "ping-q",
-            Method = TerminalIpcMethods.Ping
+            Id = "hello-invalid",
+            Method = TerminalIpcMethods.Hello,
+            Payload = new TerminalIpcHelloPayload("invalid-token")
         };
 
-        await SendMessageAsync(ws, pingMessage, timeout.Token);
+        await SendMessageAsync(ws, helloMessage, timeout.Token);
         var response = await ReceiveMessageAsync(ws, timeout.Token);
 
         Assert.NotNull(response);
-        Assert.Equal(TerminalIpcMessageTypes.Response, response.Type);
-        Assert.Equal("ping-q", response.Id);
-
-        await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
+        Assert.Equal(TerminalIpcMessageTypes.Error, response.Type);
+        Assert.Contains("token is invalid", response.Error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -102,15 +107,12 @@ public sealed class WebSocketTransportTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
             "viewer-ws",
@@ -146,15 +148,12 @@ public sealed class WebSocketTransportTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/route-viewer/sessions/ws"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
             "payload-viewer",
@@ -181,15 +180,12 @@ public sealed class WebSocketTransportTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         var startMessage = new TerminalIpcMessage
         {
@@ -239,15 +235,12 @@ public sealed class WebSocketTransportTests
     {
         await using var host = await CreateHostAsync();
         var wsClient = host.GetTestServer().CreateWebSocketClient();
-        wsClient.ConfigureRequest = request =>
-        {
-            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
-        };
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var ws = await wsClient.ConnectAsync(
             new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
+        await SendHelloAsync(ws, "test-api-key", timeout.Token);
 
         await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);
         ws.Dispose();
@@ -265,7 +258,7 @@ public sealed class WebSocketTransportTests
             });
     }
 
-    private static async Task<WebApplication> CreateHostAsync(bool allowApiKeyQueryParameter = false)
+    private static async Task<WebApplication> CreateHostAsync()
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
@@ -275,12 +268,8 @@ public sealed class WebSocketTransportTests
             EnablePipeApi: false,
             EnableHttpApi: true,
             HttpListenUrl: "http://127.0.0.1:17850",
-            ApiKey: "test-api-key")
-        {
-            AllowApiKeyQueryParameter = allowApiKeyQueryParameter
-        });
+            ApiKey: "test-api-key"));
         builder.Services.AddSingleton<ITerminalSessionService, InMemoryTerminalSessionService>();
-        builder.Services.AddSingleton<HttpTerminalSessionEventPublisher>();
         builder.Services.AddSingleton<WebSocketTerminalSessionEventPublisher>();
 
         var app = builder.Build();
@@ -296,6 +285,23 @@ public sealed class WebSocketTransportTests
     {
         var json = JsonSerializer.SerializeToUtf8Bytes(message, AureTTYJsonSerializerContext.Default.TerminalIpcMessage);
         await ws.SendAsync(new ArraySegment<byte>(json), WebSocketMessageType.Text, endOfMessage: true, cancellationToken);
+    }
+
+    private static async Task SendHelloAsync(WebSocket ws, string token, CancellationToken cancellationToken)
+    {
+        var helloMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "hello-1",
+            Method = TerminalIpcMethods.Hello,
+            Payload = new TerminalIpcHelloPayload(token)
+        };
+
+        await SendMessageAsync(ws, helloMessage, cancellationToken);
+        var helloResponse = await ReceiveMessageAsync(ws, cancellationToken);
+        Assert.NotNull(helloResponse);
+        Assert.Equal(TerminalIpcMessageTypes.Response, helloResponse.Type);
+        Assert.Equal(TerminalIpcMethods.Hello, helloResponse.Method);
     }
 
     private static async Task<TerminalIpcMessage?> ReceiveMessageAsync(WebSocket ws, CancellationToken cancellationToken)

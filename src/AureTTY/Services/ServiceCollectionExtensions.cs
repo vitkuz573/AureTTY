@@ -14,12 +14,20 @@ public static partial class ServiceCollectionExtensions
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(options);
-        if (options.SseSubscriptionBufferCapacity <= 0)
+        if (options.WebSocketSubscriptionBufferCapacity <= 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(options),
-                options.SseSubscriptionBufferCapacity,
-                "SSE subscription buffer capacity must be greater than zero.");
+                options.WebSocketSubscriptionBufferCapacity,
+                "WebSocket subscription buffer capacity must be greater than zero.");
+        }
+
+        if (options.WebSocketHelloTimeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                options.WebSocketHelloTimeout,
+                "WebSocket hello timeout must be greater than zero.");
         }
 
         var validatedLimits = (options.RuntimeLimits ?? TerminalRuntimeLimits.Default).Validate();
@@ -37,7 +45,6 @@ public static partial class ServiceCollectionExtensions
 
         services.AddSingleton<TerminalMetrics>();
         services.AddSingleton<PipeTerminalSessionEventPublisher>();
-        services.AddSingleton<HttpTerminalSessionEventPublisher>();
         services.AddSingleton<WebSocketTerminalSessionEventPublisher>();
         services.AddSingleton<ITerminalSessionEventPublisher, CompositeTerminalSessionEventPublisher>();
         services.AddSingleton<ITerminalSessionService, TerminalSessionService>();

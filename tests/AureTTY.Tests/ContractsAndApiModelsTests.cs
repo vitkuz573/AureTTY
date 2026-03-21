@@ -43,7 +43,10 @@ public sealed class ContractsAndApiModelsTests
         {
             Status = "ok",
             ApiVersion = "v1",
-            Transports = ["http", "pipe"]
+            Transports = ["http", "ws", "pipe"],
+            WebSocketHelloTimeoutSeconds = 5,
+            SessionIdleTimeoutSeconds = 900,
+            SessionHardLifetimeSeconds = 14400
         };
 
         Assert.Equal(TerminalSessionSignal.Terminate, signalRequest.Signal);
@@ -54,6 +57,9 @@ public sealed class ContractsAndApiModelsTests
         Assert.Equal(40, resizeRequest.Rows);
         Assert.Equal("ok", healthResponse.Status);
         Assert.Equal("v1", healthResponse.ApiVersion);
-        Assert.Equal(["http", "pipe"], healthResponse.Transports);
+        Assert.Equal(["http", "ws", "pipe"], healthResponse.Transports);
+        Assert.Equal(5, healthResponse.WebSocketHelloTimeoutSeconds);
+        Assert.Equal(900, healthResponse.SessionIdleTimeoutSeconds);
+        Assert.Equal(14400, healthResponse.SessionHardLifetimeSeconds);
     }
 }

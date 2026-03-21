@@ -17,22 +17,22 @@ Supports multiple terminal sessions over a single WebSocket connection. Sessions
 ### Query Parameters
 
 - `protocol` (optional) - Protocol selection: `json` (default), `msgpack`, `messagepack`
-- `api_key` (optional) - API key for authentication (if query parameter auth is enabled)
 
 ### Authentication
 
-**Header Authentication (Recommended):**
+WebSocket connection must be authenticated with `hello` request as the first message:
 ```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws', {
-  headers: {
-    'X-AureTTY-Key': 'your-api-key'
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws');
+
+ws.send({
+  type: 'request',
+  id: 'hello-1',
+  method: 'hello',
+  payload: {
+    token: 'your-api-key',
+    protocolVersion: 1
   }
 });
-```
-
-**Query Parameter Authentication:**
-```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?api_key=your-api-key');
 ```
 
 ### Protocol Selection
@@ -55,7 +55,12 @@ ws.onmessage = (event) => {
   console.log(msg);
 };
 
-ws.send(msgpack.encode({ type: 'request', method: 'terminal.ping' }));
+ws.send(msgpack.encode({
+  type: 'request',
+  id: 'hello-1',
+  method: 'hello',
+  payload: { token: 'your-api-key', protocolVersion: 1 }
+}));
 ```
 
 ## Message Format
@@ -580,7 +585,7 @@ Events were dropped due to backpressure.
 ```
 
 **Note:** `dropped` events indicate the client is not consuming events fast enough. Consider:
-- Increasing buffer size (`--sse-subscription-buffer-capacity`)
+- Increasing buffer size (`--ws-subscription-buffer-capacity`)
 - Optimizing client event processing
 - Using MessagePack protocol for lower overhead
 
@@ -603,7 +608,7 @@ class AureTTYWebSocket {
 
   connect() {
     return new Promise((resolve, reject) => {
-      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws?api_key=${this.apiKey}`;
+      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws`;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
@@ -738,7 +743,7 @@ class MultiplexedAureTTYClient {
 
   connect() {
     return new Promise((resolve, reject) => {
-      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws?protocol=${this.protocol}&api_key=${this.apiKey}`;
+      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws?protocol=${this.protocol}`;
       this.ws = new WebSocket(url);
 
       if (this.protocol === 'msgpack') {
@@ -900,7 +905,7 @@ class ResilientAureTTYClient {
 
   async connect() {
     try {
-      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws?api_key=${this.apiKey}`;
+      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws`;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
@@ -1053,7 +1058,7 @@ await client.startSession('resilient-session', 'bash');
 - Ensure header name is correct (`X-AureTTY-Key`)
 
 ### Events Dropped
-- Increase buffer size: `--sse-subscription-buffer-capacity`
+- Increase buffer size: `--ws-subscription-buffer-capacity`
 - Optimize client event processing
 - Use MessagePack protocol
 - Reduce event frequency

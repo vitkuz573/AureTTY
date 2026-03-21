@@ -20,9 +20,7 @@ public sealed class ApiKeyAuthenticationMiddleware(RequestDelegate next)
             throw new InvalidOperationException("HTTP API key is not configured. Provide --api-key or AURETTY_API_KEY.");
         }
 
-        if (context.WebSockets.IsWebSocketRequest
-            && context.Request.Path.HasValue
-            && context.Request.Path.Value.EndsWith("/ws", StringComparison.Ordinal))
+        if (context.WebSockets.IsWebSocketRequest)
         {
             await _next(context);
             return;

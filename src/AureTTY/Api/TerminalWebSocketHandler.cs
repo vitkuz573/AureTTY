@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
 using System.Text.Json;
@@ -39,31 +40,52 @@ public static class TerminalWebSocketHandler
             return;
         }
 
-        if (!ApiKeyAuthorization.IsAuthorized(context, options))
-        {
-            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-            return;
-        }
-
         var protocol = ParseProtocol(context);
         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         var connectionId = Guid.NewGuid().ToString("N");
-
-        var eventPublisher = context.RequestServices.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
-        var sessionService = context.RequestServices.GetRequiredService<ITerminalSessionService>();
-
-        var sessionTracking = multiplexing ? new ConcurrentDictionary<string, string>(StringComparer.Ordinal) : null;
-        var eventChannel = multiplexing
-            ? eventPublisher.RegisterMultiplexedConnection(connectionId, viewerId)
-            : eventPublisher.RegisterConnection(connectionId, viewerId);
         var writeLock = new SemaphoreSlim(1, 1);
+        var receiveBuffer = ArrayPool<byte>.Shared.Rent(MaxMessageSize);
+        System.Threading.Channels.ChannelReader<TerminalSessionEvent> eventChannel;
+        ConcurrentDictionary<string, string>? sessionTracking = null;
+        var isRegistered = false;
 
         try
         {
+            var authenticated = await AuthenticateConnectionAsync(
+                webSocket,
+                receiveBuffer,
+                protocol,
+                options,
+                writeLock,
+                context.RequestAborted);
+            if (!authenticated)
+            {
+                return;
+            }
+
+            var eventPublisher = context.RequestServices.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
+            var sessionService = context.RequestServices.GetRequiredService<ITerminalSessionService>();
+            sessionTracking = multiplexing ? new ConcurrentDictionary<string, string>(StringComparer.Ordinal) : null;
+            eventChannel = multiplexing
+                ? eventPublisher.RegisterMultiplexedConnection(connectionId, viewerId)
+                : eventPublisher.RegisterConnection(connectionId, viewerId);
+            isRegistered = true;
+
             using var connectionCts = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted);
             var cancellationToken = connectionCts.Token;
 
-            var inboundTask = ProcessInboundAsync(webSocket, sessionService, eventPublisher, connectionId, viewerId, protocol, sessionTracking, writeLock, logger, cancellationToken);
+            var inboundTask = ProcessInboundAsync(
+                webSocket,
+                receiveBuffer,
+                sessionService,
+                eventPublisher,
+                connectionId,
+                viewerId,
+                protocol,
+                sessionTracking,
+                writeLock,
+                logger,
+                cancellationToken);
             var outboundTask = ProcessOutboundAsync(webSocket, eventChannel, eventPublisher, connectionId, protocol, writeLock, cancellationToken);
 
             await Task.WhenAny(inboundTask, outboundTask);
@@ -75,16 +97,24 @@ public static class TerminalWebSocketHandler
         }
         finally
         {
+            var eventPublisher = isRegistered || sessionTracking is not null
+                ? context.RequestServices.GetRequiredService<WebSocketTerminalSessionEventPublisher>()
+                : null;
+
             if (sessionTracking is not null)
             {
                 foreach (var sessionId in sessionTracking.Keys)
                 {
-                    eventPublisher.UnregisterSessionSubscription(connectionId, sessionId);
+                    eventPublisher!.UnregisterSessionSubscription(connectionId, sessionId);
                 }
             }
 
-            eventPublisher.UnregisterConnection(connectionId);
+            if (isRegistered)
+            {
+                eventPublisher!.UnregisterConnection(connectionId);
+            }
             writeLock.Dispose();
+            ArrayPool<byte>.Shared.Return(receiveBuffer);
 
             if (webSocket.State is WebSocketState.Open or WebSocketState.CloseReceived)
             {
@@ -105,6 +135,7 @@ public static class TerminalWebSocketHandler
 
     private static async Task ProcessInboundAsync(
         WebSocket webSocket,
+        byte[] buffer,
         ITerminalSessionService sessionService,
         WebSocketTerminalSessionEventPublisher eventPublisher,
         string connectionId,
@@ -115,53 +146,21 @@ public static class TerminalWebSocketHandler
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var buffer = new byte[MaxMessageSize];
-
         while (!cancellationToken.IsCancellationRequested)
         {
-            WebSocketReceiveResult result;
-            int totalBytes = 0;
-
-            do
-            {
-                if (totalBytes >= buffer.Length)
-                {
-                    await SendErrorAsync(webSocket, writeLock, protocol, null, "Message too large.", cancellationToken);
-                    return;
-                }
-
-                result = await webSocket.ReceiveAsync(
-                    new ArraySegment<byte>(buffer, totalBytes, buffer.Length - totalBytes),
-                    cancellationToken);
-                totalBytes += result.Count;
-            }
-            while (!result.EndOfMessage);
-
-            if (result.MessageType == WebSocketMessageType.Close)
+            var receiveResult = await ReceiveIpcMessageAsync(webSocket, buffer, protocol, cancellationToken);
+            if (receiveResult.CloseRequested)
             {
                 return;
             }
 
-            var expectedMessageType = protocol == IpcProtocol.MessagePack
-                ? WebSocketMessageType.Binary
-                : WebSocketMessageType.Text;
-
-            if (result.MessageType != expectedMessageType)
+            if (receiveResult.Error is not null)
             {
+                await SendErrorAsync(webSocket, writeLock, protocol, null, receiveResult.Error, cancellationToken);
                 continue;
             }
 
-            TerminalIpcMessage? message;
-            try
-            {
-                message = IpcMessageSerializer.Deserialize(buffer.AsSpan(0, totalBytes), protocol);
-            }
-            catch (Exception)
-            {
-                await SendErrorAsync(webSocket, writeLock, protocol, null, "Invalid message format.", cancellationToken);
-                continue;
-            }
-
+            var message = receiveResult.Message;
             if (message is null || !string.Equals(message.Type, TerminalIpcMessageTypes.Request, StringComparison.Ordinal))
             {
                 continue;
@@ -198,6 +197,150 @@ public static class TerminalWebSocketHandler
         }
     }
 
+    private static async Task<bool> AuthenticateConnectionAsync(
+        WebSocket webSocket,
+        byte[] buffer,
+        IpcProtocol protocol,
+        TerminalServiceOptions options,
+        SemaphoreSlim writeLock,
+        CancellationToken cancellationToken)
+    {
+        ReceiveMessageResult helloMessageResult;
+        using (var helloTimeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
+        {
+            helloTimeoutSource.CancelAfter(options.WebSocketHelloTimeout);
+
+            try
+            {
+                helloMessageResult = await ReceiveIpcMessageAsync(webSocket, buffer, protocol, helloTimeoutSource.Token);
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                await SendErrorAsync(webSocket, writeLock, protocol, null, "WebSocket hello handshake timed out.", cancellationToken);
+                await CloseWithPolicyViolationAsync(webSocket, "hello-timeout");
+                return false;
+            }
+        }
+
+        if (helloMessageResult.CloseRequested)
+        {
+            return false;
+        }
+
+        if (helloMessageResult.Error is not null)
+        {
+            await SendErrorAsync(webSocket, writeLock, protocol, null, helloMessageResult.Error, cancellationToken);
+            await CloseWithPolicyViolationAsync(webSocket, "invalid-hello");
+            return false;
+        }
+
+        var helloMessage = helloMessageResult.Message;
+        if (helloMessage is null ||
+            !string.Equals(helloMessage.Type, TerminalIpcMessageTypes.Request, StringComparison.Ordinal) ||
+            !string.Equals(helloMessage.Method, TerminalIpcMethods.Hello, StringComparison.Ordinal))
+        {
+            await SendErrorAsync(webSocket, writeLock, protocol, helloMessage?.Id, "First WebSocket message must be 'hello' request.", cancellationToken);
+            await CloseWithPolicyViolationAsync(webSocket, "hello-required");
+            return false;
+        }
+
+        TerminalIpcHelloPayload helloPayload;
+        try
+        {
+            helloPayload = RequirePayload<TerminalIpcHelloPayload>(helloMessage);
+        }
+        catch (Exception)
+        {
+            await SendErrorAsync(webSocket, writeLock, protocol, helloMessage.Id, "Hello payload is missing or invalid.", cancellationToken);
+            await CloseWithPolicyViolationAsync(webSocket, "invalid-hello");
+            return false;
+        }
+
+        if (!ApiKeyAuthorization.IsApiKeyValid(helloPayload.Token, options))
+        {
+            await SendErrorAsync(webSocket, writeLock, protocol, helloMessage.Id, "WebSocket hello token is invalid.", cancellationToken);
+            await CloseWithPolicyViolationAsync(webSocket, "unauthorized");
+            return false;
+        }
+
+        if (helloPayload.ProtocolVersion != 1)
+        {
+            await SendErrorAsync(webSocket, writeLock, protocol, helloMessage.Id, "Unsupported hello protocol version.", cancellationToken);
+            await CloseWithPolicyViolationAsync(webSocket, "unsupported-protocol");
+            return false;
+        }
+
+        await WriteMessageAsync(webSocket, writeLock, protocol, CreateResponse(helloMessage, new TerminalIpcAck()), cancellationToken);
+        return true;
+    }
+
+    private static async Task<ReceiveMessageResult> ReceiveIpcMessageAsync(
+        WebSocket webSocket,
+        byte[] buffer,
+        IpcProtocol protocol,
+        CancellationToken cancellationToken)
+    {
+        WebSocketReceiveResult result;
+        int totalBytes = 0;
+
+        do
+        {
+            if (totalBytes >= buffer.Length)
+            {
+                return ReceiveMessageResult.FromError("Message too large.");
+            }
+
+            result = await webSocket.ReceiveAsync(
+                new ArraySegment<byte>(buffer, totalBytes, buffer.Length - totalBytes),
+                cancellationToken);
+            totalBytes += result.Count;
+        }
+        while (!result.EndOfMessage);
+
+        if (result.MessageType == WebSocketMessageType.Close)
+        {
+            return ReceiveMessageResult.Close;
+        }
+
+        var expectedMessageType = protocol == IpcProtocol.MessagePack
+            ? WebSocketMessageType.Binary
+            : WebSocketMessageType.Text;
+        if (result.MessageType != expectedMessageType)
+        {
+            return ReceiveMessageResult.FromError("Unexpected WebSocket message type.");
+        }
+
+        TerminalIpcMessage? message;
+        try
+        {
+            message = IpcMessageSerializer.Deserialize(buffer.AsMemory(0, totalBytes), protocol);
+        }
+        catch (Exception)
+        {
+            return ReceiveMessageResult.FromError("Invalid message format.");
+        }
+
+        return new ReceiveMessageResult(message, CloseRequested: false, Error: null);
+    }
+
+    private static async Task CloseWithPolicyViolationAsync(WebSocket webSocket, string reason)
+    {
+        if (webSocket.State is not (WebSocketState.Open or WebSocketState.CloseReceived))
+        {
+            return;
+        }
+
+        try
+        {
+            using var closeSource = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+            await webSocket.CloseAsync(WebSocketCloseStatus.PolicyViolation, reason, closeSource.Token);
+        }
+        catch
+        {
+            // Best-effort close.
+        }
+    }
+
     private static async Task<TerminalIpcMessage> HandleRequestAsync(
         TerminalIpcMessage message,
         string viewerId,
@@ -217,6 +360,9 @@ public static class TerminalWebSocketHandler
         {
             switch (method)
             {
+                case TerminalIpcMethods.Hello:
+                    return CreateError(message, "WebSocket hello handshake is only allowed as the first message.");
+
                 case TerminalIpcMethods.Ping:
                     return CreateResponse(message, new TerminalIpcAck());
 
@@ -397,6 +543,7 @@ public static class TerminalWebSocketHandler
                 nameof(TerminalIpcSignalRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcSignalRequest,
                 nameof(TerminalIpcCloseRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcCloseRequest,
                 nameof(TerminalIpcCloseViewerSessionsRequest) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcCloseViewerSessionsRequest,
+                nameof(TerminalIpcHelloPayload) => (JsonTypeInfo<T>)(object)AureTTYJsonSerializerContext.Default.TerminalIpcHelloPayload,
                 _ => throw new InvalidOperationException($"Unknown payload type '{typeof(T).Name}'.")
             };
 
@@ -498,6 +645,13 @@ public static class TerminalWebSocketHandler
         };
 
         await WriteMessageAsync(webSocket, writeLock, protocol, message, cancellationToken);
+    }
+
+    private readonly record struct ReceiveMessageResult(TerminalIpcMessage? Message, bool CloseRequested, string? Error)
+    {
+        public static ReceiveMessageResult Close { get; } = new(null, CloseRequested: true, Error: null);
+
+        public static ReceiveMessageResult FromError(string error) => new(null, CloseRequested: false, error);
     }
 
     private static async Task SafeAwait(Task task)

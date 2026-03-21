@@ -44,14 +44,21 @@ public static class CliOptions
         "--max-pending-input-chunks",
         "Maximum pending out-of-order input chunks per session.");
 
-    public static readonly Option<int> SseSubscriptionBufferCapacity = CreateInt(
-        "--sse-subscription-buffer-capacity",
-        "SSE buffered events per subscriber.");
+    public static readonly Option<int> SessionIdleTimeoutSeconds = CreateInt(
+        "--session-idle-timeout-seconds",
+        "Maximum session idle time before forced close.");
 
-    public static readonly Option<bool> AllowApiKeyQueryParameter = new("--allow-api-key-query")
-    {
-        Description = "Allows passing API key via query parameter 'api_key' (disabled by default)."
-    };
+    public static readonly Option<int> SessionHardLifetimeSeconds = CreateInt(
+        "--session-hard-lifetime-seconds",
+        "Maximum wall-clock session lifetime before forced close.");
+
+    public static readonly Option<int> WebSocketSubscriptionBufferCapacity = CreateInt(
+        "--ws-subscription-buffer-capacity",
+        "WebSocket buffered events per subscriber.");
+
+    public static readonly Option<int> WebSocketHelloTimeoutSeconds = CreateInt(
+        "--ws-hello-timeout-seconds",
+        "WebSocket hello handshake timeout.");
 
     public static readonly Option<string?> ApplicationName = new("--applicationName")
     {
@@ -77,12 +84,18 @@ public static class CliOptions
         MaxPendingInputChunks.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
             CliArguments.MaxPendingInputChunksEnvironmentVariable,
             TerminalRuntimeLimits.DefaultMaxPendingInputChunks);
-        SseSubscriptionBufferCapacity.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
-            CliArguments.SseSubscriptionBufferCapacityEnvironmentVariable,
-            TerminalServiceOptions.DefaultSseSubscriptionBufferCapacity);
-        AllowApiKeyQueryParameter.DefaultValueFactory = _ => CliArguments.GetDefaultBoolFromEnvironment(
-            CliArguments.AllowApiKeyQueryEnvironmentVariable,
-            fallback: false);
+        SessionIdleTimeoutSeconds.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.SessionIdleTimeoutSecondsEnvironmentVariable,
+            TerminalRuntimeLimits.DefaultSessionIdleTimeoutSeconds);
+        SessionHardLifetimeSeconds.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.SessionHardLifetimeSecondsEnvironmentVariable,
+            TerminalRuntimeLimits.DefaultSessionHardLifetimeSeconds);
+        WebSocketSubscriptionBufferCapacity.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.WebSocketSubscriptionBufferCapacityEnvironmentVariable,
+            TerminalServiceOptions.DefaultWebSocketSubscriptionBufferCapacity);
+        WebSocketHelloTimeoutSeconds.DefaultValueFactory = _ => CliArguments.GetDefaultIntFromEnvironment(
+            CliArguments.WebSocketHelloTimeoutSecondsEnvironmentVariable,
+            TerminalServiceOptions.DefaultWebSocketHelloTimeoutSeconds);
 
         Transports.Validators.Add(result =>
         {
@@ -115,7 +128,10 @@ public static class CliOptions
         MaxSessionsPerViewer.Validators.Add(static result => ValidatePositiveInt(result, nameof(MaxSessionsPerViewer)));
         ReplayBufferCapacity.Validators.Add(static result => ValidatePositiveInt(result, nameof(ReplayBufferCapacity)));
         MaxPendingInputChunks.Validators.Add(static result => ValidatePositiveInt(result, nameof(MaxPendingInputChunks)));
-        SseSubscriptionBufferCapacity.Validators.Add(static result => ValidatePositiveInt(result, nameof(SseSubscriptionBufferCapacity)));
+        SessionIdleTimeoutSeconds.Validators.Add(static result => ValidatePositiveInt(result, nameof(SessionIdleTimeoutSeconds)));
+        SessionHardLifetimeSeconds.Validators.Add(static result => ValidatePositiveInt(result, nameof(SessionHardLifetimeSeconds)));
+        WebSocketSubscriptionBufferCapacity.Validators.Add(static result => ValidatePositiveInt(result, nameof(WebSocketSubscriptionBufferCapacity)));
+        WebSocketHelloTimeoutSeconds.Validators.Add(static result => ValidatePositiveInt(result, nameof(WebSocketHelloTimeoutSeconds)));
     }
 
     public static void AddTo(Command command)
@@ -131,8 +147,10 @@ public static class CliOptions
         command.Add(MaxSessionsPerViewer);
         command.Add(ReplayBufferCapacity);
         command.Add(MaxPendingInputChunks);
-        command.Add(SseSubscriptionBufferCapacity);
-        command.Add(AllowApiKeyQueryParameter);
+        command.Add(SessionIdleTimeoutSeconds);
+        command.Add(SessionHardLifetimeSeconds);
+        command.Add(WebSocketSubscriptionBufferCapacity);
+        command.Add(WebSocketHelloTimeoutSeconds);
         command.Add(ApplicationName);
     }
 

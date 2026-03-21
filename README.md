@@ -6,17 +6,17 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE-MIT)
 [![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE-APACHE)
 
-**AureTTY** is a high-performance, standalone terminal runtime with multiple transport options. Built with .NET 10, it provides HTTP REST API, Server-Sent Events (SSE), WebSocket, and local IPC pipe transports for language-agnostic terminal integration.
+**AureTTY** is a high-performance, standalone terminal runtime with multiple transport options. Built with .NET 10, it provides HTTP REST API, WebSocket, and local IPC pipe transports for language-agnostic terminal integration.
 
 ## Features
 
 ### Transport Options
 
 - **HTTP REST API** (`/api/v1/*`) - Full-featured REST endpoints for terminal management
-- **Server-Sent Events** (`/api/v1/viewers/{viewerId}/events`) - Real-time event streaming
 - **WebSocket** (`/api/v1/viewers/{viewerId}/sessions/ws`) - Bidirectional real-time communication
   - **MessagePack Protocol** - Binary protocol for ~30-40% bandwidth reduction
   - **Session Multiplexing** - Multiple terminal sessions over single WebSocket connection
+  - **Mandatory Hello Handshake** - First message must be `hello` request with API token
   - **Automatic Reconnection** - Resume with state recovery from 4096-event replay buffer
 - **Local IPC Pipe** - High-performance named pipe transport for co-located processes
 
@@ -38,7 +38,7 @@ All transports can run simultaneously and share the same session state.
 - **Replay Buffer**: Circular buffer (4096 events) for reconnection and late subscribers
 - **Backpressure Handling**: Automatic event dropping with notifications when subscribers are slow
 - **Runtime Limits**: Configurable session limits, buffer sizes, and resource constraints
-- **Security**: Mandatory API key authentication with header-only or query parameter modes
+- **Security**: Mandatory API key authentication with header-only HTTP auth and WebSocket hello token
 
 ## Quick Start
 
@@ -79,18 +79,24 @@ curl -X POST -H "X-AureTTY-Key: your-secure-api-key" \
   -d '{"text":"echo hello\n","sequence":1}' \
   http://localhost:17850/api/v1/viewers/my-viewer/sessions/my-session/inputs
 
-# Stream events via SSE
-curl -H "X-AureTTY-Key: your-secure-api-key" \
-  http://localhost:17850/api/v1/viewers/my-viewer/events
+# Realtime events are streamed via WebSocket only (see WebSocket example below)
 ```
 
 ### WebSocket Example
 
 ```javascript
 // Connect with MessagePack protocol for bandwidth efficiency
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack&api_key=your-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack');
 
 ws.onopen = () => {
+  // Authenticate connection first
+  ws.send(msgpack.encode({
+    type: 'request',
+    id: 'hello-1',
+    method: 'hello',
+    payload: { token: 'your-key', protocolVersion: 1 }
+  }));
+
   // Start a terminal session
   ws.send(msgpack.encode({
     type: 'request',
@@ -115,7 +121,14 @@ ws.onmessage = (event) => {
 
 ```javascript
 // Use the multiplexing endpoint for multiple sessions
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack&api_key=your-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack');
+
+ws.send(msgpack.encode({
+  type: 'request',
+  id: 'hello-1',
+  method: 'hello',
+  payload: { token: 'your-key', protocolVersion: 1 }
+}));
 
 // Start multiple sessions on the same connection
 ws.send(msgpack.encode({
@@ -148,14 +161,16 @@ ws.onmessage = (event) => {
 --pipe-token <token>               # Pipe authentication token (required for pipe)
 --http-listen-url <url>            # HTTP listen URL (default: http://127.0.0.1:17850)
 --api-key <key>                    # HTTP API key (required for HTTP)
---allow-api-key-query              # Allow API key in query string (disabled by default)
+--ws-subscription-buffer-capacity <n>  # WebSocket buffer size (default: 2048)
+--ws-hello-timeout-seconds <n>         # WebSocket hello timeout (default: 5)
 
 # Runtime limits
 --max-concurrent-sessions <n>      # Max total sessions (default: 32)
 --max-sessions-per-viewer <n>      # Max sessions per viewer (default: 8)
 --replay-buffer-capacity <n>       # Event replay buffer size (default: 4096)
 --max-pending-input-chunks <n>     # Max queued input chunks (default: 8192)
---sse-subscription-buffer-capacity <n>  # SSE buffer size (default: 2048)
+--session-idle-timeout-seconds <n> # Idle timeout before force close (default: 900)
+--session-hard-lifetime-seconds <n># Max session lifetime (default: 14400)
 ```
 
 ### Environment Variables
@@ -168,12 +183,14 @@ AURETTY_PIPE_NAME=auretty-terminal
 AURETTY_PIPE_TOKEN=your-token
 AURETTY_HTTP_LISTEN_URL=http://127.0.0.1:17850
 AURETTY_API_KEY=your-api-key
-AURETTY_ALLOW_API_KEY_QUERY=false
+AURETTY_WS_SUBSCRIPTION_BUFFER_CAPACITY=2048
+AURETTY_WS_HELLO_TIMEOUT_SECONDS=5
 AURETTY_MAX_CONCURRENT_SESSIONS=32
 AURETTY_MAX_SESSIONS_PER_VIEWER=8
 AURETTY_REPLAY_BUFFER_CAPACITY=4096
 AURETTY_MAX_PENDING_INPUT_CHUNKS=8192
-AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY=2048
+AURETTY_SESSION_IDLE_TIMEOUT_SECONDS=900
+AURETTY_SESSION_HARD_LIFETIME_SECONDS=14400
 ```
 
 ## API Reference
@@ -203,17 +220,12 @@ AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY=2048
 - `PUT /api/v1/viewers/{viewerId}/sessions/{sessionId}/terminal-size` - Resize terminal
 - `POST /api/v1/viewers/{viewerId}/sessions/{sessionId}/signals` - Send signal (SIGINT, SIGTERM, etc.)
 
-#### Event Streaming
-
-- `GET /api/v1/viewers/{viewerId}/events` - Server-Sent Events stream
-
 ### WebSocket Endpoints
 
 - `GET /api/v1/viewers/{viewerId}/sessions/ws` - Multiplexed WebSocket
 
 Query parameters:
 - `protocol=json|msgpack|messagepack` - Protocol selection (default: json)
-- `api_key=<key>` - API key authentication (if enabled)
 
 ### WebSocket IPC Methods
 
@@ -231,6 +243,7 @@ All WebSocket messages follow the IPC message format:
 
 #### Available Methods
 
+- `hello` - Authenticate WebSocket connection (must be first request)
 - `terminal.ping` - Ping/pong for keepalive
 - `terminal.start` - Start new terminal session
 - `terminal.resume` - Resume existing session with replay
@@ -466,8 +479,7 @@ Current baseline (2026-03-20):
 - API key is **mandatory** when HTTP transport is enabled
 - Pipe token is **mandatory** when pipe transport is enabled
 - Default: API key accepted only via `X-AureTTY-Key` header
-- Query parameter auth (`?api_key=...`) is **disabled by default**
-- Use `--allow-api-key-query` only for development/testing
+- WebSocket requires `hello` handshake with API token as the first message
 
 ### Best Practices
 
@@ -494,12 +506,14 @@ Current baseline (2026-03-20):
 --max-sessions-per-viewer 32 \
 --replay-buffer-capacity 8192 \
 --max-pending-input-chunks 16384 \
---sse-subscription-buffer-capacity 4096
+--ws-subscription-buffer-capacity 4096 \
+--session-idle-timeout-seconds 1800
 
 # Low-latency configuration
 --replay-buffer-capacity 1024 \
 --max-pending-input-chunks 2048 \
---sse-subscription-buffer-capacity 512
+--ws-subscription-buffer-capacity 512 \
+--session-idle-timeout-seconds 300
 ```
 
 ## Troubleshooting
@@ -508,7 +522,7 @@ Current baseline (2026-03-20):
 
 **"API key is required"**
 - Ensure `X-AureTTY-Key` header is set
-- Or enable query parameter auth with `--allow-api-key-query`
+- Ensure WebSocket clients send `hello` request with token before any terminal methods
 
 **"Maximum concurrent sessions reached"**
 - Increase `--max-concurrent-sessions` limit
@@ -516,7 +530,7 @@ Current baseline (2026-03-20):
 
 **"Events dropped" notifications**
 - Subscriber is too slow to consume events
-- Increase `--sse-subscription-buffer-capacity`
+- Increase `--ws-subscription-buffer-capacity`
 - Optimize client event processing
 
 **Linux: "script: command not found"**
