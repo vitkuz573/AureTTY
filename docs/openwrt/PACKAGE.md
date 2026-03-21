@@ -161,6 +161,27 @@ config auretty 'config'
 
 ## Building the Package
 
+### Fast Path (from prebuilt binaries)
+
+```bash
+# Build binaries first
+ARCH=x86_64 ./scripts/openwrt/build.sh
+ARCH=aarch64 ./scripts/openwrt/build.sh
+ARCH=armv7 ./scripts/openwrt/build.sh
+
+# Build .ipk for one architecture
+ARCH=x86_64 ./scripts/openwrt/build-ipk.sh
+
+# Build .ipk for all supported architectures
+./scripts/openwrt/build-ipk-all.sh
+```
+
+Outputs are written to:
+
+```text
+artifacts/openwrt/ipk/<arch>/auretty_<version>-<release>_<arch>.ipk
+```
+
 ### Using OpenWRT SDK
 
 ```bash

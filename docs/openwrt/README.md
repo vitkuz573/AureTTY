@@ -128,6 +128,15 @@ ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
 
 See [QEMU Testing](QEMU_TESTING.md).
 
+### Package Build (IPK)
+
+```bash
+# Build .ipk for all supported architectures (from prebuilt binaries)
+./scripts/openwrt/build-ipk-all.sh
+```
+
+See [Package Guide](PACKAGE.md) for SDK and manual packaging workflows.
+
 ## Troubleshooting
 
 ### `Error: unable to find aarch64 musl compiler in PATH`
