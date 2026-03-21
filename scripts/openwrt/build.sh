@@ -109,6 +109,12 @@ EXPECTED_INTERPRETER=""
 OBJCOPY_TOOL=""
 STRIP_TOOL=""
 case "$ARCH" in
+    x86|i386|i686)
+        echo "Unsupported architecture: $ARCH" >&2
+        echo "NativeAOT is not supported for linux-musl-x86 in this .NET toolchain (NETSDK1203)." >&2
+        echo "Use x86_64, aarch64/arm64, or armv7/armhf." >&2
+        exit 1
+        ;;
     x86_64)
         RID="linux-musl-x64"
         EXPECTED_INTERPRETER="/lib/ld-musl-x86_64.so.1"

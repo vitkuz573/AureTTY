@@ -7,6 +7,7 @@ OpenWRT support is now split by architecture maturity:
 - `x86_64`: production-ready in this repository
 - `aarch64`: preview (musl-only toolchain required, on-device validation pending)
 - `armv7`: experimental (toolchain-dependent)
+- `x86`/`i386`: not supported for NativeAOT in this pipeline (`NETSDK1203`)
 - `mips`: not supported in current .NET musl RID pipeline
 
 ## What Is Implemented

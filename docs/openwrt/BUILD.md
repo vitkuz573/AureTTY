@@ -21,7 +21,7 @@ This guide covers cross-compiling AureTTY NativeAOT binaries for OpenWRT targets
 sudo apt-get install musl-tools musl-dev
 ```
 
-For ARM cross-builds, provide appropriate musl compilers in `PATH`.
+For cross-builds, provide appropriate musl compilers in `PATH`.
 `scripts/openwrt/build.sh` auto-discovers local toolchains from:
 - `.tools/openwrt-toolchains/**/bin`
 - `.tools/musl-cross/**/bin`
@@ -81,7 +81,7 @@ Optional runtime smoke tests after build:
 ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh
 ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
 
-# Run both emulated ARM tests
+# Run all emulated non-host tests
 ./scripts/openwrt/test-emulated-all.sh
 ```
 
@@ -157,6 +157,10 @@ A glibc compiler was used. Ensure your compiler is musl-based (`*-linux-musl-gcc
 ### `Error: Unsupported architecture: mips`
 
 MIPS OpenWRT builds are currently blocked by unsupported musl RID in this pipeline.
+
+### `NativeAOT is not supported for linux-musl-x86`
+
+OpenWRT x86/i386 builds are currently blocked by unsupported NativeAOT RID in this pipeline (`NETSDK1203`).
 
 ### `script: command not found` at runtime
 

@@ -17,7 +17,7 @@ AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native serv
 - Low runtime footprint for embedded devices
 - OpenWRT package layout (`ipk`), UCI config, and procd init script
 - Automated HTTP API smoke tests (`scripts/openwrt/test-api.sh`)
-- Emulated ARM API smoke tests via `qemu-user` (`scripts/openwrt/test-emulated-api.sh`)
+- Emulated non-host API smoke tests via `qemu-user` (`scripts/openwrt/test-emulated-api.sh`)
 - QEMU test workflow for x86_64
 
 ## Quick Start
@@ -110,7 +110,7 @@ uci commit auretty
 ./scripts/openwrt/test-api.sh
 ```
 
-### Emulated ARM API Smoke (Host-side)
+### Emulated API Smoke (Host-side)
 
 ```bash
 # Debian/Ubuntu prerequisite
@@ -120,7 +120,7 @@ sudo apt-get install qemu-user
 ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh
 ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
 
-# Run both
+# Run all emulated non-host architectures
 ./scripts/openwrt/test-emulated-all.sh
 ```
 
@@ -146,6 +146,10 @@ Install/provide a musl cross-compiler and retry:
 ```bash
 AARCH64_MUSL_CC=/path/to/aarch64-openwrt-linux-musl-gcc ARCH=aarch64 ./scripts/openwrt/build.sh
 ```
+
+### `NativeAOT is not supported for linux-musl-x86`
+
+OpenWRT x86/i386 builds are blocked by current .NET NativeAOT limitations (`NETSDK1203`).
 
 ### `binary interpreter mismatch`
 
