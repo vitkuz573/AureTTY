@@ -61,7 +61,7 @@ run_native_api_smoke() {
     return 1
   fi
 
-  API_KEY="test-key" BASE_URL="http://127.0.0.1:17850/api/v1" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$REPO_ROOT/scripts/openwrt/test-api.sh"
+  API_KEY="test-key" BASE_URL="http://127.0.0.1:17850/api/v1" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$REPO_ROOT/scripts/lib/test-api-smoke.sh"
   trap - EXIT
   cleanup
 }

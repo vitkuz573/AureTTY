@@ -145,6 +145,6 @@ if [[ "$ready" -ne 1 ]]; then
     exit 1
 fi
 
-API_KEY="$API_KEY" BASE_URL="$BASE_URL" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$SCRIPT_DIR/test-api.sh"
+API_KEY="$API_KEY" BASE_URL="$BASE_URL" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$REPO_ROOT/scripts/lib/test-api-smoke.sh"
 
 echo "Emulated API smoke passed for $ARCH."

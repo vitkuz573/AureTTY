@@ -75,7 +75,7 @@ Optional runtime smoke tests after build:
 
 ```bash
 # Native host (x86_64)
-./scripts/openwrt/test-api.sh
+./scripts/lib/test-api-smoke.sh
 
 # Emulated ARM binaries on x86_64 host
 ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh

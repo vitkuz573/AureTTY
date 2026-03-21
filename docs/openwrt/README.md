@@ -16,7 +16,7 @@ AureTTY supports OpenWRT with optimized NativeAOT builds and OpenWRT-native serv
 - NativeAOT binary optimized for size (`~15 MB` on x86_64, stripped)
 - Low runtime footprint for embedded devices
 - OpenWRT package layout (`ipk`), UCI config, and procd init script
-- Automated HTTP API smoke tests (`scripts/openwrt/test-api.sh`)
+- Automated HTTP API smoke tests (`scripts/lib/test-api-smoke.sh`)
 - Emulated non-host API smoke tests via `qemu-user` (`scripts/openwrt/test-emulated-api.sh`)
 - QEMU test workflow for x86_64
 
@@ -107,7 +107,7 @@ uci commit auretty
 
 ```bash
 # Start service first, then:
-./scripts/openwrt/test-api.sh
+./scripts/lib/test-api-smoke.sh
 ```
 
 ### Emulated API Smoke (Host-side)

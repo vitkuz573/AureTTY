@@ -51,7 +51,7 @@ OpenWRT support is now split by architecture maturity:
 
 ### Testing and CI
 
-- `scripts/openwrt/test-api.sh` fixed and now passes end-to-end (9/9)
+- `scripts/lib/test-api-smoke.sh` fixed and now passes end-to-end (9/9)
 - Full unit/integration test suites pass:
   - `AureTTY.Tests`
   - `AureTTY.Core.Tests`

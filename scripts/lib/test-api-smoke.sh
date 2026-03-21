@@ -1,12 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-# AureTTY OpenWRT Automated Test Suite
-# Tests AureTTY functionality via HTTP API
+# AureTTY HTTP API smoke test suite.
 
 API_KEY="${API_KEY:-test-key}"
 BASE_URL="${BASE_URL:-http://localhost:17850/api/v1}"
-VIEWER_ID="test-viewer"
+VIEWER_ID="${VIEWER_ID:-test-viewer}"
 TEST_SUITE_NAME="${TEST_SUITE_NAME:-AureTTY API Test Suite}"
 CURL_CONNECT_TIMEOUT_SECONDS="${CURL_CONNECT_TIMEOUT_SECONDS:-3}"
 CURL_MAX_TIME_SECONDS="${CURL_MAX_TIME_SECONDS:-15}"
@@ -23,6 +22,7 @@ echo "$TEST_SUITE_NAME"
 echo "=========================================="
 echo "Base URL: $BASE_URL"
 echo "API Key: $API_KEY"
+echo "Viewer ID: $VIEWER_ID"
 echo "Curl timeouts: connect=${CURL_CONNECT_TIMEOUT_SECONDS}s, max=${CURL_MAX_TIME_SECONDS}s"
 echo "=========================================="
 
@@ -67,7 +67,7 @@ fi
 
 SESSION_ID="$(echo "$RESPONSE" | sed -n 's/.*"sessionId":"\([^"]*\)".*/\1/p' | head -n 1)"
 
-if [ -n "$SESSION_ID" ]; then
+if [[ -n "$SESSION_ID" ]]; then
     test_pass "Session created (ID: $SESSION_ID)"
 else
     test_fail "Session creation failed"
@@ -172,7 +172,7 @@ echo -e "${GREEN}Passed: $PASSED${NC}"
 echo -e "${RED}Failed: $FAILED${NC}"
 echo "=========================================="
 
-if [ $FAILED -eq 0 ]; then
+if [[ "$FAILED" -eq 0 ]]; then
     echo -e "${GREEN}All tests passed!${NC}"
     exit 0
 else
