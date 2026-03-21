@@ -127,6 +127,8 @@ ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
 Notes:
 - `aarch64` emulated smoke defaults to `DOTNET_PROCESSOR_COUNT=1` for startup stability under `qemu-user`.
 - Override when needed: `APP_DOTNET_PROCESSOR_COUNT=<n> ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh`.
+- Default emulated server logs are written to `artifacts/test-logs/openwrt/<arch>/auretty-emulated-server.log`.
+- Override log path with `SERVER_LOG=/tmp/auretty-openwrt.log`.
 
 ### QEMU (x86_64)
 

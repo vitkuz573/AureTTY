@@ -40,7 +40,7 @@ esac
 PORT="${PORT:-$DEFAULT_PORT}"
 BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT}/api/v1}"
 BINARY_PATH="${BINARY_PATH:-$REPO_ROOT/artifacts/openwrt/$ARCH/auretty}"
-SERVER_LOG="${SERVER_LOG:-$REPO_ROOT/artifacts/openwrt/$ARCH/auretty-emulated-server.log}"
+SERVER_LOG="${SERVER_LOG:-$REPO_ROOT/artifacts/test-logs/openwrt/${ARCH}/auretty-emulated-server.log}"
 
 find_sysroot() {
     local roots=("$REPO_ROOT/.tools/openwrt-toolchains" "$REPO_ROOT/.tools/musl-cross")
@@ -151,6 +151,6 @@ if [[ "$ready" -ne 1 ]]; then
     exit 1
 fi
 
-API_KEY="$API_KEY" BASE_URL="$BASE_URL" "$SCRIPT_DIR/test-api.sh"
+API_KEY="$API_KEY" BASE_URL="$BASE_URL" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$SCRIPT_DIR/test-api.sh"
 
 echo "Emulated API smoke passed for $ARCH."

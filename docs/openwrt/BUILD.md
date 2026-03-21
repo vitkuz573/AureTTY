@@ -104,6 +104,9 @@ ARMV7_ALLOW_ABI_MISMATCH=0
 
 # Emulated API smoke tuning (aarch64 defaults to 1 for stability under qemu-user)
 APP_DOTNET_PROCESSOR_COUNT=1
+
+# Optional: override server log output path for emulated smoke
+SERVER_LOG=/tmp/auretty-openwrt-emulated.log
 ```
 
 ## What the Script Validates

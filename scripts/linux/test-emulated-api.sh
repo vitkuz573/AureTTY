@@ -43,7 +43,7 @@ esac
 
 PORT="${PORT:-$DEFAULT_PORT}"
 BASE_URL="${BASE_URL:-http://127.0.0.1:${PORT}/api/v1}"
-SERVER_LOG="${SERVER_LOG:-$REPO_ROOT/artifacts/publish/linux-${ARCH}-aot/auretty-emulated-server.log}"
+SERVER_LOG="${SERVER_LOG:-$REPO_ROOT/artifacts/test-logs/linux/${ARCH}/auretty-emulated-server.log}"
 
 if ! command -v "$QEMU_BIN" >/dev/null 2>&1; then
     echo "Error: $QEMU_BIN not found." >&2
@@ -124,6 +124,6 @@ if [[ "$ready" -ne 1 ]]; then
     exit 1
 fi
 
-API_KEY="$API_KEY" BASE_URL="$BASE_URL" "$REPO_ROOT/scripts/openwrt/test-api.sh"
+API_KEY="$API_KEY" BASE_URL="$BASE_URL" TEST_SUITE_NAME="AureTTY Linux ARM API Test Suite" "$REPO_ROOT/scripts/openwrt/test-api.sh"
 
 echo "Emulated API smoke passed for linux-$ARCH."

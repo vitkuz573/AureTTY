@@ -7,9 +7,10 @@ set -euo pipefail
 API_KEY="${API_KEY:-test-key}"
 BASE_URL="${BASE_URL:-http://localhost:17850/api/v1}"
 VIEWER_ID="test-viewer"
+TEST_SUITE_NAME="${TEST_SUITE_NAME:-AureTTY API Test Suite}"
 
 echo "=========================================="
-echo "AureTTY OpenWRT Test Suite"
+echo "$TEST_SUITE_NAME"
 echo "=========================================="
 echo "Base URL: $BASE_URL"
 echo "API Key: $API_KEY"

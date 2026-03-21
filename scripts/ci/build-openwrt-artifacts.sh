@@ -36,8 +36,10 @@ ARCH=armv7 "$BUILD_SCRIPT"
 
 run_native_api_smoke() {
   local binary="$REPO_ROOT/artifacts/openwrt/x86_64/auretty"
-  local log_file="$REPO_ROOT/artifacts/openwrt/x86_64/auretty-api-smoke-server.log"
+  local log_file="$REPO_ROOT/artifacts/test-logs/openwrt/x86_64/auretty-api-smoke-server.log"
   local pid
+
+  mkdir -p "$(dirname "$log_file")"
 
   "$binary" --transport http --http-listen-url "http://127.0.0.1:17850" --api-key "test-key" >"$log_file" 2>&1 &
   pid=$!
@@ -57,7 +59,7 @@ run_native_api_smoke() {
     sleep 1
   done
 
-  API_KEY="test-key" BASE_URL="http://127.0.0.1:17850/api/v1" "$REPO_ROOT/scripts/openwrt/test-api.sh"
+  API_KEY="test-key" BASE_URL="http://127.0.0.1:17850/api/v1" TEST_SUITE_NAME="AureTTY OpenWRT API Test Suite" "$REPO_ROOT/scripts/openwrt/test-api.sh"
   trap - EXIT
   cleanup
 }
