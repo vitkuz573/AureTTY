@@ -381,6 +381,8 @@ ARCH=arm ./scripts/linux/build-aot-arm.sh
 ./scripts/linux/test-emulated-all.sh
 ```
 
+`arm64` emulated smoke defaults to `DOTNET_PROCESSOR_COUNT=1` for stability under `qemu-user`.
+
 See also:
 - [Linux ARM Build + Emulation Guide](docs/linux/README.md)
 

@@ -9,6 +9,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ARCH="${ARCH:-arm64}"
 API_KEY="${API_KEY:-test-key}"
 START_TIMEOUT_SECONDS="${START_TIMEOUT_SECONDS:-90}"
+APP_DOTNET_PROCESSOR_COUNT="${APP_DOTNET_PROCESSOR_COUNT:-}"
 
 QEMU_BIN="${QEMU_BIN:-}"
 SYSROOT="${SYSROOT:-}"
@@ -22,6 +23,9 @@ case "$ARCH" in
         SYSROOT="${SYSROOT:-/usr/aarch64-linux-gnu}"
         DEFAULT_PORT="17853"
         BINARY_PATH="${BINARY_PATH:-$REPO_ROOT/artifacts/publish/linux-arm64-aot/AureTTY}"
+        if [[ -z "$APP_DOTNET_PROCESSOR_COUNT" ]]; then
+            APP_DOTNET_PROCESSOR_COUNT="1"
+        fi
         ;;
     arm|armv7|armhf)
         ARCH="arm"
@@ -68,14 +72,27 @@ echo "QEMU binary: $QEMU_BIN"
 echo "Sysroot: $SYSROOT"
 echo "Binary: $BINARY_PATH"
 echo "Base URL: $BASE_URL"
+if [[ -n "$APP_DOTNET_PROCESSOR_COUNT" ]]; then
+    echo "DOTNET_PROCESSOR_COUNT: $APP_DOTNET_PROCESSOR_COUNT"
+fi
 echo "=========================================="
 
-"$QEMU_BIN" -L "$SYSROOT" \
-    "$BINARY_PATH" \
-    --transport http \
-    --http-listen-url "http://127.0.0.1:${PORT}" \
-    --api-key "$API_KEY" \
-    >"$SERVER_LOG" 2>&1 &
+if [[ -n "$APP_DOTNET_PROCESSOR_COUNT" ]]; then
+    DOTNET_PROCESSOR_COUNT="$APP_DOTNET_PROCESSOR_COUNT" \
+        "$QEMU_BIN" -L "$SYSROOT" \
+        "$BINARY_PATH" \
+        --transport http \
+        --http-listen-url "http://127.0.0.1:${PORT}" \
+        --api-key "$API_KEY" \
+        >"$SERVER_LOG" 2>&1 &
+else
+    "$QEMU_BIN" -L "$SYSROOT" \
+        "$BINARY_PATH" \
+        --transport http \
+        --http-listen-url "http://127.0.0.1:${PORT}" \
+        --api-key "$API_KEY" \
+        >"$SERVER_LOG" 2>&1 &
+fi
 SERVER_PID=$!
 
 cleanup() {

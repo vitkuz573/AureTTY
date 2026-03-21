@@ -56,6 +56,14 @@ ARCH=arm API_KEY=test-key ./scripts/linux/test-emulated-api.sh
 API_KEY=test-key ./scripts/linux/test-emulated-all.sh
 ```
 
+Notes:
+- `arm64` emulated smoke defaults to `DOTNET_PROCESSOR_COUNT=1` for startup stability under `qemu-user`.
+- Override when needed:
+
+```bash
+APP_DOTNET_PROCESSOR_COUNT=2 ARCH=arm64 API_KEY=test-key ./scripts/linux/test-emulated-api.sh
+```
+
 ## CI Script
 
 Use the consolidated script to install prerequisites, build both binaries, and run emulated API smoke tests:
