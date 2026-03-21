@@ -198,3 +198,15 @@ Typical RAM (depends on limits):
 - [OpenWRT Overview](README.md)
 - [Package Guide](PACKAGE.md)
 - [QEMU Testing](QEMU_TESTING.md)
+
+## CI Archive Hygiene
+
+AppVeyor Linux release builds validate generated archives with:
+
+```bash
+bash ./scripts/ci/validate-release-archives.sh <archive.zip> [...]
+```
+
+Validation checks include:
+- expected payload presence (binary or `.ipk` depending on archive type),
+- rejection of leaked smoke/log artifacts (for example `auretty-emulated-server.log`).

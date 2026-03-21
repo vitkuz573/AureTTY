@@ -204,6 +204,20 @@ build_script:
           Get-FileHash $openwrtArmv7IpkArchive -Algorithm SHA256 | ForEach-Object {
               "$($_.Hash)  $(Split-Path -Leaf $openwrtArmv7IpkArchive)"
           } | Out-File -Encoding ascii "artifacts/AureTTY-$tag-openwrt-armv7-ipk.sha256"
+
+          bash ./scripts/ci/validate-release-archives.sh `
+            "$linuxAotArchive" `
+            "$linuxArm64AotArchive" `
+            "$linuxArmAotArchive" `
+            "$openwrtX64Archive" `
+            "$openwrtAarch64Archive" `
+            "$openwrtArmv7Archive" `
+            "$openwrtX64IpkArchive" `
+            "$openwrtAarch64IpkArchive" `
+            "$openwrtArmv7IpkArchive"
+          if ($LASTEXITCODE -ne 0) {
+              throw "Release archive validation failed with exit code $LASTEXITCODE."
+          }
       }
 
 artifacts:
