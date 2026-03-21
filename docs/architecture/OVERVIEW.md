@@ -262,8 +262,7 @@ data: {"sessionId":"s1","eventType":"output","text":"hello\n"}
 ### WebSocket
 
 **Endpoints:**
-- `/api/v1/viewers/{viewerId}/ws` - Single-session (legacy)
-- `/api/v1/viewers/{viewerId}/sessions/ws` - Multiplexed (recommended)
+- `/api/v1/viewers/{viewerId}/sessions/ws` - Multiplexed
 
 **Features:**
 - Bidirectional communication

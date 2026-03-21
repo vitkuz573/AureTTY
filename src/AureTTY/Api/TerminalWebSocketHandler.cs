@@ -1,12 +1,11 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
 using AureTTY.Contracts.Enums;
+using AureTTY.Contracts.Exceptions;
 using AureTTY.Protocol;
 using AureTTY.Serialization;
 using AureTTY.Services;
@@ -40,7 +39,7 @@ public static class TerminalWebSocketHandler
             return;
         }
 
-        if (!IsAuthorized(context, options))
+        if (!ApiKeyAuthorization.IsAuthorized(context, options))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return;
@@ -224,7 +223,8 @@ public static class TerminalWebSocketHandler
                 case TerminalIpcMethods.Start:
                     {
                         var payload = RequirePayload<TerminalIpcStartRequest>(message);
-                        var handle = await sessionService.StartAsync(payload.ViewerId, payload.Request);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        var handle = await sessionService.StartAsync(viewerId, payload.Request);
 
                         if (sessionTracking is not null)
                         {
@@ -238,7 +238,8 @@ public static class TerminalWebSocketHandler
                 case TerminalIpcMethods.Resume:
                     {
                         var payload = RequirePayload<TerminalIpcResumeRequest>(message);
-                        var handle = await sessionService.ResumeAsync(payload.ViewerId, payload.Request);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        var handle = await sessionService.ResumeAsync(viewerId, payload.Request);
 
                         if (sessionTracking is not null)
                         {
@@ -252,35 +253,40 @@ public static class TerminalWebSocketHandler
                 case TerminalIpcMethods.SendInput:
                     {
                         var payload = RequirePayload<TerminalIpcInputRequest>(message);
-                        await sessionService.SendInputAsync(payload.ViewerId, payload.Request);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        await sessionService.SendInputAsync(viewerId, payload.Request);
                         return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.GetInputDiagnostics:
                     {
                         var payload = RequirePayload<TerminalIpcInputDiagnosticsRequest>(message);
-                        var diagnostics = await sessionService.GetInputDiagnosticsAsync(payload.ViewerId, payload.SessionId);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        var diagnostics = await sessionService.GetInputDiagnosticsAsync(viewerId, payload.SessionId);
                         return CreateResponse(message, diagnostics);
                     }
 
                 case TerminalIpcMethods.Resize:
                     {
                         var payload = RequirePayload<TerminalIpcResizeRequest>(message);
-                        await sessionService.ResizeAsync(payload.ViewerId, payload.Request);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        await sessionService.ResizeAsync(viewerId, payload.Request);
                         return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.Signal:
                     {
                         var payload = RequirePayload<TerminalIpcSignalRequest>(message);
-                        await sessionService.SignalAsync(payload.ViewerId, payload.SessionId, payload.Signal);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        await sessionService.SignalAsync(viewerId, payload.SessionId, payload.Signal);
                         return CreateResponse(message, new TerminalIpcAck());
                     }
 
                 case TerminalIpcMethods.Close:
                     {
                         var payload = RequirePayload<TerminalIpcCloseRequest>(message);
-                        await sessionService.CloseAsync(payload.ViewerId, payload.SessionId);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        await sessionService.CloseAsync(viewerId, payload.SessionId);
 
                         if (sessionTracking is not null)
                         {
@@ -294,12 +300,13 @@ public static class TerminalWebSocketHandler
                 case TerminalIpcMethods.CloseViewerSessions:
                     {
                         var payload = RequirePayload<TerminalIpcCloseViewerSessionsRequest>(message);
-                        await sessionService.CloseViewerSessionsAsync(payload.ViewerId);
+                        EnsureViewerScope(viewerId, payload.ViewerId, method);
+                        await sessionService.CloseViewerSessionsAsync(viewerId);
 
                         if (sessionTracking is not null)
                         {
                             var sessionsToRemove = sessionTracking
-                                .Where(kvp => string.Equals(kvp.Value, payload.ViewerId, StringComparison.Ordinal))
+                                .Where(kvp => string.Equals(kvp.Value, viewerId, StringComparison.Ordinal))
                                 .Select(kvp => kvp.Key)
                                 .ToArray();
 
@@ -340,6 +347,17 @@ public static class TerminalWebSocketHandler
         }
     }
 
+    private static void EnsureViewerScope(string routeViewerId, string payloadViewerId, string method)
+    {
+        if (string.Equals(routeViewerId, payloadViewerId, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        throw new TerminalSessionForbiddenException(
+            $"Viewer scope mismatch for method '{method}'. Route viewer '{routeViewerId}' does not match payload viewer '{payloadViewerId}'.");
+    }
+
     private static IpcProtocol ParseProtocol(HttpContext context)
     {
         if (context.Request.Query.TryGetValue("protocol", out var protocolValues))
@@ -353,57 +371,6 @@ public static class TerminalWebSocketHandler
         }
 
         return IpcProtocol.Json;
-    }
-
-    private static bool IsAuthorized(HttpContext context, TerminalServiceOptions options)
-    {
-        if (string.IsNullOrWhiteSpace(options.ApiKey))
-        {
-            return false;
-        }
-
-        if (context.Request.Headers.TryGetValue(TerminalServiceOptions.ApiKeyHeaderName, out var headerValues))
-        {
-            foreach (var headerValue in headerValues)
-            {
-                if (SecureEquals(headerValue, options.ApiKey))
-                {
-                    return true;
-                }
-            }
-        }
-
-        if (!options.AllowApiKeyQueryParameter)
-        {
-            return false;
-        }
-
-        if (!context.Request.Query.TryGetValue("api_key", out var queryValues))
-        {
-            return false;
-        }
-
-        foreach (var queryValue in queryValues)
-        {
-            if (SecureEquals(queryValue, options.ApiKey))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool SecureEquals(string? candidate, string expected)
-    {
-        if (candidate is null)
-        {
-            return false;
-        }
-
-        var candidateBytes = Encoding.UTF8.GetBytes(candidate);
-        var expectedBytes = Encoding.UTF8.GetBytes(expected);
-        return CryptographicOperations.FixedTimeEquals(candidateBytes, expectedBytes);
     }
 
     private static T RequirePayload<T>(TerminalIpcMessage message)

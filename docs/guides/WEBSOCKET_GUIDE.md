@@ -4,12 +4,11 @@ Complete guide to using AureTTY's WebSocket transport with advanced features.
 
 ## Overview
 
-AureTTY provides two WebSocket endpoints:
+AureTTY provides one WebSocket endpoint:
 
-1. **Single-Session WebSocket** (`/api/v1/viewers/{viewerId}/ws`) - Legacy endpoint, one session per connection
-2. **Multiplexed WebSocket** (`/api/v1/viewers/{viewerId}/sessions/ws`) - Recommended, multiple sessions per connection
+1. **Multiplexed WebSocket** (`/api/v1/viewers/{viewerId}/sessions/ws`) - Multiple sessions per connection
 
-Both endpoints support:
+The endpoint supports:
 - **JSON Protocol** (default) - Human-readable, easy debugging
 - **MessagePack Protocol** - Binary, ~30-40% bandwidth reduction
 - **Automatic Reconnection** - Resume with state recovery
@@ -20,7 +19,7 @@ Both endpoints support:
 ### Basic Connection (JSON)
 
 ```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?api_key=your-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?api_key=your-key');
 
 ws.onopen = () => {
   console.log('Connected');
@@ -59,7 +58,7 @@ ws.onclose = () => {
 ```javascript
 import msgpack from 'msgpack-lite';
 
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?protocol=msgpack&api_key=your-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack&api_key=your-key');
 ws.binaryType = 'arraybuffer';
 
 ws.onopen = () => {
@@ -375,7 +374,7 @@ class ResilientTerminal {
 
 // Usage
 const terminal = new ResilientTerminal(
-  'ws://localhost:17850/api/v1/viewers/my-viewer/ws?api_key=key',
+  'ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?api_key=key',
   'my-viewer',
   'resilient-session'
 );
@@ -506,7 +505,7 @@ class WebSocketClient {
 }
 
 // Usage
-const client = new WebSocketClient('ws://localhost:17850/api/v1/viewers/v1/ws?api_key=key');
+const client = new WebSocketClient('ws://localhost:17850/api/v1/viewers/v1/sessions/ws?api_key=key');
 
 await client.connect();
 
@@ -645,7 +644,7 @@ class KeepaliveWebSocket {
 
 ```javascript
 // ~30-40% bandwidth reduction
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws?protocol=msgpack');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws?protocol=msgpack');
 ```
 
 ### 2. Enable Multiplexing

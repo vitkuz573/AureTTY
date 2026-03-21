@@ -321,7 +321,7 @@ class AureTTYWebSocket:
 
     def connect(self) -> None:
         """Connect to WebSocket."""
-        ws_url = f"{self.url}/viewers/{self.viewer_id}/ws?protocol={self.protocol}&api_key={self.api_key}"
+        ws_url = f"{self.url}/viewers/{self.viewer_id}/sessions/ws?protocol={self.protocol}&api_key={self.api_key}"
 
         self.ws = WebSocketApp(
             ws_url,
@@ -680,7 +680,7 @@ class AsyncAureTTYClient:
 
     async def connect(self):
         """Connect to WebSocket."""
-        ws_url = f"{self.url}/viewers/{self.viewer_id}/ws?protocol={self.protocol}&api_key={self.api_key}"
+        ws_url = f"{self.url}/viewers/{self.viewer_id}/sessions/ws?protocol={self.protocol}&api_key={self.api_key}"
         self.ws = await websockets.connect(ws_url)
 
         # Start message handler

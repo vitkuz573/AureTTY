@@ -28,7 +28,7 @@ public sealed class WebSocketTransportTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var ex = await Assert.ThrowsAnyAsync<Exception>(
             () => wsClient.ConnectAsync(
-                new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+                new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
                 timeout.Token));
 
         Assert.True(
@@ -48,7 +48,7 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
 
         var pingMessage = new TerminalIpcMessage
@@ -77,7 +77,7 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws?api_key=test-api-key"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws?api_key=test-api-key"),
             timeout.Token);
 
         var pingMessage = new TerminalIpcMessage
@@ -109,7 +109,7 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
@@ -142,6 +142,41 @@ public sealed class WebSocketTransportTests
     }
 
     [Fact]
+    public async Task WebSocket_WhenPayloadViewerDoesNotMatchRoute_ReturnsError()
+    {
+        await using var host = await CreateHostAsync();
+        var wsClient = host.GetTestServer().CreateWebSocketClient();
+        wsClient.ConfigureRequest = request =>
+        {
+            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
+        };
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var ws = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/api/v1/viewers/route-viewer/sessions/ws"),
+            timeout.Token);
+
+        var startPayload = new TerminalIpcStartRequest(
+            "payload-viewer",
+            new TerminalSessionStartRequest("session-mismatch", Shell.Bash));
+
+        var startMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "start-mismatch",
+            Method = TerminalIpcMethods.Start,
+            Payload = startPayload
+        };
+
+        await SendMessageAsync(ws, startMessage, timeout.Token);
+        var response = await ReceiveMessageAsync(ws, timeout.Token);
+
+        Assert.NotNull(response);
+        Assert.Equal(TerminalIpcMessageTypes.Error, response.Type);
+        Assert.Contains("Viewer scope mismatch", response.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task WebSocket_WhenEventIsPublished_ReceivesEventMessage()
     {
         await using var host = await CreateHostAsync();
@@ -153,8 +188,22 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
+
+        var startMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "start-event-1",
+            Method = TerminalIpcMethods.Start,
+            Payload = new TerminalIpcStartRequest(
+                "viewer-ws",
+                new TerminalSessionStartRequest("session-1", Shell.Bash))
+        };
+        await SendMessageAsync(ws, startMessage, timeout.Token);
+        var startResponse = await ReceiveMessageAsync(ws, timeout.Token);
+        Assert.NotNull(startResponse);
+        Assert.Equal(TerminalIpcMessageTypes.Response, startResponse.Type);
 
         var eventPublisher = host.Services.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
         var expectedEvent = new TerminalSessionEvent("session-1", TerminalSessionEventType.Output)
@@ -197,7 +246,7 @@ public sealed class WebSocketTransportTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-ws/ws"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-ws/sessions/ws"),
             timeout.Token);
 
         await ws.CloseAsync(WebSocketCloseStatus.NormalClosure, null, timeout.Token);

@@ -14,7 +14,7 @@
 
 - **HTTP REST API** (`/api/v1/*`) - Full-featured REST endpoints for terminal management
 - **Server-Sent Events** (`/api/v1/viewers/{viewerId}/events`) - Real-time event streaming
-- **WebSocket** (`/api/v1/viewers/{viewerId}/ws`) - Bidirectional real-time communication
+- **WebSocket** (`/api/v1/viewers/{viewerId}/sessions/ws`) - Bidirectional real-time communication
   - **MessagePack Protocol** - Binary protocol for ~30-40% bandwidth reduction
   - **Session Multiplexing** - Multiple terminal sessions over single WebSocket connection
   - **Automatic Reconnection** - Resume with state recovery from 4096-event replay buffer
@@ -88,7 +88,7 @@ curl -H "X-AureTTY-Key: your-secure-api-key" \
 
 ```javascript
 // Connect with MessagePack protocol for bandwidth efficiency
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?protocol=msgpack&api_key=your-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack&api_key=your-key');
 
 ws.onopen = () => {
   // Start a terminal session
@@ -209,8 +209,7 @@ AURETTY_SSE_SUBSCRIPTION_BUFFER_CAPACITY=2048
 
 ### WebSocket Endpoints
 
-- `GET /api/v1/viewers/{viewerId}/ws` - Single-session WebSocket (legacy)
-- `GET /api/v1/viewers/{viewerId}/sessions/ws` - Multiplexed WebSocket (recommended)
+- `GET /api/v1/viewers/{viewerId}/sessions/ws` - Multiplexed WebSocket
 
 Query parameters:
 - `protocol=json|msgpack|messagepack` - Protocol selection (default: json)

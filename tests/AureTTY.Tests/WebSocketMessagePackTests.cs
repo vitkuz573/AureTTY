@@ -31,7 +31,7 @@ public sealed class WebSocketMessagePackTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/ws?protocol=msgpack"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/sessions/ws?protocol=msgpack"),
             timeout.Token);
 
         var pingMessage = new TerminalIpcMessage
@@ -64,7 +64,7 @@ public sealed class WebSocketMessagePackTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/ws?protocol=messagepack"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/sessions/ws?protocol=messagepack"),
             timeout.Token);
 
         var startPayload = new TerminalIpcStartRequest(
@@ -115,6 +115,41 @@ public sealed class WebSocketMessagePackTests
     }
 
     [Fact]
+    public async Task WebSocket_WhenMessagePackPayloadViewerDoesNotMatchRoute_ReturnsError()
+    {
+        await using var host = await CreateHostAsync();
+        var wsClient = host.GetTestServer().CreateWebSocketClient();
+        wsClient.ConfigureRequest = request =>
+        {
+            request.Headers[TerminalServiceOptions.ApiKeyHeaderName] = "test-api-key";
+        };
+
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var ws = await wsClient.ConnectAsync(
+            new Uri("ws://localhost/api/v1/viewers/route-viewer/sessions/ws?protocol=msgpack"),
+            timeout.Token);
+
+        var startPayload = new TerminalIpcStartRequest(
+            "payload-viewer",
+            new TerminalSessionStartRequest("session-msgpack-mismatch", Shell.Bash));
+
+        var startMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "start-msgpack-mismatch",
+            Method = TerminalIpcMethods.Start,
+            Payload = startPayload
+        };
+
+        await SendMessagePackAsync(ws, startMessage, timeout.Token);
+        var response = await ReceiveMessagePackAsync(ws, timeout.Token);
+
+        Assert.NotNull(response);
+        Assert.Equal(TerminalIpcMessageTypes.Error, response.Type);
+        Assert.Contains("Viewer scope mismatch", response.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task WebSocket_WhenMessagePackProtocol_ReceivesEvents()
     {
         await using var host = await CreateHostAsync();
@@ -126,8 +161,22 @@ public sealed class WebSocketMessagePackTests
 
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         using var ws = await wsClient.ConnectAsync(
-            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/ws?protocol=msgpack"),
+            new Uri("ws://localhost/api/v1/viewers/viewer-msgpack/sessions/ws?protocol=msgpack"),
             timeout.Token);
+
+        var startMessage = new TerminalIpcMessage
+        {
+            Type = TerminalIpcMessageTypes.Request,
+            Id = "start-msgpack-event-1",
+            Method = TerminalIpcMethods.Start,
+            Payload = new TerminalIpcStartRequest(
+                "viewer-msgpack",
+                new TerminalSessionStartRequest("session-msgpack", Shell.Bash))
+        };
+        await SendMessagePackAsync(ws, startMessage, timeout.Token);
+        var startResponse = await ReceiveMessagePackAsync(ws, timeout.Token);
+        Assert.NotNull(startResponse);
+        Assert.Equal(TerminalIpcMessageTypes.Response, startResponse.Type);
 
         var eventPublisher = host.Services.GetRequiredService<WebSocketTerminalSessionEventPublisher>();
         var expectedEvent = new TerminalSessionEvent("session-msgpack", TerminalSessionEventType.Output)

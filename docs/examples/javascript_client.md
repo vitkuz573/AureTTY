@@ -319,7 +319,7 @@ export class AureTTYWebSocketClient extends EventEmitter {
 
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
-      const wsUrl = `${this.url}/viewers/${this.viewerId}/ws?protocol=${this.options.protocol}&api_key=${this.apiKey}`;
+      const wsUrl = `${this.url}/viewers/${this.viewerId}/sessions/ws?protocol=${this.options.protocol}&api_key=${this.apiKey}`;
 
       this.ws = new WebSocket(wsUrl);
 

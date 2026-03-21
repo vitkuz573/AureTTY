@@ -39,6 +39,7 @@ public sealed class TerminalSessionService(
     private readonly TerminalMetrics _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
     private readonly ILogger<TerminalSessionService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly ConcurrentDictionary<string, TerminalSessionInstance> _sessions = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Lock _sessionAdmissionSync = new();
 
     public Task<IReadOnlyCollection<TerminalSessionHandle>> GetAllSessionsAsync(CancellationToken cancellationToken = default)
     {
@@ -75,34 +76,6 @@ public sealed class TerminalSessionService(
         ArgumentException.ThrowIfNullOrWhiteSpace(viewerId);
         ArgumentNullException.ThrowIfNull(request);
 
-        var activeSessionCount = GetActiveSessionCount();
-        if (activeSessionCount >= _runtimeLimits.MaxConcurrentSessions)
-        {
-            _metrics.RecordSessionRejected();
-            var snapshot = BuildActiveSessionSnapshot();
-            _logger.LogWarning(
-                "Terminal session start rejected due to session limit. ViewerId={ViewerId} ActiveSessions={ActiveSessions} MaxSessions={MaxSessions} Snapshot={Snapshot}.",
-                viewerId,
-                activeSessionCount,
-                _runtimeLimits.MaxConcurrentSessions,
-                snapshot);
-
-            throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions ({_runtimeLimits.MaxConcurrentSessions}) has been reached.");
-        }
-
-        var viewerActiveSessionCount = GetViewerActiveSessionCount(viewerId);
-        if (viewerActiveSessionCount >= _runtimeLimits.MaxSessionsPerViewer)
-        {
-            _metrics.RecordSessionRejected();
-            _logger.LogWarning(
-                "Terminal session start rejected due to per-viewer limit. ViewerId={ViewerId} ViewerActiveSessions={ViewerActiveSessions} MaxPerViewer={MaxPerViewer}.",
-                viewerId,
-                viewerActiveSessionCount,
-                _runtimeLimits.MaxSessionsPerViewer);
-
-            throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions per viewer ({_runtimeLimits.MaxSessionsPerViewer}) has been reached.");
-        }
-
         var sessionId = request.SessionId?.Trim();
         if (string.IsNullOrWhiteSpace(sessionId))
         {
@@ -126,10 +99,42 @@ public sealed class TerminalSessionService(
             normalizedRequest,
             _runtimeLimits.ReplayBufferCapacity,
             _runtimeLimits.MaxPendingInputChunks);
-        if (!_sessions.TryAdd(session.SessionId, session))
+
+        lock (_sessionAdmissionSync)
         {
-            _metrics.RecordSessionRejected();
-            throw new TerminalSessionConflictException($"Terminal session '{session.SessionId}' already exists.");
+            var activeSessionCount = GetActiveSessionCount();
+            if (activeSessionCount >= _runtimeLimits.MaxConcurrentSessions)
+            {
+                _metrics.RecordSessionRejected();
+                var snapshot = BuildActiveSessionSnapshot();
+                _logger.LogWarning(
+                    "Terminal session start rejected due to session limit. ViewerId={ViewerId} ActiveSessions={ActiveSessions} MaxSessions={MaxSessions} Snapshot={Snapshot}.",
+                    viewerId,
+                    activeSessionCount,
+                    _runtimeLimits.MaxConcurrentSessions,
+                    snapshot);
+
+                throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions ({_runtimeLimits.MaxConcurrentSessions}) has been reached.");
+            }
+
+            var viewerActiveSessionCount = GetViewerActiveSessionCount(viewerId);
+            if (viewerActiveSessionCount >= _runtimeLimits.MaxSessionsPerViewer)
+            {
+                _metrics.RecordSessionRejected();
+                _logger.LogWarning(
+                    "Terminal session start rejected due to per-viewer limit. ViewerId={ViewerId} ViewerActiveSessions={ViewerActiveSessions} MaxPerViewer={MaxPerViewer}.",
+                    viewerId,
+                    viewerActiveSessionCount,
+                    _runtimeLimits.MaxSessionsPerViewer);
+
+                throw new TerminalSessionConflictException($"Maximum number of concurrent terminal sessions per viewer ({_runtimeLimits.MaxSessionsPerViewer}) has been reached.");
+            }
+
+            if (!_sessions.TryAdd(session.SessionId, session))
+            {
+                _metrics.RecordSessionRejected();
+                throw new TerminalSessionConflictException($"Terminal session '{session.SessionId}' already exists.");
+            }
         }
 
         _ = RunSessionAsync(session, CancellationToken.None);
@@ -502,7 +507,11 @@ public sealed class TerminalSessionService(
         {
             session.SetProcess(null);
             session.CancelSource.Dispose();
-            _sessions.TryRemove(session.SessionId, out _);
+
+            lock (_sessionAdmissionSync)
+            {
+                _sessions.TryRemove(session.SessionId, out _);
+            }
         }
     }
 

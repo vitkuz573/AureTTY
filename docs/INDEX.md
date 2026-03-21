@@ -144,8 +144,7 @@ DELETE /api/v1/viewers/{viewerId}/sessions
 ### WebSocket Endpoints
 
 ```
-GET /api/v1/viewers/{viewerId}/ws                  (single-session)
-GET /api/v1/viewers/{viewerId}/sessions/ws         (multiplexed)
+GET /api/v1/viewers/{viewerId}/sessions/ws
 ```
 
 Query parameters: `?protocol=json|msgpack&api_key=...`

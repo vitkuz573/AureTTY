@@ -80,19 +80,12 @@ public sealed class RunServiceCommandHandler
 
         webBuilder.WebHost.UseUrls(options.HttpListenUrl);
         webBuilder.Services.AddAureTTYTerminalServices(options);
-#if AURETTY_NATIVEAOT
         webBuilder.Services.ConfigureHttpJsonOptions(static options =>
         {
             options.SerializerOptions.TypeInfoResolverChain.Insert(0, AureTTYJsonSerializerContext.Default);
             options.SerializerOptions.Converters.Add(new ShellJsonConverter());
         });
-#else
-        webBuilder.Services
-            .AddControllers()
-            .AddJsonOptions(static options =>
-            {
-                options.JsonSerializerOptions.Converters.Add(new ShellJsonConverter());
-            });
+#if !AURETTY_NATIVEAOT
         webBuilder.Services.AddEndpointsApiExplorer();
         webBuilder.Services.AddOpenApi(TerminalServiceOptions.ApiVersion);
 #endif
@@ -100,11 +93,9 @@ public sealed class RunServiceCommandHandler
         var app = webBuilder.Build();
         app.UseWebSockets();
         app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
-#if AURETTY_NATIVEAOT
         app.MapTerminalHttpEndpoints();
-#else
+#if !AURETTY_NATIVEAOT
         app.MapOpenApi();
-        app.MapControllers();
 #endif
 
         await app.RunAsync(cancellationToken);

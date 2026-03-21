@@ -188,7 +188,7 @@ curl -X DELETE \
 ### Basic WebSocket Connection
 
 ```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?api_key=my-secret-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?api_key=my-secret-key');
 
 ws.onopen = () => {
   console.log('Connected!');
@@ -255,7 +255,7 @@ ws.onclose = () => {
 ```javascript
 import msgpack from 'msgpack-lite';
 
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?protocol=msgpack&api_key=my-secret-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack&api_key=my-secret-key');
 ws.binaryType = 'arraybuffer';
 
 ws.onopen = () => {

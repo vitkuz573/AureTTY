@@ -4,15 +4,7 @@ Complete reference for the AureTTY WebSocket API with support for JSON and Messa
 
 ## WebSocket Endpoints
 
-### Single-Session WebSocket (Legacy)
-
-```
-ws://localhost:17850/api/v1/viewers/{viewerId}/ws
-```
-
-Subscribes to all events for a specific viewer. Each session requires a separate WebSocket connection.
-
-### Multiplexed WebSocket (Recommended)
+### Multiplexed WebSocket
 
 ```
 ws://localhost:17850/api/v1/viewers/{viewerId}/sessions/ws
@@ -31,7 +23,7 @@ Supports multiple terminal sessions over a single WebSocket connection. Sessions
 
 **Header Authentication (Recommended):**
 ```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws', {
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws', {
   headers: {
     'X-AureTTY-Key': 'your-api-key'
   }
@@ -40,14 +32,14 @@ const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws', {
 
 **Query Parameter Authentication:**
 ```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?api_key=your-api-key');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?api_key=your-api-key');
 ```
 
 ### Protocol Selection
 
 **JSON Protocol (Default):**
 ```javascript
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws');
 ws.binaryType = 'arraybuffer'; // Not used for JSON
 ```
 
@@ -55,7 +47,7 @@ ws.binaryType = 'arraybuffer'; // Not used for JSON
 ```javascript
 import msgpack from 'msgpack-lite';
 
-const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/ws?protocol=msgpack');
+const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/my-viewer/sessions/ws?protocol=msgpack');
 ws.binaryType = 'arraybuffer';
 
 ws.onmessage = (event) => {
@@ -611,7 +603,7 @@ class AureTTYWebSocket {
 
   connect() {
     return new Promise((resolve, reject) => {
-      const url = `${this.baseUrl}/viewers/${this.viewerId}/ws?api_key=${this.apiKey}`;
+      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws?api_key=${this.apiKey}`;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {
@@ -908,7 +900,7 @@ class ResilientAureTTYClient {
 
   async connect() {
     try {
-      const url = `${this.baseUrl}/viewers/${this.viewerId}/ws?api_key=${this.apiKey}`;
+      const url = `${this.baseUrl}/viewers/${this.viewerId}/sessions/ws?api_key=${this.apiKey}`;
       this.ws = new WebSocket(url);
 
       this.ws.onopen = () => {

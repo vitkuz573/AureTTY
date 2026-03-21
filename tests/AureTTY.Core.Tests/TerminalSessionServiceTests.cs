@@ -572,6 +572,56 @@ public sealed class TerminalSessionServiceTests
     }
 
     [Fact]
+    public async Task StartAsync_WhenStartsRaceInParallel_DoesNotExceedConfiguredLimits()
+    {
+        var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
+        var processFactory = new Mock<IScriptProcessFactory>();
+        var createdProcesses = new ConcurrentBag<FakeTerminalProcess>();
+        var limits = new AureTTY.Contracts.Configuration.TerminalRuntimeLimits(
+            MaxConcurrentSessions: 2,
+            MaxSessionsPerViewer: 2,
+            ReplayBufferCapacity: AureTTY.Contracts.Configuration.TerminalRuntimeLimits.DefaultReplayBufferCapacity,
+            MaxPendingInputChunks: AureTTY.Contracts.Configuration.TerminalRuntimeLimits.DefaultMaxPendingInputChunks).Validate();
+        var service = new TerminalSessionService(processFactory.Object, eventPublisher.Object, limits, new TerminalMetrics(), NullLogger<TerminalSessionService>.Instance);
+
+        processFactory
+            .Setup(factory => factory.Create(It.IsAny<ExecutionRunContext>(), It.IsAny<ProcessCredentialOptions?>(), It.IsAny<ProcessRuntimeOptions?>()))
+            .Returns(() =>
+            {
+                var process = new FakeTerminalProcess(string.Empty, processId: 7000 + createdProcesses.Count);
+                createdProcesses.Add(process);
+                return process;
+            });
+
+        var startTasks = Enumerable.Range(1, 16)
+            .Select(index => Task.Run(async () =>
+            {
+                try
+                {
+                    _ = await service.StartAsync("viewer-race", new TerminalSessionStartRequest($"session-race-{index}", Shell.Pwsh));
+                    return true;
+                }
+                catch (TerminalSessionConflictException)
+                {
+                    return false;
+                }
+            }))
+            .ToArray();
+
+        var startResults = await Task.WhenAll(startTasks);
+        Assert.Equal(2, startResults.Count(static result => result));
+
+        var activeSessions = await service.GetAllSessionsAsync();
+        Assert.Equal(2, activeSessions.Count);
+
+        await service.CloseAllSessionsAsync();
+        foreach (var process in createdProcesses)
+        {
+            process.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task StartAsync_WhenProcessStartThrows_ShouldPublishFailedEvent()
     {
         var eventPublisher = new Mock<ITerminalSessionEventPublisher>();
@@ -1257,4 +1307,3 @@ public sealed class TerminalSessionServiceTests
         }
     }
 }
-

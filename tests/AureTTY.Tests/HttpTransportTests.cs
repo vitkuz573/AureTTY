@@ -6,7 +6,6 @@ using AureTTY.Contracts.Abstractions;
 using AureTTY.Contracts.DTOs;
 using AureTTY.Contracts.Enums;
 using AureTTY.Contracts.Exceptions;
-using AureTTY.Controllers;
 using AureTTY.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -106,8 +105,6 @@ public sealed class HttpTransportTests
     {
         var builder = WebApplication.CreateSlimBuilder();
         builder.WebHost.UseTestServer();
-        builder.Services.AddControllers()
-            .AddApplicationPart(typeof(TerminalHealthController).Assembly);
         builder.Services.AddSingleton(new TerminalServiceOptions(
             PipeName: "pipe-test",
             PipeToken: "pipe-token",
@@ -120,7 +117,7 @@ public sealed class HttpTransportTests
 
         var app = builder.Build();
         app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
-        app.MapControllers();
+        app.MapTerminalHttpEndpoints();
 
         await app.StartAsync();
         return app;

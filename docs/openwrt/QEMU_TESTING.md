@@ -130,7 +130,7 @@ opkg update
 opkg install websocat
 
 # Connect to WebSocket
-websocat ws://localhost:17850/api/v1/viewers/test-viewer/ws?api_key=test-key
+websocat ws://localhost:17850/api/v1/viewers/test-viewer/sessions/ws?api_key=test-key
 
 # Send terminal.start
 {"type":"request","id":"1","method":"terminal.start","payload":{"viewerId":"test-viewer","request":{"sessionId":"s1","shell":"sh"}}}

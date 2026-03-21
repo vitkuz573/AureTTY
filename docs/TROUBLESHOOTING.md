@@ -116,7 +116,7 @@ Common issues and solutions for AureTTY.
 
 1. **Use query parameter (if enabled)**
    ```javascript
-   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws?api_key=your-key');
+   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws?api_key=your-key');
    ```
 
 2. **Check header support**
@@ -356,7 +356,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 3. **Use MessagePack protocol**
    ```javascript
    // Reduces serialization overhead
-   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws?protocol=msgpack');
+   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws?protocol=msgpack');
    ```
 
 4. **Reduce output frequency**
@@ -384,7 +384,7 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 2. **Use WebSocket instead of HTTP**
    ```javascript
    // WebSocket has lower latency than HTTP polling
-   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws');
+   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws');
    ```
 
 3. **Enable NativeAOT**
@@ -448,10 +448,10 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 3. **Check protocol parameter**
    ```javascript
    // Correct
-   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws?protocol=msgpack');
+   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws?protocol=msgpack');
 
    // Wrong
-   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws?protocol=json');
+   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws?protocol=json');
    ```
 
 ### Multiplexing Not Working
@@ -464,9 +464,6 @@ Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
    ```javascript
    // Multiplexed endpoint
    const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/sessions/ws');
-
-   // Not legacy endpoint
-   const ws = new WebSocket('ws://localhost:17850/api/v1/viewers/v1/ws');
    ```
 
 2. **Start sessions explicitly**
