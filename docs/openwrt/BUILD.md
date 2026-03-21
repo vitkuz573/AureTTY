@@ -101,6 +101,9 @@ SKIP_INTERPRETER_CHECK=1
 
 # ARMv7: disable linker ABI mismatch workaround (advanced/debug only)
 ARMV7_ALLOW_ABI_MISMATCH=0
+
+# Emulated API smoke tuning (aarch64 defaults to 1 for stability under qemu-user)
+APP_DOTNET_PROCESSOR_COUNT=1
 ```
 
 ## What the Script Validates

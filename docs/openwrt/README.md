@@ -124,6 +124,10 @@ ARCH=armv7 ./scripts/openwrt/test-emulated-api.sh
 ./scripts/openwrt/test-emulated-all.sh
 ```
 
+Notes:
+- `aarch64` emulated smoke defaults to `DOTNET_PROCESSOR_COUNT=1` for startup stability under `qemu-user`.
+- Override when needed: `APP_DOTNET_PROCESSOR_COUNT=<n> ARCH=aarch64 ./scripts/openwrt/test-emulated-api.sh`.
+
 ### QEMU (x86_64)
 
 See [QEMU Testing](QEMU_TESTING.md).

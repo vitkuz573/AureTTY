@@ -10,6 +10,7 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ARCH="${ARCH:-aarch64}"
 API_KEY="${API_KEY:-test-key}"
 START_TIMEOUT_SECONDS="${START_TIMEOUT_SECONDS:-60}"
+APP_DOTNET_PROCESSOR_COUNT="${APP_DOTNET_PROCESSOR_COUNT:-}"
 
 QEMU_BIN="${QEMU_BIN:-}"
 LOADER_NAME=""
@@ -21,6 +22,7 @@ case "$ARCH" in
         LOADER_NAME="ld-musl-aarch64.so.1"
         DEFAULT_PORT="17851"
         QEMU_BIN="${QEMU_BIN:-qemu-aarch64}"
+        APP_DOTNET_PROCESSOR_COUNT="${APP_DOTNET_PROCESSOR_COUNT:-1}"
         ;;
     armv7|armhf)
         ARCH="armv7"
@@ -97,14 +99,27 @@ echo "QEMU binary: $QEMU_BIN"
 echo "Sysroot: $SYSROOT"
 echo "Binary: $BINARY_PATH"
 echo "Base URL: $BASE_URL"
+if [[ -n "$APP_DOTNET_PROCESSOR_COUNT" ]]; then
+    echo "DOTNET_PROCESSOR_COUNT: $APP_DOTNET_PROCESSOR_COUNT"
+fi
 echo "=========================================="
 
-"$QEMU_BIN" -L "$SYSROOT" \
-    "$BINARY_PATH" \
-    --transport http \
-    --http-listen-url "http://127.0.0.1:${PORT}" \
-    --api-key "$API_KEY" \
-    >"$SERVER_LOG" 2>&1 &
+if [[ -n "$APP_DOTNET_PROCESSOR_COUNT" ]]; then
+    DOTNET_PROCESSOR_COUNT="$APP_DOTNET_PROCESSOR_COUNT" \
+        "$QEMU_BIN" -L "$SYSROOT" \
+        "$BINARY_PATH" \
+        --transport http \
+        --http-listen-url "http://127.0.0.1:${PORT}" \
+        --api-key "$API_KEY" \
+        >"$SERVER_LOG" 2>&1 &
+else
+    "$QEMU_BIN" -L "$SYSROOT" \
+        "$BINARY_PATH" \
+        --transport http \
+        --http-listen-url "http://127.0.0.1:${PORT}" \
+        --api-key "$API_KEY" \
+        >"$SERVER_LOG" 2>&1 &
+fi
 SERVER_PID=$!
 
 cleanup() {
