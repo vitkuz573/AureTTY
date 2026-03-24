@@ -32,6 +32,7 @@ case "$ARCH" in
         LOADER_NAME="ld-musl-armhf.so.1"
         DEFAULT_PORT="17852"
         QEMU_BIN="${QEMU_BIN:-qemu-arm}"
+        APP_DOTNET_PROCESSOR_COUNT="${APP_DOTNET_PROCESSOR_COUNT:-1}"
         ;;
     *)
         echo "Unsupported ARCH: $ARCH" >&2
