@@ -50,6 +50,33 @@ artifacts/publish/linux-arm64-aot/AureTTY
 artifacts/publish/linux-arm-aot/AureTTY
 ```
 
+## Debian Package (.deb)
+
+Build Debian packages from existing NativeAOT publish outputs:
+
+```bash
+# Requires: scripts/ci/build-linux-x64-aot.sh + scripts/ci/build-linux-arm-emulated.sh
+./scripts/linux/build-deb.sh x64
+./scripts/linux/build-deb.sh arm64
+./scripts/linux/build-deb.sh arm
+```
+
+Outputs:
+
+```text
+artifacts/deb/auretty_<version>-1_amd64.deb
+artifacts/deb/auretty_<version>-1_arm64.deb
+artifacts/deb/auretty_<version>-1_armhf.deb
+```
+
+Install and configure:
+
+```bash
+sudo apt-get install ./artifacts/deb/auretty_<version>-1_amd64.deb
+sudo editor /etc/auretty/auretty.env
+sudo systemctl enable --now auretty
+```
+
 ## API Smoke
 
 ```bash
@@ -92,6 +119,7 @@ Use the consolidated script to install prerequisites, build both binaries, and r
 bash ./scripts/ci/build-linux-x64-scd.sh
 bash ./scripts/ci/build-linux-x64-aot.sh
 bash ./scripts/ci/build-linux-arm-emulated.sh
+bash ./scripts/ci/build-linux-deb.sh
 ```
 
 These scripts are the reference workflow used for CI validation.

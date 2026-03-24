@@ -64,6 +64,48 @@ dotnet run --project src/AureTTY/AureTTY.csproj -f net10.0 -c Release -- \
   --api-key your-secure-api-key
 ```
 
+### Debian Package (.deb)
+
+Release builds now include Debian packages for Linux runtimes:
+
+- `AureTTY-<tag>-linux-amd64.deb`
+- `AureTTY-<tag>-linux-arm64.deb`
+- `AureTTY-<tag>-linux-armhf.deb`
+
+Install and run as a systemd service:
+
+```bash
+sudo apt-get install ./AureTTY-<tag>-linux-amd64.deb
+sudo editor /etc/auretty/auretty.env
+sudo systemctl enable --now auretty
+sudo systemctl status auretty
+```
+
+Package layout:
+
+- binary: `/usr/lib/auretty/AureTTY`
+- launcher: `/usr/bin/auretty`
+- systemd unit: `/lib/systemd/system/auretty.service`
+- config: `/etc/auretty/auretty.env`
+
+### NuGet Packages
+
+`AureTTY` libraries are published to NuGet for standalone integration:
+
+- `AureTTY.Contracts`
+- `AureTTY.Execution`
+- `AureTTY.Core`
+- `AureTTY.Protocol`
+- `AureTTY.Linux`
+- `AureTTY.Windows`
+
+Install example:
+
+```bash
+dotnet add package AureTTY.Contracts
+dotnet add package AureTTY.Core
+```
+
 ### Basic Usage
 
 ```bash

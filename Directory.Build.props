@@ -13,6 +13,23 @@
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
     <DefaultItemExcludesInProjectFolder>$(DefaultItemExcludesInProjectFolder);bin/**;obj/**;**/bin/**;**/obj/**</DefaultItemExcludesInProjectFolder>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(IsPackable)' != 'false'">
+    <RepositoryUrl>https://github.com/vitkuz573/AureTTY</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/vitkuz573/AureTTY</PackageProjectUrl>
+    <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageTags>auretty;terminal;pty;conpty;linux;windows;websocket</PackageTags>
+    <Authors>Vitaly Kuzyaev</Authors>
+    <Company>AureTTY</Company>
+    <Description>AureTTY high-performance terminal runtime libraries for contracts, execution, protocol, and platform backends.</Description>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'AureTTY.OpenWRT'">
     <BaseIntermediateOutputPath>obj/openwrt/</BaseIntermediateOutputPath>
     <MSBuildProjectExtensionsPath>$(BaseIntermediateOutputPath)</MSBuildProjectExtensionsPath>
@@ -22,5 +39,10 @@
     <PackageReference Include="Nerdbank.GitVersioning" Condition="!Exists('packages.config')">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(IsPackable)' != 'false'">
+    <None Include="$(MSBuildThisFileDirectory)README.md"
+          Pack="true"
+          PackagePath="\" />
   </ItemGroup>
 </Project>

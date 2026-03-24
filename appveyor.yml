@@ -90,8 +90,8 @@ build_script:
           }
       }
 
-      if (Test-Path "artifacts/publish") {
-          Remove-Item -Recurse -Force "artifacts/publish"
+      if (Test-Path "artifacts") {
+          Remove-Item -Recurse -Force "artifacts"
       }
 
       New-Item -ItemType Directory -Path "artifacts" -Force | Out-Null
@@ -103,8 +103,12 @@ build_script:
       $linuxAotArchive = "artifacts/AureTTY-$tag-linux-x64-aot.zip"
       $linuxArm64AotArchive = "artifacts/AureTTY-$tag-linux-arm64-aot.zip"
       $linuxArmAotArchive = "artifacts/AureTTY-$tag-linux-arm-aot.zip"
+      $linuxDebAmd64 = "artifacts/AureTTY-$tag-linux-amd64.deb"
+      $linuxDebArm64 = "artifacts/AureTTY-$tag-linux-arm64.deb"
+      $linuxDebArmhf = "artifacts/AureTTY-$tag-linux-armhf.deb"
       $linuxX64Manifest = "artifacts/AureTTY-$tag-linux-x64-manifest.txt"
       $linuxArmManifest = "artifacts/AureTTY-$tag-linux-arm-manifest.txt"
+      $linuxDebManifest = "artifacts/AureTTY-$tag-linux-deb-manifest.txt"
       $openwrtX64Archive = "artifacts/AureTTY-$tag-openwrt-x86_64.zip"
       $openwrtAarch64Archive = "artifacts/AureTTY-$tag-openwrt-aarch64.zip"
       $openwrtArmv7Archive = "artifacts/AureTTY-$tag-openwrt-armv7.zip"
@@ -177,6 +181,40 @@ build_script:
           Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-arm64-aot/*" -ArchivePath $linuxArm64AotArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-arm64-aot.sha256"
           Compress-ArtifactAndWriteSha256 -SourcePath "artifacts/publish/linux-arm-aot/*" -ArchivePath $linuxArmAotArchive -ChecksumPath "artifacts/AureTTY-$tag-linux-arm-aot.sha256"
 
+          bash ./scripts/ci/build-linux-deb.sh
+          if ($LASTEXITCODE -ne 0) {
+              throw "Linux Debian package build failed with exit code $LASTEXITCODE."
+          }
+
+          $debAmd64Source = Get-ChildItem -Path "artifacts/deb" -Filter "auretty_*_amd64.deb" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $debArm64Source = Get-ChildItem -Path "artifacts/deb" -Filter "auretty_*_arm64.deb" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $debArmhfSource = Get-ChildItem -Path "artifacts/deb" -Filter "auretty_*_armhf.deb" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($null -eq $debAmd64Source -or $null -eq $debArm64Source -or $null -eq $debArmhfSource) {
+              throw "One or more Debian package artifacts are missing in artifacts/deb."
+          }
+
+          Copy-Item -Path $debAmd64Source.FullName -Destination $linuxDebAmd64 -Force
+          Copy-Item -Path $debArm64Source.FullName -Destination $linuxDebArm64 -Force
+          Copy-Item -Path $debArmhfSource.FullName -Destination $linuxDebArmhf -Force
+          Write-ArtifactSha256 -ArtifactPath $linuxDebAmd64 -ChecksumPath "artifacts/AureTTY-$tag-linux-amd64.sha256"
+          Write-ArtifactSha256 -ArtifactPath $linuxDebArm64 -ChecksumPath "artifacts/AureTTY-$tag-linux-arm64.sha256"
+          Write-ArtifactSha256 -ArtifactPath $linuxDebArmhf -ChecksumPath "artifacts/AureTTY-$tag-linux-armhf.sha256"
+
+          $linuxDebManifestSource = "artifacts/deb/manifest.txt"
+          if (-not (Test-Path $linuxDebManifestSource)) {
+              throw "Missing Linux Debian manifest: $linuxDebManifestSource"
+          }
+          Copy-Item -Path $linuxDebManifestSource -Destination $linuxDebManifest -Force
+          Write-ArtifactSha256 -ArtifactPath $linuxDebManifest -ChecksumPath "artifacts/AureTTY-$tag-linux-deb-manifest.sha256"
+
+          bash ./scripts/ci/validate-deb-packages.sh `
+            "$linuxDebAmd64" `
+            "$linuxDebArm64" `
+            "$linuxDebArmhf"
+          if ($LASTEXITCODE -ne 0) {
+              throw "Debian package validation failed with exit code $LASTEXITCODE."
+          }
+
           $linuxX64ManifestSource = "artifacts/publish/linux-x64-manifest.txt"
           if (-not (Test-Path $linuxX64ManifestSource)) {
               throw "Missing Linux x64 manifest: $linuxX64ManifestSource"
@@ -203,6 +241,11 @@ build_script:
           Copy-Item -Path $linuxArmManifestSource -Destination $linuxArmManifest -Force
           Write-ArtifactSha256 -ArtifactPath $linuxArmManifest -ChecksumPath "artifacts/AureTTY-$tag-linux-arm-manifest.sha256"
 
+          bash ./scripts/ci/pack-nuget.sh artifacts/nuget
+          if ($LASTEXITCODE -ne 0) {
+              throw "NuGet packaging failed with exit code $LASTEXITCODE."
+          }
+
           $openwrtManifestSource = "artifacts/openwrt/manifest.txt"
           if (-not (Test-Path $openwrtManifestSource)) {
               throw "Missing OpenWRT manifest: $openwrtManifestSource"
@@ -215,8 +258,12 @@ build_script:
             "artifacts/AureTTY-$tag-linux-x64-aot.sha256" `
             "artifacts/AureTTY-$tag-linux-arm64-aot.sha256" `
             "artifacts/AureTTY-$tag-linux-arm-aot.sha256" `
+            "artifacts/AureTTY-$tag-linux-amd64.sha256" `
+            "artifacts/AureTTY-$tag-linux-arm64.sha256" `
+            "artifacts/AureTTY-$tag-linux-armhf.sha256" `
             "artifacts/AureTTY-$tag-linux-x64-manifest.sha256" `
             "artifacts/AureTTY-$tag-linux-arm-manifest.sha256" `
+            "artifacts/AureTTY-$tag-linux-deb-manifest.sha256" `
             "artifacts/AureTTY-$tag-openwrt-x86_64.sha256" `
             "artifacts/AureTTY-$tag-openwrt-aarch64.sha256" `
             "artifacts/AureTTY-$tag-openwrt-armv7.sha256" `
@@ -257,6 +304,12 @@ artifacts:
     name: auretty-linux-arm64-aot
   - path: artifacts/AureTTY-*-linux-arm-aot.zip
     name: auretty-linux-arm-aot
+  - path: artifacts/AureTTY-*-linux-amd64.deb
+    name: auretty-linux-amd64-deb
+  - path: artifacts/AureTTY-*-linux-arm64.deb
+    name: auretty-linux-arm64-deb
+  - path: artifacts/AureTTY-*-linux-armhf.deb
+    name: auretty-linux-armhf-deb
   - path: artifacts/AureTTY-*-win-x64.sha256
     name: auretty-win-x64-sha256
   - path: artifacts/AureTTY-*-linux-x64.sha256
@@ -269,6 +322,12 @@ artifacts:
     name: auretty-linux-arm64-aot-sha256
   - path: artifacts/AureTTY-*-linux-arm-aot.sha256
     name: auretty-linux-arm-aot-sha256
+  - path: artifacts/AureTTY-*-linux-amd64.sha256
+    name: auretty-linux-amd64-deb-sha256
+  - path: artifacts/AureTTY-*-linux-arm64.sha256
+    name: auretty-linux-arm64-deb-sha256
+  - path: artifacts/AureTTY-*-linux-armhf.sha256
+    name: auretty-linux-armhf-deb-sha256
   - path: artifacts/AureTTY-*-linux-x64-manifest.txt
     name: auretty-linux-x64-manifest
   - path: artifacts/AureTTY-*-linux-x64-manifest.sha256
@@ -277,6 +336,10 @@ artifacts:
     name: auretty-linux-arm-manifest
   - path: artifacts/AureTTY-*-linux-arm-manifest.sha256
     name: auretty-linux-arm-manifest-sha256
+  - path: artifacts/AureTTY-*-linux-deb-manifest.txt
+    name: auretty-linux-deb-manifest
+  - path: artifacts/AureTTY-*-linux-deb-manifest.sha256
+    name: auretty-linux-deb-manifest-sha256
   - path: artifacts/AureTTY-*-openwrt-x86_64.zip
     name: auretty-openwrt-x86_64
   - path: artifacts/AureTTY-*-openwrt-aarch64.zip
@@ -305,6 +368,10 @@ artifacts:
     name: auretty-openwrt-manifest
   - path: artifacts/AureTTY-*-openwrt-manifest.sha256
     name: auretty-openwrt-manifest-sha256
+  - path: artifacts/nuget/*.nupkg
+    name: auretty-nuget-packages
+  - path: artifacts/nuget/*.snupkg
+    name: auretty-nuget-symbol-packages
 
 deploy_script:
   - ps: |
@@ -317,6 +384,9 @@ deploy_script:
 
       if ([string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
           throw "GITHUB_TOKEN is not configured in AppVeyor project settings."
+      }
+      if (-not $IsWindows -and [string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
+          throw "NUGET_API_KEY is not configured in AppVeyor project settings."
       }
 
       $repo = if ($env:APPVEYOR_REPO_NAME) { $env:APPVEYOR_REPO_NAME.Trim() } else { "" }
@@ -375,7 +445,7 @@ deploy_script:
       $uploadUrl = "https://uploads.github.com/repos/$repo/releases/$($release.id)/assets"
       Write-Host "Release upload context: Repo='$repo' Tag='$tag' ReleaseId='$($release.id)'."
       Write-Host "Upload base URL: $uploadUrl"
-      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|linux-x64-manifest|linux-arm-manifest|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk|openwrt-manifest)\.(zip|sha256|txt)$'
+      $assetPattern = '^AureTTY-.*-(win-x64|linux-x64|win-x64-aot|linux-x64-aot|linux-arm64-aot|linux-arm-aot|linux-amd64|linux-arm64|linux-armhf|linux-x64-manifest|linux-arm-manifest|linux-deb-manifest|openwrt-x86_64|openwrt-aarch64|openwrt-armv7|openwrt-x86_64-ipk|openwrt-aarch64-ipk|openwrt-armv7-ipk|openwrt-manifest)\.(zip|deb|sha256|txt)$'
       $assets = Get-ChildItem -Path artifacts -File | Where-Object { $_.Name -match $assetPattern } | Sort-Object Name
 
       if (-not $assets) {
@@ -404,4 +474,11 @@ deploy_script:
 
           Invoke-RestMethod -Method Post -Uri $uploadUri -Headers $headers -InFile $asset.FullName -ContentType "application/octet-stream"
           Write-Host "Uploaded release asset $($asset.Name)"
+      }
+
+      if (-not $IsWindows) {
+          bash ./scripts/ci/publish-nuget.sh artifacts/nuget
+          if ($LASTEXITCODE -ne 0) {
+              throw "NuGet publish failed with exit code $LASTEXITCODE."
+          }
       }

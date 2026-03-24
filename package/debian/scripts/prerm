@@ -1,0 +1,13 @@
+#!/bin/sh
+set -e
+
+if command -v systemctl >/dev/null 2>&1; then
+    case "${1:-}" in
+        remove|deconfigure)
+            systemctl --no-reload stop auretty.service || true
+            systemctl --no-reload disable auretty.service || true
+            ;;
+    esac
+fi
+
+exit 0
